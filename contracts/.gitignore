@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Hardhat build artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Environment secrets
+.env
+
+# Coverage
+coverage/
+coverage.json
