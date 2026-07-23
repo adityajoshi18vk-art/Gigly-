@@ -10,23 +10,23 @@ import * as Contracts from "./index.js";
 
 declare module "@nomicfoundation/hardhat-ethers/types" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
-  getContractFactory(name: 'OptimisticEscrow', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.OptimisticEscrow__factory>
-getContractFactory(name: 'MockUSDC', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.MockUSDC__factory>
+  getContractFactory(name: 'MockUSDC', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.MockUSDC__factory>
+getContractFactory(name: 'OptimisticEscrow', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.OptimisticEscrow__factory>
 getContractFactory(name: 'ReentrantAttacker', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ReentrantAttacker__factory>
 getContractFactory(name: 'ReentrantToken', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ReentrantToken__factory>
 
-  getContractAt(name: 'OptimisticEscrow', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.OptimisticEscrow>
-getContractAt(name: 'MockUSDC', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockUSDC>
+  getContractAt(name: 'MockUSDC', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.MockUSDC>
+getContractAt(name: 'OptimisticEscrow', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.OptimisticEscrow>
 getContractAt(name: 'ReentrantAttacker', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ReentrantAttacker>
 getContractAt(name: 'ReentrantToken', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ReentrantToken>
 
-  deployContract(name: 'OptimisticEscrow', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.OptimisticEscrow>
-deployContract(name: 'MockUSDC', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDC>
+  deployContract(name: 'MockUSDC', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDC>
+deployContract(name: 'OptimisticEscrow', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.OptimisticEscrow>
 deployContract(name: 'ReentrantAttacker', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantAttacker>
 deployContract(name: 'ReentrantToken', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantToken>
 
-  deployContract(name: 'OptimisticEscrow', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.OptimisticEscrow>
-deployContract(name: 'MockUSDC', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDC>
+  deployContract(name: 'MockUSDC', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.MockUSDC>
+deployContract(name: 'OptimisticEscrow', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.OptimisticEscrow>
 deployContract(name: 'ReentrantAttacker', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantAttacker>
 deployContract(name: 'ReentrantToken', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ReentrantToken>
 

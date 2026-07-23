@@ -306,10 +306,10 @@ describe("Gigly Escrow", function () {
     it("should allow client to dispute within window", async function () {
       const jobId = await createAndSubmitJob();
 
-      const tx = await escrow.connect(client).raiseDispute(jobId);
+      const tx = await escrow.connect(client).raiseDispute(jobId, "Poor quality");
       await expect(tx)
         .to.emit(escrow, "DisputeRaised")
-        .withArgs(jobId, client.address);
+        .withArgs(jobId, client.address, "Poor quality");
 
       const job = await escrow.jobs(jobId);
       expect(job.status).to.equal(3); // Disputed
@@ -320,14 +320,14 @@ describe("Gigly Escrow", function () {
       await networkHelpers.time.increase(REVIEW_WINDOW + 1);
 
       await expect(
-        escrow.connect(client).raiseDispute(jobId)
+        escrow.connect(client).raiseDispute(jobId, "Poor quality")
       ).to.be.revertedWithCustomError(escrow, "ReviewWindowExpired");
     });
 
     it("should reject dispute from non-client", async function () {
       const jobId = await createAndSubmitJob();
       await expect(
-        escrow.connect(freelancer).raiseDispute(jobId)
+        escrow.connect(freelancer).raiseDispute(jobId, "Poor quality")
       ).to.be.revertedWithCustomError(escrow, "OnlyClient");
     });
   });
@@ -335,7 +335,7 @@ describe("Gigly Escrow", function () {
   describe("resolveDispute", function () {
     it("should split funds between freelancer and client", async function () {
       const jobId = await createAndSubmitJob();
-      await escrow.connect(client).raiseDispute(jobId);
+      await escrow.connect(client).raiseDispute(jobId, "Poor quality");
 
       const splitToFreelancer = JOB_AMOUNT / 2n; // 50/50
       const splitToClient = JOB_AMOUNT - splitToFreelancer;
@@ -364,7 +364,7 @@ describe("Gigly Escrow", function () {
 
     it("should allow full refund to client (0 to freelancer)", async function () {
       const jobId = await createAndSubmitJob();
-      await escrow.connect(client).raiseDispute(jobId);
+      await escrow.connect(client).raiseDispute(jobId, "Poor quality");
 
       const clientBefore = await usdc.balanceOf(client.address);
       await escrow.connect(arbiter).resolveDispute(jobId, 0n);
@@ -379,7 +379,7 @@ describe("Gigly Escrow", function () {
 
     it("should allow full payout to freelancer", async function () {
       const jobId = await createAndSubmitJob();
-      await escrow.connect(client).raiseDispute(jobId);
+      await escrow.connect(client).raiseDispute(jobId, "Poor quality");
 
       const freelancerBefore = await usdc.balanceOf(freelancer.address);
       await escrow.connect(arbiter).resolveDispute(jobId, JOB_AMOUNT);
@@ -397,7 +397,7 @@ describe("Gigly Escrow", function () {
 
     it("should reject non-arbiter caller", async function () {
       const jobId = await createAndSubmitJob();
-      await escrow.connect(client).raiseDispute(jobId);
+      await escrow.connect(client).raiseDispute(jobId, "Poor quality");
 
       await expect(
         escrow.connect(outsider).resolveDispute(jobId, JOB_AMOUNT / 2n)
@@ -406,7 +406,7 @@ describe("Gigly Escrow", function () {
 
     it("should reject split exceeding job amount", async function () {
       const jobId = await createAndSubmitJob();
-      await escrow.connect(client).raiseDispute(jobId);
+      await escrow.connect(client).raiseDispute(jobId, "Poor quality");
 
       await expect(
         escrow.connect(arbiter).resolveDispute(jobId, JOB_AMOUNT + 1n)

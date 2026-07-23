@@ -23,7 +23,7 @@ encodeFunctionData(functionFragment: 'jobCount', values?: undefined): string;
 encodeFunctionData(functionFragment: 'jobs', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
 encodeFunctionData(functionFragment: 'paymentToken', values?: undefined): string;
-encodeFunctionData(functionFragment: 'raiseDispute', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'raiseDispute', values: [BigNumberish, string]): string;
 encodeFunctionData(functionFragment: 'renounceOwnership', values?: undefined): string;
 encodeFunctionData(functionFragment: 'resolveDispute', values: [BigNumberish, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'setArbiter', values: [AddressLike]): string;
@@ -57,9 +57,9 @@ decodeFunctionResult(functionFragment: 'withdrawFees', data: BytesLike): Result;
 
   
     export namespace DisputeRaisedEvent {
-      export type InputTuple = [jobId: BigNumberish, raisedBy: AddressLike];
-      export type OutputTuple = [jobId: bigint, raisedBy: string];
-      export interface OutputObject {jobId: bigint, raisedBy: string };
+      export type InputTuple = [jobId: BigNumberish, raisedBy: AddressLike, reason: string];
+      export type OutputTuple = [jobId: bigint, raisedBy: string, reason: string];
+      export interface OutputObject {jobId: bigint, raisedBy: string, reason: string };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -291,7 +291,7 @@ decodeFunctionResult(functionFragment: 'withdrawFees', data: BytesLike): Result;
 
     
     raiseDispute: TypedContractMethod<
-      [jobId: BigNumberish, ],
+      [jobId: BigNumberish, reason: string, ],
       [void],
       'nonpayable'
     >
@@ -422,7 +422,7 @@ getFunction(nameOrSignature: 'paymentToken'): TypedContractMethod<
       'view'
     >;
 getFunction(nameOrSignature: 'raiseDispute'): TypedContractMethod<
-      [jobId: BigNumberish, ],
+      [jobId: BigNumberish, reason: string, ],
       [void],
       'nonpayable'
     >;
@@ -473,7 +473,7 @@ getEvent(key: 'WorkSubmitted'): TypedContractEvent<WorkSubmittedEvent.InputTuple
 
     filters: {
       
-      'DisputeRaised(uint256,address)': TypedContractEvent<DisputeRaisedEvent.InputTuple, DisputeRaisedEvent.OutputTuple, DisputeRaisedEvent.OutputObject>;
+      'DisputeRaised(uint256,address,string)': TypedContractEvent<DisputeRaisedEvent.InputTuple, DisputeRaisedEvent.OutputTuple, DisputeRaisedEvent.OutputObject>;
       DisputeRaised: TypedContractEvent<DisputeRaisedEvent.InputTuple, DisputeRaisedEvent.OutputTuple, DisputeRaisedEvent.OutputObject>;
     
 

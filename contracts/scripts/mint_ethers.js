@@ -10,7 +10,7 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const signer = new ethers.Wallet(privateKey, provider);
 
-  const usdcAddress = "0x1c55C94Bdb23F6d4dAE9Fac90ff01bf21b326952";
+  const usdcAddress = "0x630338eDfAfD22c0FF2971Db5696EA2d422b673D";
   const targetAddress = "0x99424dfd6F29e3754228Bd40405bfD1439bcEC4F"; // Actual smart account from frontend
   
   const abi = ["function mint(address to, uint256 amount) public", "function balanceOf(address account) public view returns (uint256)"];

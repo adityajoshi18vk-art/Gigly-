@@ -96,7 +96,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     event FundsReleased(uint256 indexed jobId, uint256 netAmount, uint256 fee);
 
     /// @notice Emitted when a client raises a dispute.
-    event DisputeRaised(uint256 indexed jobId, address indexed raisedBy);
+    event DisputeRaised(uint256 indexed jobId, address indexed raisedBy, string reason);
 
     /// @notice Emitted when the arbiter resolves a dispute.
     event DisputeResolved(
@@ -279,8 +279,9 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
      * @notice Client raises a dispute within the 24-hour review window, freezing funds.
      * @dev The job must be in Submitted status and the window must not have expired.
      * @param jobId The ID of the job to dispute.
+     * @param reason The reason for the dispute.
      */
-    function raiseDispute(uint256 jobId)
+    function raiseDispute(uint256 jobId, string calldata reason)
         external
         onlyClient(jobId)
         inStatus(jobId, Status.Submitted)
@@ -291,7 +292,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
 
         job.status = Status.Disputed;
 
-        emit DisputeRaised(jobId, msg.sender);
+        emit DisputeRaised(jobId, msg.sender, reason);
     }
 
     /**
