@@ -68,6 +68,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         uint256 submittedAt;    // timestamp when work was submitted (0 if not yet)
         Status  status;
         string  taskTitle;      // human-readable task description
+        string  submissionLink; // link to submitted work (stored on-chain)
     }
 
     // ─── Storage ─────────────────────────────────────────────────────────
@@ -91,6 +92,9 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
 
     /// @notice Emitted when a freelancer submits work for review.
     event WorkSubmitted(uint256 indexed jobId, uint256 submittedAt, string submissionLink);
+
+    /// @notice Emitted when a freelancer logs progress on a funded job.
+    event ProgressLogged(uint256 indexed jobId, uint8 percent, string note);
 
     /// @notice Emitted when a client approves and releases funds early.
     event FundsReleased(uint256 indexed jobId, uint256 netAmount, uint256 fee);
@@ -201,7 +205,8 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
             releasedAmount: 0,
             submittedAt: 0,
             status: Status.Funded,
-            taskTitle: taskTitle
+            taskTitle: taskTitle,
+            submissionLink: ""
         });
 
         // Pull USDC from client into this contract
@@ -225,6 +230,22 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     }
 
     /**
+     * @notice Freelancer logs progress on a Funded job. No state change, purely an event log.
+     * @dev Can only be called by the job's freelancer when status is Funded.
+     * @param jobId The ID of the job.
+     * @param percent The completion percentage (0-100).
+     * @param note An optional text note.
+     */
+    function logProgress(uint256 jobId, uint8 percent, string calldata note)
+        external
+        onlyFreelancer(jobId)
+        inStatus(jobId, Status.Funded)
+    {
+        require(percent <= 100, "Percent cannot exceed 100");
+        emit ProgressLogged(jobId, percent, note);
+    }
+
+    /**
      * @notice Freelancer marks work as submitted, starting the 24-hour review timer.
      * @dev Can only be called by the job's freelancer when status is Funded.
      * @param jobId The ID of the job to submit work for.
@@ -238,6 +259,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         Job storage job = jobs[jobId];
         job.status = Status.Submitted;
         job.submittedAt = block.timestamp;
+        job.submissionLink = submissionLink; // persist link in contract state
 
         emit WorkSubmitted(jobId, block.timestamp, submissionLink);
     }

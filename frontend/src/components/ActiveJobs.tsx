@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
 import { Link as LinkIcon } from "lucide-react";
-import { useSubmissionLinks } from "@/lib/useSubmissionLinks";
+import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
 import { client as thirdwebClient } from "@/lib/config";
@@ -26,13 +26,14 @@ export interface JobData {
   submittedAt: bigint;
   status: number;
   taskTitle: string;
+  submissionLink: string;
 }
 
 export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess?: () => void }) {
   const account = useActiveAccount();
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState(true);
-  const workLinks = useSubmissionLinks(refreshCounter);
+  const progressUpdates = useProgressUpdates(refreshCounter);
   const { mutateAsync: sendTransaction } = useSendTransaction();
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
@@ -115,7 +116,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
           jobIds.map(async (id) => {
             const data = await readContract({
               contract: escrowContract,
-              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle)",
+              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle, string submissionLink)",
               params: [id],
             });
             return {
@@ -126,18 +127,20 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
               releasedAmount: data[3],
               submittedAt: data[4],
               status: data[5],
-              taskTitle: data[6]
+              taskTitle: data[6],
+              submissionLink: data[7],
             } as JobData;
           })
         );
 
-        // Filter jobs belonging to the connected client
-        const clientJobs = allJobs.filter(
-          (job) => job.client.toLowerCase() === account.address.toLowerCase()
-        );
-        
+        // Show all jobs (no address filter) — the contract enforces
+        // client-only actions on-chain, so showing all jobs is safe.
+        // This also handles the EOA↔smart-account address mismatch that
+        // occurs when accountAbstraction is toggled.
+        const activeJobs = allJobs.filter((job) => job.status < 4); // hide Released/Refunded
+
         // Sort descending (newest first)
-        setJobs(clientJobs.sort((a, b) => b.id - a.id));
+        setJobs(activeJobs.sort((a, b) => b.id - a.id));
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {
@@ -178,9 +181,9 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
               </p>
               <div className="mt-2">
                 {job.status >= 2 && (
-                  workLinks[job.id] ? (
+                  job.submissionLink ? (
                     <a 
-                      href={workLinks[job.id].startsWith('http') ? workLinks[job.id] : `https://${workLinks[job.id]}`}
+                      href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
                       target="_blank" 
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline bg-primary/5 px-2 py-1 rounded-md"
@@ -193,6 +196,19 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                       No link submitted
                     </span>
                   )
+                )}
+                {job.status === 1 && progressUpdates[job.id] && (
+                  <div className="mt-2 inline-flex flex-col text-sm bg-slate-50 border border-slate-100 rounded-md p-2 w-full">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-slate-700">Progress: {progressUpdates[job.id].percent}%</span>
+                      <span className="text-xs text-slate-400">
+                        updated {Math.max(1, Math.floor((Date.now() / 1000 - progressUpdates[job.id].timestamp) / 60))}m ago
+                      </span>
+                    </div>
+                    {progressUpdates[job.id].note && (
+                      <p className="text-slate-600 italic">&quot;{progressUpdates[job.id].note}&quot;</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

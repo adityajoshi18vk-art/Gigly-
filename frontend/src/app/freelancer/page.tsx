@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
-import { client, CHAIN, wallets } from "@/lib/config";
-import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { IncomingJobs } from "@/components/IncomingJobs";
 import { BrowseGigs } from "@/components/BrowseGigs";

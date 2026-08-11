@@ -1,10 +1,8 @@
-// scripts/deploy.ts
-// ─── Gigly Deploy Script ──────────────────────────────────────────
-// Deploys OptimisticEscrow to Sepolia using the official Circle
-// Testnet USDC as the payment token (no custom MockUSDC needed).
+// scripts/redeploy_escrow.ts
+// ─── Redeploy only OptimisticEscrow (keeps MockUSDC) ──────────────
 //
 // Usage:
-//   npx hardhat run scripts/deploy.ts --network sepolia
+//   npx hardhat run scripts/redeploy_escrow.ts --network sepolia
 // ──────────────────────────────────────────────────────────────────
 
 import * as fs from "fs";
@@ -13,62 +11,65 @@ import { network } from "hardhat";
 
 const { ethers, networkName } = await network.create();
 
-// ─── Official Circle Testnet USDC on Sepolia ─────────────────────
-// Source: https://developers.circle.com/stablecoins/docs/usdc-on-test-networks
-const SEPOLIA_USDC = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
-
 // ─── Config ──────────────────────────────────────────────────────
 
-let ARBITER_ADDRESS = process.env.ARBITER_ADDRESS;
+const ARBITER_ADDRESS = process.env.ARBITER_ADDRESS;
 const FEE_BPS = parseInt(process.env.FEE_BPS || "250", 10);
 
-if (networkName === "localhost" || networkName === "hardhat") {
-  const signers = await ethers.getSigners();
-  ARBITER_ADDRESS = signers[0].address;
+// Read existing deployed.json to get MockUSDC address
+const deployed = JSON.parse(fs.readFileSync("deployed.json", "utf8"));
+const usdcAddress = deployed.MockUSDC;
+
+if (!usdcAddress) {
+  console.error("❌ MockUSDC address not found in deployed.json");
+  process.exit(1);
 }
 
 if (!ARBITER_ADDRESS || ARBITER_ADDRESS === "0x0000000000000000000000000000000000000000") {
-  console.error("❌ ARBITER_ADDRESS is not set in .env — please set it to a valid wallet address.");
+  console.error("❌ ARBITER_ADDRESS is not set in .env");
   process.exit(1);
 }
 
 console.log("══════════════════════════════════════════════════");
-console.log("  🚀 Gigly — Contract Deployment");
+console.log("  🚀 Gigly — Escrow Re-deployment");
 console.log(`  Network  : ${networkName}`);
-console.log(`  USDC     : ${SEPOLIA_USDC}  (Circle Testnet)`);
+console.log(`  MockUSDC : ${usdcAddress} (existing)`);
 console.log(`  Arbiter  : ${ARBITER_ADDRESS}`);
 console.log(`  Fee      : ${FEE_BPS} bps (${(FEE_BPS / 100).toFixed(1)}%)`);
 console.log("══════════════════════════════════════════════════\n");
 
-// ─── Deploy OptimisticEscrow (points to official testnet USDC) ───
+// ─── Compile & Deploy OptimisticEscrow ───────────────────────────
 
-console.log("📄 Deploying OptimisticEscrow...");
+console.log("📄 Deploying new OptimisticEscrow...");
 const escrow = await ethers.deployContract("OptimisticEscrow", [
-  SEPOLIA_USDC,
+  usdcAddress,
   ARBITER_ADDRESS,
   FEE_BPS,
 ]);
 await escrow.waitForDeployment();
 const escrowAddress = await escrow.getAddress();
-console.log(`   ✅ OptimisticEscrow deployed at: ${escrowAddress}\n`);
 
-// ─── Save Addresses ──────────────────────────────────────────────
+// Get the deployment block number
+const provider = ethers.provider;
+const blockNumber = await provider.getBlockNumber();
 
-fs.writeFileSync("deployed.json", JSON.stringify({
-  USDC: SEPOLIA_USDC,
-  OptimisticEscrow: escrowAddress,
-  Network: networkName,
-}, null, 2));
+console.log(`   ✅ OptimisticEscrow deployed at: ${escrowAddress}`);
+console.log(`   📦 Deployment block: ${blockNumber}\n`);
+
+// ─── Update deployed.json ────────────────────────────────────────
+
+deployed.OptimisticEscrow = escrowAddress;
+deployed.Network = networkName;
+deployed.DeploymentBlock = blockNumber;
+fs.writeFileSync("deployed.json", JSON.stringify(deployed, null, 2));
 
 // ─── Summary ─────────────────────────────────────────────────────
 
 console.log("══════════════════════════════════════════════════");
-console.log("  ✅ Deployment Complete!");
+console.log("  ✅ Re-deployment Complete!");
 console.log("──────────────────────────────────────────────────");
-console.log(`  Circle Testnet USDC : ${SEPOLIA_USDC}`);
-console.log(`  OptimisticEscrow    : ${escrowAddress}`);
-console.log(`  Arbiter             : ${ARBITER_ADDRESS}`);
-console.log(`  Fee                 : ${FEE_BPS} bps`);
+console.log(`  MockUSDC          : ${usdcAddress} (unchanged)`);
+console.log(`  OptimisticEscrow  : ${escrowAddress} (NEW)`);
+console.log(`  Deployment Block  : ${blockNumber}`);
 console.log("══════════════════════════════════════════════════");
-console.log("\n💡 Update CONTRACTS.OptimisticEscrow in frontend/src/lib/config.ts with:");
-console.log(`   ${escrowAddress}`);
+console.log("\n💡 Update frontend/src/lib/config.ts with the new escrow address and block number.");

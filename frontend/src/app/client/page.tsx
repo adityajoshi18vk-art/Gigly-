@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
-import { client, CHAIN, wallets } from "@/lib/config";
 import { Tabs } from "@/components/ui/Tabs";
 import { FreelancerCard } from "@/components/FreelancerCard";
 import { Button } from "@/components/ui/Button";

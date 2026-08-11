@@ -6,7 +6,6 @@ import { useReadContract, useActiveAccount, useSendTransaction, useConnect } fro
 import { inAppWallet } from "thirdweb/wallets";
 import { escrowContract, client as thirdwebClient, client, CHAIN, accountAbstraction } from "@/lib/config";
 import { formatUnits, parseUnits } from "viem";
-import { useSubmissionLinks } from "@/lib/useSubmissionLinks";
 import { useDisputeReasons } from "@/lib/useDisputeReasons";
 import { Link as LinkIcon } from "lucide-react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
@@ -23,6 +22,7 @@ interface JobData {
   submittedAt: bigint;
   status: number;
   taskTitle: string;
+  submissionLink: string;
 }
 
 export default function AdminDashboard() {
@@ -34,6 +34,7 @@ export default function AdminDashboard() {
       executionMode: { mode: "EIP4337" as const, smartAccount: accountAbstraction }
     });
     connect(async () => {
+      // @ts-expect-error - Gigly hack for quick admin login
       await wallet.connect({
         client,
         chain: CHAIN,
@@ -87,7 +88,7 @@ export default function AdminDashboard() {
           <p className="font-bold mb-2">How to become Arbiter:</p>
           <p className="mb-2">The deployer of the contract must run the following command in the <code>contracts</code> directory:</p>
           <code className="bg-blue-100 px-2 py-1 rounded block whitespace-pre overflow-x-auto">
-            $env:NEW_ARBITER="{account.address}"; npx hardhat run scripts/set_arbiter.ts --network sepolia
+            $env:NEW_ARBITER=&quot;{account.address}&quot;; npx hardhat run scripts/set_arbiter.ts --network sepolia
           </code>
         </div>
       </div>
@@ -102,7 +103,6 @@ function AdminDisputes() {
   const [loading, setLoading] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
   
-  const workLinks = useSubmissionLinks(refreshCounter);
   const disputeReasons = useDisputeReasons(refreshCounter);
 
   const { data: jobCountData } = useReadContract({
@@ -130,7 +130,7 @@ function AdminDisputes() {
           jobIds.map(async (id) => {
             const data = await readContract({
               contract: escrowContract,
-              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle)",
+              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle, string submissionLink)",
               params: [id],
             });
             return {
@@ -141,7 +141,8 @@ function AdminDisputes() {
               releasedAmount: data[3],
               submittedAt: data[4],
               status: data[5],
-              taskTitle: data[6]
+              taskTitle: data[6],
+              submissionLink: data[7],
             } as JobData;
           })
         );
@@ -179,7 +180,7 @@ function AdminDisputes() {
               key={job.id} 
               job={job} 
               onResolved={() => setRefreshCounter(c => c + 1)} 
-              submissionLink={workLinks[job.id]}
+              submissionLink={job.submissionLink}
               disputeReason={disputeReasons[job.id]}
             />
           ))}
@@ -249,7 +250,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
 
       <div className="bg-slate-50 border border-slate-100 p-4 rounded-md flex flex-col sm:flex-row gap-4 sm:gap-8 mt-2 mb-2 text-sm">
         <div className="flex-1">
-          <p className="font-semibold text-slate-700 mb-1">Freelancer's Submission:</p>
+          <p className="font-semibold text-slate-700 mb-1">Freelancer&apos;s Submission:</p>
           {submissionLink ? (
             <a 
               href={submissionLink.startsWith('http') ? submissionLink : `https://${submissionLink}`}
@@ -265,7 +266,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
           )}
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-slate-700 mb-1">Client's Dispute Reason:</p>
+          <p className="font-semibold text-slate-700 mb-1">Client&apos;s Dispute Reason:</p>
           {disputeReason ? (
             <p className="text-slate-600 whitespace-pre-wrap">{disputeReason}</p>
           ) : (

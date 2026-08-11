@@ -1,5 +1,5 @@
 {
-  "MockUSDC": "0x630338eDfAfD22c0FF2971Db5696EA2d422b673D",
-  "OptimisticEscrow": "0xc87EcE5cB40baFC7Eb542Bd805eC053E9b625DFE",
+  "USDC": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+  "OptimisticEscrow": "0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672",
   "Network": "sepolia"
 }

@@ -6,37 +6,55 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface MockUSDCInterface extends Interface {
-    getFunction(nameOrSignature: "allowance" | "approve" | "balanceOf" | "decimals" | "mint" | "name" | "owner" | "renounceOwnership" | "symbol" | "totalSupply" | "transfer" | "transferFrom" | "transferOwnership"): FunctionFragment;
+    getFunction(nameOrSignature: "ETH_TO_USDC_RATE" | "FAUCET_AMOUNT" | "FAUCET_COOLDOWN" | "allowance" | "approve" | "balanceOf" | "buyWithEth" | "decimals" | "faucet" | "lastFaucetClaim" | "mint" | "name" | "owner" | "quoteEthToUsdc" | "renounceOwnership" | "symbol" | "timeUntilNextClaim" | "totalSupply" | "transfer" | "transferFrom" | "transferOwnership" | "withdrawEth"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "Approval" | "OwnershipTransferred" | "Transfer"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "Approval" | "BoughtWithEth" | "OwnershipTransferred" | "Transfer"): EventFragment;
 
-    encodeFunctionData(functionFragment: 'allowance', values: [AddressLike, AddressLike]): string;
+    encodeFunctionData(functionFragment: 'ETH_TO_USDC_RATE', values?: undefined): string;
+encodeFunctionData(functionFragment: 'FAUCET_AMOUNT', values?: undefined): string;
+encodeFunctionData(functionFragment: 'FAUCET_COOLDOWN', values?: undefined): string;
+encodeFunctionData(functionFragment: 'allowance', values: [AddressLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'approve', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'balanceOf', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'buyWithEth', values?: undefined): string;
 encodeFunctionData(functionFragment: 'decimals', values?: undefined): string;
+encodeFunctionData(functionFragment: 'faucet', values?: undefined): string;
+encodeFunctionData(functionFragment: 'lastFaucetClaim', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'mint', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'name', values?: undefined): string;
 encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
+encodeFunctionData(functionFragment: 'quoteEthToUsdc', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'renounceOwnership', values?: undefined): string;
 encodeFunctionData(functionFragment: 'symbol', values?: undefined): string;
+encodeFunctionData(functionFragment: 'timeUntilNextClaim', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'totalSupply', values?: undefined): string;
 encodeFunctionData(functionFragment: 'transfer', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'transferFrom', values: [AddressLike, AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'transferOwnership', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'withdrawEth', values?: undefined): string;
 
-    decodeFunctionResult(functionFragment: 'allowance', data: BytesLike): Result;
+    decodeFunctionResult(functionFragment: 'ETH_TO_USDC_RATE', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'FAUCET_AMOUNT', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'FAUCET_COOLDOWN', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'allowance', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'approve', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'balanceOf', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'buyWithEth', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'decimals', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'faucet', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'lastFaucetClaim', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'mint', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'name', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'quoteEthToUsdc', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renounceOwnership', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'symbol', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'timeUntilNextClaim', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'totalSupply', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'transfer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'transferFrom', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'withdrawEth', data: BytesLike): Result;
   }
 
   
@@ -44,6 +62,18 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
       export type InputTuple = [owner: AddressLike, spender: AddressLike, value: BigNumberish];
       export type OutputTuple = [owner: string, spender: string, value: bigint];
       export interface OutputObject {owner: string, spender: string, value: bigint };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace BoughtWithEthEvent {
+      export type InputTuple = [buyer: AddressLike, ethIn: BigNumberish, usdcOut: BigNumberish];
+      export type OutputTuple = [buyer: string, ethIn: bigint, usdcOut: bigint];
+      export interface OutputObject {buyer: string, ethIn: bigint, usdcOut: bigint };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -110,6 +140,30 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
 
     
     
+    ETH_TO_USDC_RATE: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    FAUCET_AMOUNT: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    FAUCET_COOLDOWN: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
     allowance: TypedContractMethod<
       [owner: AddressLike, spender: AddressLike, ],
       [bigint],
@@ -134,8 +188,32 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     
 
     
+    buyWithEth: TypedContractMethod<
+      [],
+      [void],
+      'payable'
+    >
+    
+
+    
     decimals: TypedContractMethod<
       [],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    faucet: TypedContractMethod<
+      [],
+      [void],
+      'nonpayable'
+    >
+    
+
+    
+    lastFaucetClaim: TypedContractMethod<
+      [arg0: AddressLike, ],
       [bigint],
       'view'
     >
@@ -166,6 +244,14 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     
 
     
+    quoteEthToUsdc: TypedContractMethod<
+      [ethAmount: BigNumberish, ],
+      [bigint],
+      'view'
+    >
+    
+
+    
     renounceOwnership: TypedContractMethod<
       [],
       [void],
@@ -177,6 +263,14 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     symbol: TypedContractMethod<
       [],
       [string],
+      'view'
+    >
+    
+
+    
+    timeUntilNextClaim: TypedContractMethod<
+      [claimer: AddressLike, ],
+      [bigint],
       'view'
     >
     
@@ -213,10 +307,33 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     >
     
 
+    
+    withdrawEth: TypedContractMethod<
+      [],
+      [void],
+      'nonpayable'
+    >
+    
+
 
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
-    getFunction(nameOrSignature: 'allowance'): TypedContractMethod<
+    getFunction(nameOrSignature: 'ETH_TO_USDC_RATE'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'FAUCET_AMOUNT'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'FAUCET_COOLDOWN'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'allowance'): TypedContractMethod<
       [owner: AddressLike, spender: AddressLike, ],
       [bigint],
       'view'
@@ -231,8 +348,23 @@ getFunction(nameOrSignature: 'balanceOf'): TypedContractMethod<
       [bigint],
       'view'
     >;
+getFunction(nameOrSignature: 'buyWithEth'): TypedContractMethod<
+      [],
+      [void],
+      'payable'
+    >;
 getFunction(nameOrSignature: 'decimals'): TypedContractMethod<
       [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'faucet'): TypedContractMethod<
+      [],
+      [void],
+      'nonpayable'
+    >;
+getFunction(nameOrSignature: 'lastFaucetClaim'): TypedContractMethod<
+      [arg0: AddressLike, ],
       [bigint],
       'view'
     >;
@@ -251,6 +383,11 @@ getFunction(nameOrSignature: 'owner'): TypedContractMethod<
       [string],
       'view'
     >;
+getFunction(nameOrSignature: 'quoteEthToUsdc'): TypedContractMethod<
+      [ethAmount: BigNumberish, ],
+      [bigint],
+      'view'
+    >;
 getFunction(nameOrSignature: 'renounceOwnership'): TypedContractMethod<
       [],
       [void],
@@ -259,6 +396,11 @@ getFunction(nameOrSignature: 'renounceOwnership'): TypedContractMethod<
 getFunction(nameOrSignature: 'symbol'): TypedContractMethod<
       [],
       [string],
+      'view'
+    >;
+getFunction(nameOrSignature: 'timeUntilNextClaim'): TypedContractMethod<
+      [claimer: AddressLike, ],
+      [bigint],
       'view'
     >;
 getFunction(nameOrSignature: 'totalSupply'): TypedContractMethod<
@@ -281,8 +423,14 @@ getFunction(nameOrSignature: 'transferOwnership'): TypedContractMethod<
       [void],
       'nonpayable'
     >;
+getFunction(nameOrSignature: 'withdrawEth'): TypedContractMethod<
+      [],
+      [void],
+      'nonpayable'
+    >;
 
     getEvent(key: 'Approval'): TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
+getEvent(key: 'BoughtWithEth'): TypedContractEvent<BoughtWithEthEvent.InputTuple, BoughtWithEthEvent.OutputTuple, BoughtWithEthEvent.OutputObject>;
 getEvent(key: 'OwnershipTransferred'): TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
 getEvent(key: 'Transfer'): TypedContractEvent<TransferEvent.InputTuple, TransferEvent.OutputTuple, TransferEvent.OutputObject>;
 
@@ -290,6 +438,10 @@ getEvent(key: 'Transfer'): TypedContractEvent<TransferEvent.InputTuple, Transfer
       
       'Approval(address,address,uint256)': TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
       Approval: TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
+    
+
+      'BoughtWithEth(address,uint256,uint256)': TypedContractEvent<BoughtWithEthEvent.InputTuple, BoughtWithEthEvent.OutputTuple, BoughtWithEthEvent.OutputObject>;
+      BoughtWithEth: TypedContractEvent<BoughtWithEthEvent.InputTuple, BoughtWithEthEvent.OutputTuple, BoughtWithEthEvent.OutputObject>;
     
 
       'OwnershipTransferred(address,address)': TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;

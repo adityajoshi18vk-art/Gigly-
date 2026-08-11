@@ -1,6 +1,6 @@
 import { sepolia } from "thirdweb/chains";
 import { createThirdwebClient, getContract } from "thirdweb";
-import { inAppWallet } from "thirdweb/wallets";
+import { createWallet, inAppWallet } from "thirdweb/wallets";
 
 export const CHAIN = sepolia;
 const clientId = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "PLACEHOLDER_CLIENT_ID";
@@ -10,10 +10,11 @@ export const client = createThirdwebClient({ clientId });
 export const accountAbstraction = {
   chain: CHAIN,
   sponsorGas: true,
-  factoryAddress: "0x85e23b94e7F5E9cC1fF78BCe78cfb15B81f0DF00", // Forces ERC-4337 over EIP-7702
+  // No factoryAddress override — uses Thirdweb's canonical ERC-4337 factory on Sepolia
 };
 
 export const wallets = [
+  // In-app wallet: Gmail + Email OTP, with built-in ERC-4337 smart account
   inAppWallet({
     auth: {
       options: ["google", "email"],
@@ -23,24 +24,34 @@ export const wallets = [
       smartAccount: accountAbstraction,
     },
   }),
+  // External Web3 wallets — gasless AA applied via accountAbstraction prop on ConnectButton
+  createWallet("io.metamask"),
+  createWallet("com.coinbase.wallet"),
 ];
 
 export const CHAINLINK_FEEDS = {
+  // Chainlink EUR/USD price feed on Sepolia
   EUR_USD: "0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910",
 };
 
 export const CONTRACTS = {
-  MockUSDC: "0x630338eDfAfD22c0FF2971Db5696EA2d422b673D",
-  OptimisticEscrow: "0xc87EcE5cB40baFC7Eb542Bd805eC053E9b625DFE",
+  // Official Circle Testnet USDC on Ethereum Sepolia
+  // Faucet: https://faucet.circle.com/
+  USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+  // Deployed 2026-08-11 — points to Circle Testnet USDC
+  OptimisticEscrow: "0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672",
 };
 
-export const DEPLOYMENT_BLOCK = BigInt(11333200); // Updated to actual deployment block range
+export const DEPLOYMENT_BLOCK = BigInt(11425792);
 
-export const mockUsdcContract = getContract({
+export const usdcContract = getContract({
   client,
   chain: CHAIN,
-  address: CONTRACTS.MockUSDC,
+  address: CONTRACTS.USDC,
 });
+
+// Keep legacy export name so existing imports don't break during migration
+export const mockUsdcContract = usdcContract;
 
 export const escrowContract = getContract({
   client,

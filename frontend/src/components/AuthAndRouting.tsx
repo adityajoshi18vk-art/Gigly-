@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useActiveAccount, useActiveWalletConnectionStatus } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
-import { client, wallets, CHAIN } from "@/lib/config";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 

@@ -6,9 +6,9 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface OptimisticEscrowInterface extends Interface {
-    getFunction(nameOrSignature: "MAX_FEE_BPS" | "REVIEW_WINDOW" | "acceptJob" | "accumulatedFees" | "approveAndRelease" | "arbiter" | "claimAfterWindow" | "createJob" | "feeBps" | "jobCount" | "jobs" | "owner" | "paymentToken" | "raiseDispute" | "renounceOwnership" | "resolveDispute" | "setArbiter" | "setFeeBps" | "submitWork" | "transferOwnership" | "withdrawFees"): FunctionFragment;
+    getFunction(nameOrSignature: "MAX_FEE_BPS" | "REVIEW_WINDOW" | "acceptJob" | "accumulatedFees" | "approveAndRelease" | "arbiter" | "claimAfterWindow" | "createJob" | "feeBps" | "jobCount" | "jobs" | "logProgress" | "owner" | "paymentToken" | "raiseDispute" | "renounceOwnership" | "resolveDispute" | "setArbiter" | "setFeeBps" | "submitWork" | "transferOwnership" | "withdrawFees"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "DisputeRaised" | "DisputeResolved" | "FeesWithdrawn" | "FundsReleased" | "JobAccepted" | "JobCreated" | "OwnershipTransferred" | "WorkSubmitted"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "DisputeRaised" | "DisputeResolved" | "FeesWithdrawn" | "FundsReleased" | "JobAccepted" | "JobCreated" | "OwnershipTransferred" | "ProgressLogged" | "WorkSubmitted"): EventFragment;
 
     encodeFunctionData(functionFragment: 'MAX_FEE_BPS', values?: undefined): string;
 encodeFunctionData(functionFragment: 'REVIEW_WINDOW', values?: undefined): string;
@@ -21,6 +21,7 @@ encodeFunctionData(functionFragment: 'createJob', values: [AddressLike, BigNumbe
 encodeFunctionData(functionFragment: 'feeBps', values?: undefined): string;
 encodeFunctionData(functionFragment: 'jobCount', values?: undefined): string;
 encodeFunctionData(functionFragment: 'jobs', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'logProgress', values: [BigNumberish, BigNumberish, string]): string;
 encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
 encodeFunctionData(functionFragment: 'paymentToken', values?: undefined): string;
 encodeFunctionData(functionFragment: 'raiseDispute', values: [BigNumberish, string]): string;
@@ -43,6 +44,7 @@ decodeFunctionResult(functionFragment: 'createJob', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'feeBps', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'jobCount', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'jobs', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'logProgress', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'paymentToken', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'raiseDispute', data: BytesLike): Result;
@@ -132,6 +134,18 @@ decodeFunctionResult(functionFragment: 'withdrawFees', data: BytesLike): Result;
       export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
       export type OutputTuple = [previousOwner: string, newOwner: string];
       export interface OutputObject {previousOwner: string, newOwner: string };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace ProgressLoggedEvent {
+      export type InputTuple = [jobId: BigNumberish, percent: BigNumberish, note: string];
+      export type OutputTuple = [jobId: bigint, percent: bigint, note: string];
+      export interface OutputObject {jobId: bigint, percent: bigint, note: string };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -268,8 +282,16 @@ decodeFunctionResult(functionFragment: 'withdrawFees', data: BytesLike): Result;
     
     jobs: TypedContractMethod<
       [arg0: BigNumberish, ],
-      [[string, string, bigint, bigint, bigint, bigint, string] & {client: string, freelancer: string, amount: bigint, releasedAmount: bigint, submittedAt: bigint, status: bigint, taskTitle: string }],
+      [[string, string, bigint, bigint, bigint, bigint, string, string] & {client: string, freelancer: string, amount: bigint, releasedAmount: bigint, submittedAt: bigint, status: bigint, taskTitle: string, submissionLink: string }],
       'view'
+    >
+    
+
+    
+    logProgress: TypedContractMethod<
+      [jobId: BigNumberish, percent: BigNumberish, note: string, ],
+      [void],
+      'nonpayable'
     >
     
 
@@ -408,8 +430,13 @@ getFunction(nameOrSignature: 'jobCount'): TypedContractMethod<
     >;
 getFunction(nameOrSignature: 'jobs'): TypedContractMethod<
       [arg0: BigNumberish, ],
-      [[string, string, bigint, bigint, bigint, bigint, string] & {client: string, freelancer: string, amount: bigint, releasedAmount: bigint, submittedAt: bigint, status: bigint, taskTitle: string }],
+      [[string, string, bigint, bigint, bigint, bigint, string, string] & {client: string, freelancer: string, amount: bigint, releasedAmount: bigint, submittedAt: bigint, status: bigint, taskTitle: string, submissionLink: string }],
       'view'
+    >;
+getFunction(nameOrSignature: 'logProgress'): TypedContractMethod<
+      [jobId: BigNumberish, percent: BigNumberish, note: string, ],
+      [void],
+      'nonpayable'
     >;
 getFunction(nameOrSignature: 'owner'): TypedContractMethod<
       [],
@@ -469,6 +496,7 @@ getEvent(key: 'FundsReleased'): TypedContractEvent<FundsReleasedEvent.InputTuple
 getEvent(key: 'JobAccepted'): TypedContractEvent<JobAcceptedEvent.InputTuple, JobAcceptedEvent.OutputTuple, JobAcceptedEvent.OutputObject>;
 getEvent(key: 'JobCreated'): TypedContractEvent<JobCreatedEvent.InputTuple, JobCreatedEvent.OutputTuple, JobCreatedEvent.OutputObject>;
 getEvent(key: 'OwnershipTransferred'): TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
+getEvent(key: 'ProgressLogged'): TypedContractEvent<ProgressLoggedEvent.InputTuple, ProgressLoggedEvent.OutputTuple, ProgressLoggedEvent.OutputObject>;
 getEvent(key: 'WorkSubmitted'): TypedContractEvent<WorkSubmittedEvent.InputTuple, WorkSubmittedEvent.OutputTuple, WorkSubmittedEvent.OutputObject>;
 
     filters: {
@@ -499,6 +527,10 @@ getEvent(key: 'WorkSubmitted'): TypedContractEvent<WorkSubmittedEvent.InputTuple
 
       'OwnershipTransferred(address,address)': TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
       OwnershipTransferred: TypedContractEvent<OwnershipTransferredEvent.InputTuple, OwnershipTransferredEvent.OutputTuple, OwnershipTransferredEvent.OutputObject>;
+    
+
+      'ProgressLogged(uint256,uint8,string)': TypedContractEvent<ProgressLoggedEvent.InputTuple, ProgressLoggedEvent.OutputTuple, ProgressLoggedEvent.OutputObject>;
+      ProgressLogged: TypedContractEvent<ProgressLoggedEvent.InputTuple, ProgressLoggedEvent.OutputTuple, ProgressLoggedEvent.OutputObject>;
     
 
       'WorkSubmitted(uint256,uint256,string)': TypedContractEvent<WorkSubmittedEvent.InputTuple, WorkSubmittedEvent.OutputTuple, WorkSubmittedEvent.OutputObject>;

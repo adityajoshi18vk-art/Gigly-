@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 import { JobData } from "./ActiveJobs";
-import { AlertCircle, CheckCircle2, Clock, Link as LinkIcon } from "lucide-react";
+import { CheckCircle2, Clock, Link as LinkIcon } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { useSubmissionLinks } from "@/lib/useSubmissionLinks";
 
 export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
@@ -26,9 +25,11 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   // Submit modal state
   const [submitModalJobId, setSubmitModalJobId] = useState<number | null>(null);
   const [workLinkInput, setWorkLinkInput] = useState("");
-  
-  // Work links state (on-chain via events)
-  const workLinks = useSubmissionLinks(refreshCounter);
+
+  // Progress modal state
+  const [progressModalJobId, setProgressModalJobId] = useState<number | null>(null);
+  const [progressPercent, setProgressPercent] = useState<number>(0);
+  const [progressNote, setProgressNote] = useState("");
 
   const { mutateAsync: sendTransaction } = useSendTransaction();
 
@@ -69,7 +70,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
           jobIds.map(async (id) => {
             const data = await readContract({
               contract: escrowContract,
-              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle)",
+              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle, string submissionLink)",
               params: [id],
             });
             return {
@@ -80,7 +81,8 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               releasedAmount: data[3],
               submittedAt: data[4],
               status: data[5],
-              taskTitle: data[6]
+              taskTitle: data[6],
+              submissionLink: data[7],
             } as JobData;
           })
         );
@@ -129,6 +131,38 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       console.error("Failed to submit work:", err);
       // Ensure modal is closed on failure too so it doesn't hang
       setSubmitModalJobId(null);
+    } finally {
+      setProcessingJobId(null);
+    }
+  };
+
+  const handleUpdateProgress = async () => {
+    if (progressModalJobId === null) return;
+    const jobId = progressModalJobId;
+    
+    try {
+      setProcessingJobId(jobId);
+
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function logProgress(uint256 jobId, uint8 percent, string note)",
+        params: [BigInt(jobId), progressPercent, progressNote.trim()],
+      });
+      const result = await sendTransaction(tx);
+      
+      setProgressModalJobId(null);
+      setProgressPercent(0);
+      setProgressNote("");
+      
+      await waitForReceipt({
+        client: thirdwebClient,
+        chain: escrowContract.chain,
+        transactionHash: result.transactionHash,
+      });
+      onInteractionSuccess();
+    } catch (err) {
+      console.error("Failed to log progress:", err);
+      setProgressModalJobId(null);
     } finally {
       setProcessingJobId(null);
     }
@@ -190,9 +224,9 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                 <p className="text-sm text-slate-500 mb-2">
                   Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
                 </p>
-                {workLinks[job.id] && job.status >= 2 && (
+                {job.submissionLink && job.status >= 2 && (
                   <a 
-                    href={workLinks[job.id].startsWith('http') ? workLinks[job.id] : `https://${workLinks[job.id]}`}
+                    href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
                     target="_blank" 
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-sm text-primary hover:underline bg-primary/5 px-2 py-1 rounded-md"
@@ -210,15 +244,28 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                 
                 {/* Status-specific actions */}
                 {job.status === 1 && ( // Funded
-                  <Button 
-                    onClick={() => {
-                      setSubmitModalJobId(job.id);
-                      setWorkLinkInput("");
-                    }}
-                    disabled={processingJobId === job.id}
-                  >
-                    {processingJobId === job.id ? "Submitting..." : "Submit work"}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setProgressModalJobId(job.id);
+                        setProgressPercent(0);
+                        setProgressNote("");
+                      }}
+                      disabled={processingJobId === job.id}
+                    >
+                      Update Progress
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setSubmitModalJobId(job.id);
+                        setWorkLinkInput("");
+                      }}
+                      disabled={processingJobId === job.id}
+                    >
+                      {processingJobId === job.id ? "Processing..." : "Submit work"}
+                    </Button>
+                  </div>
                 )}
                 
                 {job.status === 2 && ( // Submitted
@@ -278,6 +325,58 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               disabled={processingJobId === submitModalJobId}
             >
               {processingJobId === submitModalJobId ? "Submitting on-chain..." : "Submit Work"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Update Progress Modal */}
+      <Modal 
+        isOpen={progressModalJobId !== null} 
+        onClose={() => {
+          if (!processingJobId) {
+            setProgressModalJobId(null);
+          }
+        }} 
+        title="Update Progress"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Completion Percentage: {progressPercent}%</label>
+            <input 
+              type="range"
+              min="0"
+              max="100"
+              value={progressPercent}
+              onChange={(e) => setProgressPercent(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Note (optional, max 200 chars)</label>
+            <textarea 
+              placeholder="What have you completed so far?" 
+              value={progressNote}
+              onChange={(e) => setProgressNote(e.target.value)}
+              maxLength={200}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              rows={3}
+            />
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button 
+              variant="ghost" 
+              onClick={() => setProgressModalJobId(null)}
+              disabled={processingJobId === progressModalJobId}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateProgress}
+              disabled={processingJobId === progressModalJobId}
+            >
+              {processingJobId === progressModalJobId ? "Logging..." : "Log Progress"}
             </Button>
           </div>
         </div>
