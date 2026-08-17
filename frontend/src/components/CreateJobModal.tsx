@@ -49,7 +49,7 @@ export function CreateJobModal({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
   // ── Read USDC Balance & Allowance ─────────────────────────────────────────
   const { data: balanceData, refetch: refetchBalance } = useReadContract({
@@ -294,19 +294,19 @@ export function CreateJobModal({
             </div>
           </div>
 
-          {/* ── Smart wallet address — copy to fund it ──────────────────── */}
+          {/* ── Wallet address — copy to fund it ──────────────────────── */}
           {account && (
             <div className="rounded-xl border-2 border-primary/20 bg-primary/5 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-2">
                 <Wallet className="w-3.5 h-3.5 text-primary" />
                 <p className="text-xs font-semibold text-primary uppercase tracking-wide">
-                  Your Gigly Smart Wallet Address
+                  Your Wallet Address
                 </p>
               </div>
               <div className="p-4 space-y-2">
                 <p className="text-xs text-slate-500">
-                  ⚠️ This is <strong>not</strong> your MetaMask address. Send Circle
-                  USDC to <strong>this address</strong> on Sepolia.
+                  Send Circle Testnet USDC to <strong>this address</strong> on{" "}
+                  <strong>Ethereum Sepolia</strong>.
                 </p>
                 <button
                   onClick={handleCopyAddress}

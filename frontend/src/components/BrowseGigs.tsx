@@ -15,7 +15,7 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
   const [loading, setLoading] = useState(true);
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
-  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
   const { data: jobCountData } = useReadContract({
     contract: escrowContract,

@@ -193,7 +193,7 @@ function AdminDisputes() {
 function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: JobData, onResolved: () => void, submissionLink?: string, disputeReason?: string }) {
   const [amountInput, setAmountInput] = useState("");
   const [processing, setProcessing] = useState(false);
-  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
   const maxAmount = Number(formatUnits(job.amount, 6));
 

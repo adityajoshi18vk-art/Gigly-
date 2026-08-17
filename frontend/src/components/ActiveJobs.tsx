@@ -34,7 +34,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState(true);
   const progressUpdates = useProgressUpdates(refreshCounter);
-  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
   const [disputeModalJobId, setDisputeModalJobId] = useState<number | null>(null);

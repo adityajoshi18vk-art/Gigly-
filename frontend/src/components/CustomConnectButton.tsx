@@ -1,33 +1,34 @@
 "use client";
 
 import { ConnectButton } from "thirdweb/react";
-import { client, wallets, CHAIN, accountAbstraction } from "@/lib/config";
+import { client, wallets, CHAIN } from "@/lib/config";
 
 export interface CustomConnectButtonProps {
   label?: string;
 }
 
 /**
- * ConnectButton with accountAbstraction re-enabled globally.
+ * ConnectButton with wallet-type-aware Account Abstraction.
  *
- * This gives EVERY connected wallet (Gmail, Email, MetaMask, Coinbase) a
- * Thirdweb ERC-4337 smart account with sponsored gas — so freelancers never
- * need ETH to claim payment, submit work, or log progress.
+ * - **In-app wallets (Google / Email)**: These already have ERC-4337 AA
+ *   configured via `executionMode` in their wallet definition (config.ts).
+ *   Users get a gasless smart wallet automatically — no ETH needed.
  *
- * Trade-off: MetaMask users transact from a smart-account address that differs
- * from their MetaMask EOA. USDC must be sent to the smart-account address,
- * not the raw MetaMask address. The CreateJobModal "funding" screen shows
- * this address explicitly so clients always know where to send funds.
+ * - **External wallets (MetaMask / Coinbase)**: These connect with their
+ *   native EOA address. Users see and use their own MetaMask address and
+ *   existing USDC balance directly. They pay their own gas (tiny on Sepolia).
+ *
+ * This avoids the confusing UX where MetaMask users had to fund a separate
+ * smart-account address that differed from their MetaMask wallet.
  */
 export function CustomConnectButton({ label }: CustomConnectButtonProps) {
   return (
     <div className="flex flex-col items-center justify-center">
-      <div title="Gas is sponsored via ERC-4337 Account Abstraction. Native ETH is not required.">
+      <div title="In-app wallets are gasless via ERC-4337. External wallets use their own address.">
         <ConnectButton
           client={client}
           wallets={wallets}
           chain={CHAIN}
-          accountAbstraction={accountAbstraction}
           theme="light"
           connectButton={label ? { label } : undefined}
         />

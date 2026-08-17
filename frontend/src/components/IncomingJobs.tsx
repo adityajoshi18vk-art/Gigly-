@@ -31,7 +31,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [progressNote, setProgressNote] = useState("");
 
-  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
   const { data: jobCountData } = useReadContract({
     contract: escrowContract,
