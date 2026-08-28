@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState } from "react";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { getContract } from "thirdweb";
 import { client, CHAIN, mockUsdcContract, CHAINLINK_FEEDS } from "@/lib/config";
@@ -10,13 +10,13 @@ import { formatUnits } from "viem";
 import {
   Link as LinkIcon,
   RefreshCw,
-  AlertTriangle,
   Clock,
   Building2,
+  AlertTriangle,
   FlaskConical,
-  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { WithdrawModal } from "@/components/WithdrawModal";
 
 // ─── Chainlink EUR/USD feed ───────────────────────────────────────────────────
 const eurUsdFeedContract = getContract({
@@ -25,143 +25,21 @@ const eurUsdFeedContract = getContract({
   address: CHAINLINK_FEEDS.EUR_USD,
 });
 
-// ─── Transak Staging constants ────────────────────────────────────────────────
-const TRANSAK_STAGING_BASE = "https://global-stg.transak.com/";
-const TRANSAK_API_KEY =
-  process.env.NEXT_PUBLIC_TRANSAK_API_KEY ?? "";
-
-/**
- * Builds the Transak staging off-ramp URL for the connected wallet.
- * Targets Ethereum Sepolia USDC (Transak staging maps to "ethereum" network).
- */
-function buildTransakUrl(walletAddress: string): string {
-  const params = new URLSearchParams({
-    apiKey: TRANSAK_API_KEY,
-    productsAvailed: "SELL",          // Off-ramp only
-    cryptoCurrencyCode: "USDC",
-    network: "ethereum",              // Transak staging uses "ethereum" for Sepolia
-    walletAddress,
-    isAutoFillUserData: "true",       // Skip data-entry screens when possible
-    disableWalletAddressForm: "true", // Lock wallet to connected address
-    themeColor: "6366F1",             // Match Gigly's indigo brand
-  });
-  return `${TRANSAK_STAGING_BASE}?${params.toString()}`;
-}
-
-// ─── Transak modal ───────────────────────────────────────────────────────────
-
-interface TransakWithdrawModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  walletAddress: string;
-}
-
-function TransakWithdrawModal({
-  isOpen,
-  onClose,
-  walletAddress,
-}: TransakWithdrawModalProps) {
-  const transakUrl = useMemo(
-    () => buildTransakUrl(walletAddress),
-    [walletAddress]
-  );
-
-  if (!isOpen) return null;
-
-  return (
-    // Full-screen backdrop
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Dialog — wider than the standard Modal to accommodate the widget */}
-      <div className="relative z-50 w-full max-w-xl mx-4 rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-slate-900 leading-tight">
-                Withdraw to Bank Account
-              </h2>
-              <p className="text-xs text-slate-500">Powered by Transak</p>
-            </div>
-          </div>
-          <button
-            id="transak-modal-close-btn"
-            onClick={onClose}
-            aria-label="Close Transak widget"
-            className="rounded-full p-1.5 hover:bg-gray-100 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Testnet simulation banner */}
-        <div className="flex items-start gap-2.5 px-5 py-3 bg-amber-50 border-b border-amber-100">
-          <FlaskConical className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800 leading-relaxed">
-            <strong>Sandbox / Testnet Mode.</strong> This is a simulated
-            off-ramp for development purposes. No real funds will be moved.
-            Use Transak&apos;s staging test credentials when prompted.
-          </p>
-        </div>
-
-        {/* Missing API key fallback */}
-        {!TRANSAK_API_KEY || TRANSAK_API_KEY === "your_transak_staging_api_key_here" ? (
-          <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-rose-500" />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-800 mb-1">
-                API Key Not Configured
-              </p>
-              <p className="text-sm text-slate-500 max-w-xs">
-                Set{" "}
-                <code className="bg-slate-100 px-1 rounded text-xs font-mono">
-                  NEXT_PUBLIC_TRANSAK_API_KEY
-                </code>{" "}
-                in your{" "}
-                <code className="bg-slate-100 px-1 rounded text-xs font-mono">
-                  .env.local
-                </code>{" "}
-                file to a valid Transak staging key.
-              </p>
-            </div>
-          </div>
-        ) : (
-          /* Transak iframe */
-          <iframe
-            id="transak-offramp-iframe"
-            src={transakUrl}
-            title="Transak Off-Ramp — Withdraw USDC to Bank Account (Sandbox)"
-            allow="camera; microphone; payment"
-            className="w-full border-0"
-            style={{ height: "560px" }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
+// ─── On-chain INR/USD feed (MockINRFeed on Sepolia) ───────────────────────────
+const inrUsdFeedContract = getContract({
+  client,
+  chain: CHAIN,
+  address: CHAINLINK_FEEDS.INR_USD,
+});
 
 // ─── Main Earnings component ──────────────────────────────────────────────────
 
 export function Earnings() {
   const account = useActiveAccount();
-  const [inrRate, setInrRate] = useState<number | null>(null);
-  const [inrLoading, setInrLoading] = useState(true);
-  const [lastInrUpdate, setLastInrUpdate] = useState<Date | null>(null);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
   // 1. Fetch USDC Balance
-  const { data: usdcBalance, isLoading: isUsdcLoading } = useReadContract({
+  const { data: usdcBalance, isLoading: isUsdcLoading, refetch: refetchBalance } = useReadContract({
     contract: mockUsdcContract,
     method: "function balanceOf(address account) view returns (uint256)",
     params: account
@@ -184,28 +62,16 @@ export function Earnings() {
     },
   });
 
-  // 3. Fetch INR Rate from external API
-  const fetchInrRate = async () => {
-    try {
-      setInrLoading(true);
-      const res = await fetch("https://open.er-api.com/v6/latest/USD");
-      const data = await res.json();
-      if (data && data.rates && data.rates.INR) {
-        setInrRate(data.rates.INR);
-        setLastInrUpdate(new Date());
-      }
-    } catch (err) {
-      console.error("Failed to fetch INR rate:", err);
-    } finally {
-      setInrLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInrRate();
-    const interval = setInterval(fetchInrRate, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // 3. Fetch on-chain INR/USD Rate (MockINRFeed)
+  const { data: inrRoundData, isLoading: isInrLoading } = useReadContract({
+    contract: inrUsdFeedContract,
+    method:
+      "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
+    params: [],
+    queryOptions: {
+      refetchInterval: 30000,
+    },
+  });
 
   if (!account) {
     return (
@@ -240,10 +106,23 @@ export function Earnings() {
     }
   }
 
-  // INR via ER-API
+  // INR via on-chain MockINRFeed (8 decimals, same as Chainlink)
   let inrEquivalent: number | null = null;
-  if (usdcFormatted !== null && inrRate !== null) {
-    inrEquivalent = usdcFormatted * inrRate;
+  let isInrDelayed = false;
+  let inrUpdatedAtDate: Date | null = null;
+
+  if (usdcFormatted !== null && inrRoundData) {
+    const inrAnswer = inrRoundData[1];
+    const inrUpdatedAt = Number(inrRoundData[3]);
+
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+    isInrDelayed = nowInSeconds - inrUpdatedAt > 10800;
+    inrUpdatedAtDate = new Date(inrUpdatedAt * 1000);
+
+    const inrUsdRate = Number(formatUnits(inrAnswer, 8));
+    if (inrUsdRate > 0) {
+      inrEquivalent = usdcFormatted * inrUsdRate;
+    }
   }
 
   return (
@@ -275,7 +154,7 @@ export function Earnings() {
           <p className="text-xs text-amber-800 leading-relaxed">
             <strong>Testnet Environment.</strong> Balances shown are on{" "}
             {CHAIN.name ?? "a testnet"}. The &quot;Withdraw to Bank Account&quot; button
-            opens a <strong>Transak sandbox</strong> widget — no real money is
+            opens a <strong>simulated off-ramp</strong> — no real money is
             transferred.
           </p>
         </div>
@@ -360,7 +239,7 @@ export function Earnings() {
             </CardContent>
           </Card>
 
-          {/* INR (API Fallback) Card */}
+          {/* INR (On-Chain) Card */}
           <Card className="shadow-sm border-slate-200 bg-white">
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div>
@@ -370,17 +249,18 @@ export function Earnings() {
                   </p>
                   <Badge
                     variant="default"
-                    className="bg-slate-100 text-slate-500 gap-1.5 px-2 py-0.5"
+                    className="bg-indigo-50 text-indigo-600 gap-1.5 px-2 py-0.5"
                   >
+                    <LinkIcon className="w-3 h-3" />
                     <span className="text-[10px] uppercase tracking-wider font-bold">
-                      API Fallback
+                      On-Chain Rate
                     </span>
                   </Badge>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-3xl font-bold text-slate-800">
                     ₹
-                    {isUsdcLoading || (inrLoading && !inrRate)
+                    {isUsdcLoading || isInrLoading
                       ? "..."
                       : inrEquivalent !== null
                       ? inrEquivalent.toLocaleString("en-IN", {
@@ -392,24 +272,31 @@ export function Earnings() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  {lastInrUpdate
-                    ? `Last fetched: ${lastInrUpdate.toLocaleTimeString()}`
-                    : "Fetching..."}
+              {isInrDelayed ? (
+                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Rate may be delayed
                 </div>
-              </div>
+              ) : (
+                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs text-indigo-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  {inrUpdatedAtDate
+                    ? `Oracle updated: ${inrUpdatedAtDate.toLocaleTimeString()}`
+                    : "Reading oracle..."}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* ── Transak Off-Ramp Modal (portal outside card grid) ──────────── */}
-      <TransakWithdrawModal
+      {/* ── Withdraw Modal ────────────────────────────────────────────────── */}
+      <WithdrawModal
         isOpen={isWithdrawOpen}
         onClose={() => setIsWithdrawOpen(false)}
         walletAddress={account.address}
+        usdcBalance={usdcFormatted ?? 0}
+        onWithdrawSuccess={() => refetchBalance()}
       />
     </>
   );

@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as test from './test/index.js';
+export { MockINRFeed__factory } from './MockINRFeed__factory.js';
 export { MockUSDC__factory } from './MockUSDC__factory.js';
 export { OptimisticEscrow__factory } from './OptimisticEscrow__factory.js';

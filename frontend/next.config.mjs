@@ -7,8 +7,6 @@ const nextConfig = {
         source: "/(.*)",
         headers: [
           {
-            // Allow Transak staging iframe to load inside our pages.
-            // 'self' keeps all other same-origin frames working.
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
@@ -17,8 +15,7 @@ const nextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' data: https:",
               "connect-src 'self' https: wss:",
-              // Permit embedding the Transak staging widget:
-              "frame-src 'self' https://global-stg.transak.com https://global.transak.com",
+              "frame-src 'self'",
             ].join("; "),
           },
         ],

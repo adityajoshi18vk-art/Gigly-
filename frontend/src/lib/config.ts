@@ -32,6 +32,8 @@ export const wallets = [
 export const CHAINLINK_FEEDS = {
   // Chainlink EUR/USD price feed on Sepolia
   EUR_USD: "0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910",
+  // MockINRFeed — custom Chainlink-style aggregator for INR/USD on Sepolia
+  INR_USD: "0x89f3a73ac523f236804867B8Eca75Da2d5324C86",
 };
 
 export const CONTRACTS = {

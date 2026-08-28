@@ -11,7 +11,6 @@ import {
   AlertCircle,
   ArrowLeft,
   ExternalLink,
-  RefreshCw,
   Loader2,
   Wallet,
   Copy,
@@ -28,11 +27,11 @@ export interface CreateJobModalProps {
 }
 
 type Step =
-  | "input"       // User fills in title + amount
-  | "funding"     // Prompt to get USDC from Circle faucet
-  | "approving"   // Waiting for USDC approval tx
-  | "creating"    // Waiting for createJob tx
-  | "success";    // Job created!
+  | "input"
+  | "funding"
+  | "approving"
+  | "creating"
+  | "success";
 
 export function CreateJobModal({
   isOpen,
@@ -88,7 +87,9 @@ export function CreateJobModal({
   const targetAddress =
     freelancerAddress || "0x0000000000000000000000000000000000000000";
 
-  // Copy smart wallet address to clipboard
+
+
+  // Copy wallet address
   const handleCopyAddress = () => {
     if (!account) return;
     navigator.clipboard.writeText(account.address);
@@ -96,20 +97,12 @@ export function CreateJobModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Check balance on the funding screen then auto-proceed ─────────────────
-  const handleCheckBalance = useCallback(async () => {
-    setIsRefreshing(true);
-    await refetchBalance();
-    await refetchAllowance();
-    setIsRefreshing(false);
-  }, [refetchBalance, refetchAllowance]);
 
-  // Watch balance while on funding screen — proceed when sufficient
+  // Auto-proceed when balance becomes sufficient
   useEffect(() => {
     if (step !== "funding") return;
     if (!parsedAmount || parsedAmount === BigInt(0)) return;
     if (BigInt(balanceData || 0) >= parsedAmount) {
-      // Balance is now sufficient — proceed automatically
       executeJobCreation();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -191,7 +184,7 @@ export function CreateJobModal({
   const isProcessing = step === "approving" || step === "creating";
 
   const modalTitle =
-    step === "funding" ? "Get Testnet USDC"
+    step === "funding" ? "Top Up USDC"
     : freelancerName ? `Hire ${freelancerName}`
     : "Post an Open Job";
 
@@ -224,36 +217,55 @@ export function CreateJobModal({
         </div>
       )}
 
-      {/* ── FUNDING SCREEN — Guide user to Circle Faucet ─────────────────── */}
+      {/* ── FUNDING SCREEN ───────────────────────────────────────────────── */}
       {step === "funding" && (
         <div className="flex flex-col gap-4">
 
-          {/* Status: current vs needed */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-              <p className="text-xs text-slate-500 mb-1">Your balance</p>
-              <p className="text-lg font-bold text-slate-900">{usdcBalance.toFixed(2)}</p>
-              <p className="text-xs text-slate-400">USDC</p>
+          {/* ── Summary Card: Balance vs Required ──────────────────────────── */}
+          <div className="rounded-xl border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-3 border-b border-slate-200">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                Funding Summary
+              </p>
             </div>
-            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-center">
-              <p className="text-xs text-rose-600 mb-1">Still need</p>
-              <p className="text-lg font-bold text-rose-700">{shortfall}</p>
-              <p className="text-xs text-rose-400">USDC</p>
+            <div className="p-4">
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Your Balance</p>
+                  <p className="text-xl font-bold text-slate-900">{usdcBalance.toFixed(2)}</p>
+                  <p className="text-xs text-slate-400">USDC</p>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <span className="text-amber-600 text-sm font-bold">→</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Required</p>
+                  <p className="text-xl font-bold text-slate-900">{neededAmount.toFixed(2)}</p>
+                  <p className="text-xs text-slate-400">USDC</p>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 text-center">
+                <p className="text-sm text-rose-600 font-semibold">
+                  You need {shortfall} more USDC to proceed
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Step 1 — Circle faucet */}
+          {/* ── Option A: Circle Faucet ────────────────────────────────────── */}
           <div className="rounded-xl border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200">
+            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">A</span>
               <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                Step 1 — Get Testnet USDC
+                Get Free Testnet USDC
               </p>
             </div>
             <div className="p-4 space-y-3">
               <p className="text-sm text-slate-600">
-                Visit the <strong>Circle Testnet Faucet</strong> to claim up to{" "}
-                <strong>10 USDC</strong> per day for free. Make sure your{" "}
-                <strong>Ethereum Sepolia</strong> wallet is connected.
+                Claim up to <strong>10 USDC</strong> per day for free from the{" "}
+                <strong>Circle Testnet Faucet</strong> on Ethereum Sepolia.
               </p>
               <a
                 href="https://faucet.circle.com/"
@@ -268,33 +280,33 @@ export function CreateJobModal({
             </div>
           </div>
 
-          {/* Step 2 — Check balance */}
+          {/* ── Option B: Uniswap Swap ─────────────────────────────────────── */}
           <div className="rounded-xl border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200">
+            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-pink-100 text-pink-700 text-xs font-bold flex items-center justify-center">B</span>
               <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                Step 2 — Refresh & Proceed
+                Swap Sepolia ETH for USDC
               </p>
             </div>
             <div className="p-4 space-y-3">
               <p className="text-sm text-slate-600">
-                After claiming, click below to check your updated balance. Job
-                creation will start automatically once you have enough USDC.
+                If you have Sepolia ETH, swap it for USDC directly on{" "}
+                <strong>Uniswap</strong>.
               </p>
-              <button
-                id="check-balance-btn"
-                onClick={handleCheckBalance}
-                disabled={isRefreshing}
-                className="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 active:scale-[0.98] transition-all py-3 text-sm font-semibold text-primary disabled:opacity-60 disabled:pointer-events-none"
+              <a
+                href="https://app.uniswap.org/swap?chain=sepolia&outputCurrency=0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
+                target="_blank"
+                rel="noopener noreferrer"
+                id="uniswap-swap-link"
+                className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#FF007A] hover:bg-[#E0006B] active:scale-[0.98] transition-all text-white font-semibold py-3 text-sm"
               >
-                {isRefreshing
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Checking…</>
-                  : <><RefreshCw className="w-4 h-4" />Check Balance & Proceed</>
-                }
-              </button>
+                <ExternalLink className="w-4 h-4" />
+                Open Uniswap Swap
+              </a>
             </div>
           </div>
 
-          {/* ── Wallet address — copy to fund it ──────────────────────── */}
+          {/* ── Copyable Wallet Address ─────────────────────────────────────── */}
           {account && (
             <div className="rounded-xl border-2 border-primary/20 bg-primary/5 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-2">
@@ -305,8 +317,7 @@ export function CreateJobModal({
               </div>
               <div className="p-4 space-y-2">
                 <p className="text-xs text-slate-500">
-                  Send Circle Testnet USDC to <strong>this address</strong> on{" "}
-                  <strong>Ethereum Sepolia</strong>.
+                  Copy and paste this address into the faucet or bridge.
                 </p>
                 <button
                   onClick={handleCopyAddress}
@@ -327,9 +338,44 @@ export function CreateJobModal({
             </div>
           )}
 
+          {/* ── Inline warning when balance is still insufficient ──────────── */}
+          {errorMessage && (
+            <div className="flex items-start gap-2 bg-amber-50 text-amber-800 p-3 rounded-lg border border-amber-200">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+          )}
+
+          {/* ── Primary Action: I've Funded — Proceed ──────────────────────── */}
+          <button
+            id="proceed-after-funding-btn"
+            onClick={async () => {
+              setErrorMessage("");
+              setIsRefreshing(true);
+              const { data: freshBalance } = await refetchBalance();
+              await refetchAllowance();
+              setIsRefreshing(false);
+
+              if (freshBalance && BigInt(freshBalance) >= parsedAmount) {
+                executeJobCreation();
+              } else {
+                setErrorMessage(
+                  "Balance not updated yet. Please wait a few seconds after the transaction confirms, then try again."
+                );
+              }
+            }}
+            disabled={isRefreshing}
+            className="flex items-center justify-center gap-2 w-full rounded-xl bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all text-white font-semibold py-3.5 text-sm disabled:opacity-60 disabled:pointer-events-none shadow-sm"
+          >
+            {isRefreshing
+              ? <><Loader2 className="w-4 h-4 animate-spin" />Checking Balance…</>
+              : <><CheckCircle2 className="w-4 h-4" />I&apos;ve Funded My Wallet — Proceed</>
+            }
+          </button>
+
           <Button
             variant="ghost"
-            onClick={() => setStep("input")}
+            onClick={() => { setErrorMessage(""); setStep("input"); }}
             className="w-full flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -370,22 +416,21 @@ export function CreateJobModal({
                 disabled={step !== "input"}
               />
             </div>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-              <span>
+            <div className="mt-2 flex items-center gap-3 flex-wrap">
+              <p className="text-xs text-slate-500">
                 Available:{" "}
                 <span className={usdcBalance === 0 ? "text-amber-600 font-medium" : "font-medium"}>
                   {usdcBalance.toFixed(2)} USDC
                 </span>
-              </span>
-              <a
-                href="https://faucet.circle.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 text-primary hover:underline"
+              </p>
+              <button
+                type="button"
+                onClick={() => setStep("funding")}
+                className="text-xs px-2 py-1 bg-primary/10 text-primary border border-primary/20 rounded hover:bg-primary/20 font-medium transition-colors"
               >
-                Get USDC <ExternalLink className="w-2.5 h-2.5" />
-              </a>
-            </p>
+                Top up with other tokens / chains
+              </button>
+            </div>
           </div>
 
           {/* Insufficient balance */}
