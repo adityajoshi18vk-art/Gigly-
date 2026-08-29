@@ -18,9 +18,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@anon-aadhaar/react": ["./src/types/anon-aadhaar.d.ts"],
+      "@anon-aadhaar/core": ["./src/types/anon-aadhaar.d.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "node_modules/**/*"]
 }

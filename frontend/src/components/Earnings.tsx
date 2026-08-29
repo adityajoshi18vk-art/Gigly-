@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { getContract } from "thirdweb";
 import { client, CHAIN, mockUsdcContract, CHAINLINK_FEEDS } from "@/lib/config";
@@ -14,9 +14,12 @@ import {
   Building2,
   AlertTriangle,
   FlaskConical,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { WithdrawModal } from "@/components/WithdrawModal";
+import { KYCModal } from "@/components/KYCModal";
 
 // ─── Chainlink EUR/USD feed ───────────────────────────────────────────────────
 const eurUsdFeedContract = getContract({
@@ -37,6 +40,33 @@ const inrUsdFeedContract = getContract({
 export function Earnings() {
   const account = useActiveAccount();
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
+  const [isKYCVerified, setIsKYCVerified] = useState(false);
+
+  // ── Sync KYC state from localStorage whenever wallet changes ────────
+  useEffect(() => {
+    if (account?.address) {
+      const stored = localStorage.getItem(`finguard_kyc_${account.address}`);
+      setIsKYCVerified(stored === "true");
+    } else {
+      setIsKYCVerified(false);
+    }
+  }, [account?.address]);
+
+  // ── Withdraw click handler — guards with KYC gate ───────────────────
+  const handleWithdrawClick = useCallback(() => {
+    if (!isKYCVerified) {
+      setIsKYCModalOpen(true);
+    } else {
+      setIsWithdrawOpen(true);
+    }
+  }, [isKYCVerified]);
+
+  // ── KYC verification success callback ───────────────────────────────
+  const handleKYCVerified = useCallback(() => {
+    setIsKYCVerified(true);
+    setIsKYCModalOpen(false);
+  }, []);
 
   // 1. Fetch USDC Balance
   const { data: usdcBalance, isLoading: isUsdcLoading, refetch: refetchBalance } = useReadContract({
@@ -130,16 +160,48 @@ export function Earnings() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* ── Header row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Your Earnings</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900">Your Earnings</h2>
+            {/* ── KYC Status Badge ────────────────────────────────────── */}
+            {isKYCVerified ? (
+              <Badge
+                id="kyc-status-badge"
+                variant="success"
+                className="flex items-center gap-1.5 px-3 py-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                🛡️ ZK-KYC Verified (RBI &amp; GDPR Compliant)
+              </Badge>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Badge
+                  id="kyc-status-badge"
+                  variant="pending"
+                  className="flex items-center gap-1.5 px-3 py-1"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  ⚠️ KYC Required (Withdrawals Locked)
+                </Badge>
+                <Button
+                  id="verify-identity-btn"
+                  variant="outline"
+                  onClick={() => setIsKYCModalOpen(true)}
+                  className="text-xs px-3 py-1 h-auto"
+                >
+                  Verify Identity
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <RefreshCw className="w-4 h-4 animate-spin-slow" />
               <span>Auto-updating every 30s</span>
             </div>
-            {/* ── Withdraw CTA ─────────────────────────────────────────── */}
+            {/* ── Withdraw CTA (guarded by KYC) ───────────────────────── */}
             <Button
               id="withdraw-to-bank-btn"
-              onClick={() => setIsWithdrawOpen(true)}
+              onClick={handleWithdrawClick}
               className="flex items-center gap-2"
             >
               <Building2 className="w-4 h-4" />
@@ -297,6 +359,14 @@ export function Earnings() {
         walletAddress={account.address}
         usdcBalance={usdcFormatted ?? 0}
         onWithdrawSuccess={() => refetchBalance()}
+      />
+
+      {/* ── KYC Verification Modal ─────────────────────────────────────────── */}
+      <KYCModal
+        isOpen={isKYCModalOpen}
+        onClose={() => setIsKYCModalOpen(false)}
+        onVerified={handleKYCVerified}
+        walletAddress={account.address}
       />
     </>
   );
