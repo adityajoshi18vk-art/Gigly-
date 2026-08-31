@@ -16,6 +16,7 @@ import {
   FlaskConical,
   ShieldCheck,
   ShieldAlert,
+  RotateCcw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { WithdrawModal } from "@/components/WithdrawModal";
@@ -42,6 +43,7 @@ export function Earnings() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isKYCVerified, setIsKYCVerified] = useState(false);
+  const [resetToast, setResetToast] = useState(false);
 
   // ── Sync KYC state from localStorage whenever wallet changes ────────
   useEffect(() => {
@@ -67,6 +69,21 @@ export function Earnings() {
     setIsKYCVerified(true);
     setIsKYCModalOpen(false);
   }, []);
+
+  // ── Reset KYC (Demo Mode) ───────────────────────────────────────────
+  const handleResetKYC = useCallback(() => {
+    // 1. Clear your app's custom KYC state
+    localStorage.removeItem(`finguard_kyc_${account?.address}`);
+
+    // 2. Clear the Anon Aadhaar SDK's persistent storage
+    localStorage.removeItem("anonAadhaar");
+
+    // 3. Clear session storage just in case
+    sessionStorage.clear();
+
+    // 4. Force a hard reload to flush the React Context memory
+    window.location.reload();
+  }, [account?.address]);
 
   // 1. Fetch USDC Balance
   const { data: usdcBalance, isLoading: isUsdcLoading, refetch: refetchBalance } = useReadContract({
@@ -164,14 +181,25 @@ export function Earnings() {
             <h2 className="text-xl font-bold text-slate-900">Your Earnings</h2>
             {/* ── KYC Status Badge ────────────────────────────────────── */}
             {isKYCVerified ? (
-              <Badge
-                id="kyc-status-badge"
-                variant="success"
-                className="flex items-center gap-1.5 px-3 py-1"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                🛡️ ZK-KYC Verified (RBI &amp; GDPR Compliant)
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  id="kyc-status-badge"
+                  variant="success"
+                  className="flex items-center gap-1.5 px-3 py-1"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  🛡️ ZK-KYC Verified (RBI &amp; GDPR Compliant)
+                </Badge>
+                <button
+                  id="kyc-reset-btn"
+                  onClick={handleResetKYC}
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 border border-gray-200 hover:border-red-300 rounded px-2 py-1 transition-colors"
+                  title="Reset KYC verification for demo purposes"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Reset (Demo)
+                </button>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Badge
@@ -368,6 +396,16 @@ export function Earnings() {
         onVerified={handleKYCVerified}
         walletAddress={account.address}
       />
+
+      {/* ── Reset KYC Toast ──────────────────────────────────────────────── */}
+      {resetToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_0.3s_ease-out]">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-medium shadow-xl">
+            <RotateCcw className="w-4 h-4 text-amber-400" />
+            KYC verification reset. Ready for live demo.
+          </div>
+        </div>
+      )}
     </>
   );
 }

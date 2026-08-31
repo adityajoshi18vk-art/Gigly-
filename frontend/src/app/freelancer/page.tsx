@@ -8,6 +8,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { IncomingJobs } from "@/components/IncomingJobs";
 import { BrowseGigs } from "@/components/BrowseGigs";
 import { Earnings } from "@/components/Earnings";
+import { DIDTrustCard } from "@/components/DIDTrustCard";
 
 export default function FreelancerDashboard() {
   const account = useActiveAccount();
@@ -60,7 +61,10 @@ export default function FreelancerDashboard() {
       )}
 
       {activeTab === "Earnings" && (
-        <Earnings />
+        <div className="space-y-6">
+          <Earnings />
+          <DIDTrustCard />
+        </div>
       )}
     </div>
   );

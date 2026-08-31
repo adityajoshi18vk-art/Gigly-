@@ -13,7 +13,9 @@ import {
   Loader2,
   CheckCircle2,
   Lock,
+  Smartphone,
 } from "lucide-react";
+import QRCode from "react-qr-code";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,28 +45,14 @@ const VERIFICATION_STEPS: VerificationStep[] = [
   },
 ];
 
-const COUNTRIES = [
-  "Germany",
-  "France",
-  "Netherlands",
-  "Spain",
-  "Italy",
-  "Portugal",
-  "Belgium",
-  "Austria",
-  "Sweden",
-  "Ireland",
-  "United Kingdom",
-  "United States",
-  "Canada",
-  "Australia",
-  "Japan",
-  "South Korea",
-  "Singapore",
-  "Brazil",
-  "Switzerland",
-  "Other",
-] as const;
+const GLOBAL_SIMULATION_STEPS: VerificationStep[] = [
+  { message: "📱 NFC Handshake: e-Passport detected (ICAO 9303 Compliant)...", delay: 700 },
+  { message: "🔐 Verifying government digital signature off-chain...", delay: 800 },
+  { message: "🛡️ Generating Zero-Knowledge Proof (Zero PII on-chain)...", delay: 700 },
+  { message: "✅ Proof Validated: GDPR Article 25 & FATF Compliant!", delay: 500 },
+];
+
+
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -142,9 +130,12 @@ export function KYCModal({
   // Anon Aadhaar SDK hook
   const [anonAadhaar] = useAnonAadhaar();
 
-  // Global/EU fields
-  const [documentId, setDocumentId] = useState("");
-  const [country, setCountry] = useState("");
+  // ZKPassport QR URL — generated immediately, no async blocking
+  const zkpUrl = `zkpassport://verify?domain=localhost:3000&purpose=GDPR_Escrow_Compliance&nullifier=${walletAddress || "demo"}`;
+
+  // Global/EU simulation state
+  const [globalSimulating, setGlobalSimulating] = useState(false);
+  const [globalSimStep, setGlobalSimStep] = useState(-1);
 
   // ── Listen for real ZK proof completion from Anon Aadhaar SDK ───────────
   useEffect(() => {
@@ -155,17 +146,13 @@ export function KYCModal({
     }
   }, [anonAadhaar.status, walletAddress, onVerified, onClose, isOpen, jurisdiction]);
 
-  // ── Form validation (Global/EU tab only — India uses SDK button) ────────
-  const isGlobalFormValid =
-    documentId.trim().length >= 4 && country.length > 0;
-
   // ── Reset state ────────────────────────────────────────────────────────
   const resetModal = useCallback(() => {
     setIsVerifying(false);
     setVerificationStepIndex(-1);
     setShowSuccess(false);
-    setDocumentId("");
-    setCountry("");
+    setGlobalSimulating(false);
+    setGlobalSimStep(-1);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -174,25 +161,21 @@ export function KYCModal({
     onClose();
   }, [isVerifying, onClose, resetModal]);
 
-  // ── Simulated ZK verification flow (Global/EU tab only) ────────────────
-  const handleGlobalVerify = useCallback(async () => {
-    setIsVerifying(true);
-    setVerificationStepIndex(0);
+  // ── Dev-mode simulate scan (Global/EU tab) ─────────────────────────────
+  const handleSimulateScan = useCallback(async () => {
+    setGlobalSimulating(true);
 
-    for (let i = 0; i < VERIFICATION_STEPS.length; i++) {
-      setVerificationStepIndex(i);
-      await new Promise((r) => setTimeout(r, VERIFICATION_STEPS[i].delay));
+    for (let i = 0; i < GLOBAL_SIMULATION_STEPS.length; i++) {
+      setGlobalSimStep(i);
+      await new Promise((r) => setTimeout(r, GLOBAL_SIMULATION_STEPS[i].delay));
     }
 
-    // Persist verification
+    // All steps complete — persist & notify
     localStorage.setItem(`finguard_kyc_${walletAddress}`, "true");
-
-    setShowSuccess(true);
-
-    // Brief pause to show success state
-    await new Promise((r) => setTimeout(r, 1200));
-
     onVerified();
+
+    // Brief pause to show the final ✅ step before closing
+    await new Promise((r) => setTimeout(r, 600));
     resetModal();
     onClose();
   }, [walletAddress, onVerified, onClose, resetModal]);
@@ -223,8 +206,8 @@ export function KYCModal({
         <div className="grid grid-cols-2 gap-2">
           <button
             id="kyc-tab-india"
-            onClick={() => !isVerifying && setJurisdiction("india")}
-            disabled={isVerifying}
+            onClick={() => { if (!isVerifying && !globalSimulating) { setGlobalSimulating(false); setGlobalSimStep(-1); setJurisdiction("india"); } }}
+            disabled={isVerifying || globalSimulating}
             className={`flex items-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
               jurisdiction === "india"
                 ? "border-teal-500 bg-teal-50 text-teal-700 shadow-sm"
@@ -244,8 +227,8 @@ export function KYCModal({
 
           <button
             id="kyc-tab-global"
-            onClick={() => !isVerifying && setJurisdiction("global")}
-            disabled={isVerifying}
+            onClick={() => { if (!isVerifying && !globalSimulating) { setJurisdiction("global"); } }}
+            disabled={isVerifying || globalSimulating}
             className={`flex items-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
               jurisdiction === "global"
                 ? "border-teal-500 bg-teal-50 text-teal-700 shadow-sm"
@@ -340,42 +323,105 @@ export function KYCModal({
           </div>
         )}
 
-        {/* ── Global / EU form ──────────────────────────────────────────── */}
-        {jurisdiction === "global" && !isVerifying && (
+        {/* ── Global / EU — ZKPassport QR Code ──────────────────────────── */}
+        {jurisdiction === "global" && !isVerifying && !globalSimulating && (
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                Document ID (Passport / National ID)
-              </label>
-              <input
-                id="kyc-document-id-input"
-                type="text"
-                value={documentId}
-                onChange={(e) => setDocumentId(e.target.value)}
-                placeholder="e.g. AB1234567"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-sm font-semibold text-slate-800 transition-all"
-              />
+            {/* Subtitle */}
+            <div className="flex items-start gap-2.5 rounded-xl border border-cyan-100 bg-cyan-50/50 px-4 py-3">
+              <Globe className="w-4 h-4 text-cyan-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-cyan-800 leading-relaxed">
+                <strong>Powered by ZKPassport.</strong>{" "}
+                Scan this QR code with the ZKPassport app to verify your e-Passport via NFC.
+              </p>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                Country of Issuance
-              </label>
-              <select
-                id="kyc-country-select"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-sm font-semibold text-slate-800 transition-all bg-white appearance-none cursor-pointer"
-              >
-                <option value="" disabled>
-                  Select country…
-                </option>
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+            {/* QR Code area */}
+            <div className="flex flex-col items-center justify-center py-4">
+              <div className="p-4 bg-white rounded-2xl shadow-lg shadow-slate-200/60 border border-slate-100">
+                <QRCode
+                  id="zkpassport-qr"
+                  value={zkpUrl}
+                  size={160}
+                  level="M"
+                  bgColor="#ffffff"
+                  fgColor="#0f172a"
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-3 text-center">
+                📱 Scan with <strong>ZKPassport Mobile App</strong>
+              </p>
+            </div>
+
+            {/* Dev-mode simulate button */}
+            <button
+              id="kyc-simulate-scan-btn"
+              onClick={handleSimulateScan}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-slate-300 hover:border-teal-400 hover:bg-teal-50/50 text-slate-500 hover:text-teal-700 font-semibold text-xs transition-all"
+            >
+              <Smartphone className="w-4 h-4" />
+              Simulate Phone Scan (Dev Mode)
+            </button>
+          </div>
+        )}
+
+        {/* ── Global/EU — Simulated NFC Verification Terminal ────────────── */}
+        {jurisdiction === "global" && globalSimulating && (
+          <div className="space-y-3">
+            <div className="rounded-xl bg-slate-900 border border-slate-700 p-4 space-y-3 font-mono text-xs">
+              {/* Terminal chrome */}
+              <div className="flex items-center gap-2 text-slate-400 mb-1">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                </div>
+                <span className="text-[10px] uppercase tracking-wider">
+                  ZKPassport NFC Verification
+                </span>
+                <span className="ml-auto text-[10px] text-slate-500">
+                  <ProofTimer />
+                </span>
+              </div>
+
+              {/* Animated steps */}
+              {GLOBAL_SIMULATION_STEPS.map((step, i) => {
+                if (i > globalSimStep) return null;
+                const isDone = i < globalSimStep;
+                const isCurrent = i === globalSimStep;
+
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-2 transition-opacity duration-300 ${
+                      isDone
+                        ? "text-emerald-400"
+                        : isCurrent
+                        ? "text-cyan-300"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {isDone ? (
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                    ) : (
+                      <Loader2 className="w-4 h-4 shrink-0 mt-0.5 animate-spin" />
+                    )}
+                    <span className="leading-relaxed">{step.message}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Reassurance bar */}
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-cyan-50 border border-cyan-200">
+              <Loader2 className="w-4 h-4 text-cyan-600 animate-spin shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-cyan-800">
+                  Verifying e-Passport via NFC — please wait
+                </p>
+                <p className="text-[10px] text-cyan-600 mt-0.5">
+                  ZK proof generated entirely on-device. No PII leaves your phone.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -426,24 +472,12 @@ export function KYCModal({
         <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
           <p className="text-[11px] text-slate-600 leading-relaxed">
-            <strong>🔒 Zero-Knowledge Guarantee:</strong> Your sensitive
-            identity data is hashed and verified off-chain. No PII is recorded
-            on the blockchain (GDPR Article 25 &amp; FATF Compliant).
+            <strong>🔒 Zero-Knowledge Guarantee:</strong>{" "}
+            {jurisdiction === "global"
+              ? "Your e-Passport is verified entirely via client-side ZK-SNARKs. No personally identifiable information (PII) is stored on-chain or transmitted to any server (GDPR Article 25 & eIDAS Compliant)."
+              : "Your sensitive identity data is hashed and verified off-chain. No PII is recorded on the blockchain (GDPR Article 25 & FATF Compliant)."}
           </p>
         </div>
-
-        {/* ── Submit button (Global/EU tab only) ──────────────────────────── */}
-        {jurisdiction === "global" && !isVerifying && (
-          <button
-            id="kyc-verify-btn"
-            onClick={handleGlobalVerify}
-            disabled={!isGlobalFormValid}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-semibold text-sm shadow-lg shadow-teal-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-          >
-            <Shield className="w-4 h-4" />
-            Generate ZK Proof &amp; Verify
-          </button>
-        )}
       </div>
     </Modal>
   );
