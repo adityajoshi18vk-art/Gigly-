@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useEffect, useState } from "react";
+import { useActiveAccount, useReadContract } from "thirdweb/react";
+import { readContract, getContractEvents, prepareEvent } from "thirdweb";
+import { escrowContract, DEPLOYMENT_BLOCK } from "@/lib/config";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -12,7 +14,24 @@ import {
   Award,
   Scale,
   Hash,
+  Loader2,
 } from "lucide-react";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ReputationStats {
+  verifiedGigs: number;
+  disputes: number;
+  trustScore: number;
+  totalCompleted: number; // Released + Refunded (all terminal jobs)
+}
+
+// ─── Prepared event for fetching FundsReleased logs ──────────────────────────
+
+const fundsReleasedEvent = prepareEvent({
+  signature:
+    "event FundsReleased(uint256 indexed jobId, uint256 netAmount, uint256 fee)",
+});
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -23,6 +42,9 @@ export function DIDTrustCard() {
     : "Not Connected";
 
   const [copied, setCopied] = useState(false);
+  const [stats, setStats] = useState<ReputationStats | null>(null);
+  const [latestProofHash, setLatestProofHash] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleCopyDID = async () => {
     if (!account?.address) return;
@@ -31,25 +53,132 @@ export function DIDTrustCard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Mock VC stats ──────────────────────────────────────────────────────
+  // ── Read job count from contract ──────────────────────────────────────
+  const { data: jobCountData } = useReadContract({
+    contract: escrowContract,
+    method: "function jobCount() view returns (uint256)",
+    params: [],
+  });
+
+  // ── Derive reputation stats from on-chain jobs ────────────────────────
+  useEffect(() => {
+    async function fetchReputation() {
+      if (!account?.address || jobCountData === undefined) {
+        setIsLoading(false);
+        return;
+      }
+
+      const count = Number(jobCountData);
+      if (count === 0) {
+        setStats({ verifiedGigs: 0, disputes: 0, trustScore: 0, totalCompleted: 0 });
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        const jobIds = Array.from({ length: count }, (_, i) => BigInt(i + 1));
+        const userAddress = account.address.toLowerCase();
+
+        // Fetch all jobs in parallel
+        const allJobs = await Promise.all(
+          jobIds.map(async (id) => {
+            const data = await readContract({
+              contract: escrowContract,
+              method:
+                "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle, string submissionLink)",
+              params: [id],
+            });
+            return {
+              id: Number(id),
+              freelancer: data[1],
+              status: data[5],
+            };
+          })
+        );
+
+        // Filter: jobs where the connected wallet is the freelancer
+        const myJobs = allJobs.filter(
+          (j) => j.freelancer.toLowerCase() === userAddress
+        );
+
+        // Status enum: 0=None, 1=Funded, 2=Submitted, 3=Disputed, 4=Released, 5=Refunded
+        const verifiedGigs = myJobs.filter((j) => j.status === 4).length; // Released
+        const disputes = myJobs.filter((j) => j.status === 3 || j.status === 5).length; // Disputed or Refunded
+        const totalCompleted = verifiedGigs + disputes;
+
+        // Trust score: (verifiedGigs / totalCompleted) * 100, floored
+        // If no completed jobs, default to 0
+        const trustScore =
+          totalCompleted > 0
+            ? Math.floor((verifiedGigs / totalCompleted) * 100)
+            : 0;
+
+        setStats({ verifiedGigs, disputes, trustScore, totalCompleted });
+
+        // ── Fetch latest FundsReleased event as proof hash ──────────────
+        try {
+          const events = await getContractEvents({
+            contract: escrowContract,
+            events: [fundsReleasedEvent],
+            fromBlock: DEPLOYMENT_BLOCK,
+          });
+
+          // Filter events for jobs belonging to this freelancer
+          const myReleasedJobIds = new Set(
+            myJobs.filter((j) => j.status === 4).map((j) => j.id)
+          );
+
+          const myEvents = events.filter((e) =>
+            myReleasedJobIds.has(Number(e.args.jobId))
+          );
+
+          if (myEvents.length > 0) {
+            // Use the transaction hash of the most recent release event
+            const latest = myEvents[myEvents.length - 1];
+            setLatestProofHash(latest.transactionHash);
+          } else {
+            setLatestProofHash(null);
+          }
+        } catch (eventErr) {
+          console.error("Failed to fetch FundsReleased events:", eventErr);
+          setLatestProofHash(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch reputation data:", err);
+        setStats({ verifiedGigs: 0, disputes: 0, trustScore: 0, totalCompleted: 0 });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchReputation();
+  }, [account?.address, jobCountData]);
+
+  // ── Build dynamic VC stats array ──────────────────────────────────────
   const vcStats = [
     {
       label: "Verified Gigs",
-      value: "14",
+      value: isLoading ? null : String(stats?.verifiedGigs ?? 0),
       icon: Award,
       color: "text-teal-600",
       bg: "bg-teal-50",
     },
     {
       label: "Trust Score",
-      value: "98/100",
+      value: isLoading
+        ? null
+        : stats && stats.totalCompleted > 0
+          ? `${stats.trustScore}/100`
+          : "0/100",
       icon: ShieldCheck,
       color: "text-emerald-500",
       bg: "bg-emerald-50",
     },
     {
       label: "Disputes",
-      value: "0",
+      value: isLoading ? null : String(stats?.disputes ?? 0),
       icon: Scale,
       color: "text-slate-500",
       bg: "bg-slate-50",
@@ -65,7 +194,7 @@ export function DIDTrustCard() {
               <Fingerprint className="w-4.5 h-4.5 text-white" />
             </div>
             <h2 className="text-xl font-bold text-slate-900">
-              On-Chain Trust & Reputation
+              On-Chain Trust &amp; Reputation
             </h2>
           </div>
           <Badge variant="default" className="flex items-center gap-1 px-2.5 py-1">
@@ -110,7 +239,11 @@ export function DIDTrustCard() {
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
               <span className={`text-xl font-bold ${stat.color}`}>
-                {stat.value}
+                {stat.value === null ? (
+                  <Loader2 className="w-5 h-5 animate-spin opacity-50" />
+                ) : (
+                  stat.value
+                )}
               </span>
               <span className="text-[11px] font-medium text-slate-500">
                 {stat.label}
@@ -134,8 +267,19 @@ export function DIDTrustCard() {
 
           <div className="flex items-center gap-2">
             <Hash className="w-4 h-4 text-emerald-400 shrink-0" />
-            <code className="text-sm font-mono text-emerald-300 tracking-wide">
-              0x8f2a91b7c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e319
+            <code className="text-sm font-mono text-emerald-300 tracking-wide break-all">
+              {isLoading ? (
+                <span className="flex items-center gap-2 text-slate-500">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Fetching on-chain data…
+                </span>
+              ) : latestProofHash ? (
+                latestProofHash
+              ) : (
+                <span className="text-slate-500 italic">
+                  No Escrows Completed Yet
+                </span>
+              )}
             </code>
           </div>
 
