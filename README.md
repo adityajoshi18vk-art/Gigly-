@@ -1,4 +1,4 @@
-<![CDATA[# Gigly
+# Gigly
 **Decentralized Escrow, Zero-Knowledge Compliance, and Verifiable Reputation for the Web3 Gig Economy.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -53,8 +53,8 @@ Integrating **`@anon-aadhaar/react`** (India) and **`@zkpassport/sdk`** (Global/
 
 Reputation is mathematically verifiable. Each connected wallet is assigned a **`did:ethr` identifier** anchored to the Ethereum Sepolia network:
 
-```
-did:ethr:sepolia:<wallet_address>
+```text
+did:ethr:sepolia:{wallet_address}
 ```
 
 - **Trust Scores** are computed deterministically from on-chain escrow settlement events (`FundsReleased` logs).
@@ -346,4 +346,3 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 *The future of work is decentralized.*
 
 </div>
-]]>
