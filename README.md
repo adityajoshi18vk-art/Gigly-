@@ -257,6 +257,7 @@ gigly/
 ├── frontend/                       # Next.js 14 App
 │   ├── src/
 │   │   ├── app/
+│   │   │   ├── api/                # Next.js API Routes (ZKPassport integration)
 │   │   │   ├── client/             # Client dashboard (create jobs, fund escrow)
 │   │   │   ├── freelancer/         # Freelancer dashboard (browse, submit, earn)
 │   │   │   ├── admin/              # Platform admin panel
