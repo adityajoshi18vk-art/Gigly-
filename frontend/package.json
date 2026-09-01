@@ -11,6 +11,9 @@
   "dependencies": {
     "@anon-aadhaar/core": "^2.4.3",
     "@anon-aadhaar/react": "^2.4.3",
+    "@x402/core": "^2.24.0",
+    "@x402/evm": "^2.24.0",
+    "@x402/svm": "^2.24.0",
     "@zkpassport/sdk": "^0.16.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.25.0",
