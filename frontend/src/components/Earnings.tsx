@@ -43,7 +43,6 @@ export function Earnings() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isKYCVerified, setIsKYCVerified] = useState(false);
-  const [resetToast, setResetToast] = useState(false);
 
   // ── Sync KYC state from localStorage whenever wallet changes ────────
   useEffect(() => {
@@ -397,15 +396,6 @@ export function Earnings() {
         walletAddress={account.address}
       />
 
-      {/* ── Reset KYC Toast ──────────────────────────────────────────────── */}
-      {resetToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_0.3s_ease-out]">
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-medium shadow-xl">
-            <RotateCcw className="w-4 h-4 text-amber-400" />
-            KYC verification reset. Ready for live demo.
-          </div>
-        </div>
-      )}
     </>
   );
 }
