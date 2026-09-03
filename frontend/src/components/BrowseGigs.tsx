@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { JobData } from "./ActiveJobs";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
@@ -109,51 +110,86 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500">Finding open gigs...</p>
+      <div className="max-w-4xl mx-auto text-center py-20 flex flex-col items-center">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full mb-6"
+        />
+        <p className="text-on-surface-variant font-medium tracking-wide text-sm">Scanning for open gigs...</p>
       </div>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">No open gigs available right now</h2>
-        <p className="text-slate-500 mb-6">Check back later for new opportunities.</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="max-w-4xl mx-auto text-center py-20 surface-card p-12 border-dashed border-outline-variant"
+      >
+        <div className="w-16 h-16 bg-surface-container border border-outline-variant rounded-xl flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        </div>
+        <h2 className="text-xl font-semibold text-on-surface mb-2">No open gigs right now</h2>
+        <p className="text-on-surface-variant">Check back later. New opportunities arise constantly.</p>
+      </motion.div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      {jobs.map((job) => (
-        <Card key={job.id} className="transition-all hover:shadow-md">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 text-lg mb-1">{job.taskTitle || `Job #${job.id}`}</h3>
-                <p className="text-sm text-slate-500">
-                  Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
-                </p>
-              </div>
-              
-              <div className="flex flex-col md:flex-row items-end md:items-center gap-4 md:gap-6">
-                <div className="text-right">
-                  <p className="font-bold text-slate-900 text-lg">${formatUnits(job.amount, 6)} USDC</p>
+      <AnimatePresence>
+        {jobs.map((job, index) => (
+          <motion.div
+            key={job.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <Card className="hover:border-primary/50 group transition-colors">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-surface-container border border-outline-variant text-on-surface-variant">Open Gig</span>
+                      <span className="text-xs text-on-surface-variant font-mono">#{job.id}</span>
+                    </div>
+                    <h3 className="font-semibold text-on-surface text-xl mb-2 group-hover:text-primary transition-colors">{job.taskTitle || `Job #${job.id}`}</h3>
+                    <p className="text-sm text-on-surface-variant flex items-center gap-2">
+                      <svg className="w-4 h-4 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                      Client: <span className="font-mono text-on-surface">{job.client.slice(0, 6)}...{job.client.slice(-4)}</span>
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col md:items-end gap-4">
+                    <div className="text-left md:text-right">
+                      <p className="text-xs text-on-surface-variant uppercase tracking-wider font-medium mb-1">Bounty</p>
+                      <p className="font-bold text-on-surface text-2xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-on-surface-variant font-sans">USDC</span></p>
+                    </div>
+                    
+                    <Button 
+                      variant="primary"
+                      onClick={() => handleAcceptJob(job.id, job.client)}
+                      disabled={processingJobId === job.id}
+                      className="w-full md:w-auto"
+                    >
+                      {processingJobId === job.id ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-3.5 h-3.5 rounded-full border-2 border-background border-t-transparent animate-spin" />
+                          Accepting...
+                        </span>
+                      ) : "Accept Job"}
+                    </Button>
+                  </div>
                 </div>
-                
-                <Button 
-                  onClick={() => handleAcceptJob(job.id, job.client)}
-                  disabled={processingJobId === job.id}
-                >
-                  {processingJobId === job.id ? "Accepting..." : "Accept Job"}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

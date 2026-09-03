@@ -1,5 +1,4 @@
 import * as React from "react";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -13,16 +12,15 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
       <div
         ref={ref}
         className={cn(
-          "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gray-100",
+          "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-white/10",
           className
         )}
         {...props}
       >
         {src ? (
-          <Image
+          <img
             src={src}
             alt={fallback}
-            fill
             className="aspect-square h-full w-full object-cover"
           />
         ) : (
