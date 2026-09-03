@@ -40,10 +40,10 @@ export const CONTRACTS = {
   // Official Circle Testnet USDC on Ethereum Sepolia
   // Faucet: https://faucet.circle.com/
   USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-  // Deployed 2026-08-11 — points to Circle Testnet USDC
-  OptimisticEscrow: "0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672",
+  // Deployed 2026-09-03
+  OptimisticEscrow: "0x6Ef070ae3dfB072407Cb61AB0Ce8439Fe4527341",
   // Soulbound Token Credentials Contract
-  GiglyCredential: "0x0000000000000000000000000000000000000000", // placeholder until next deployment
+  GiglyCredential: "0xFB43c1182F51583d33E2e191DB32025DE115ea75",
 };
 
 export const DEPLOYMENT_BLOCK = BigInt(11425792);
