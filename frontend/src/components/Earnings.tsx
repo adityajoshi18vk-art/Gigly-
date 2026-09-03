@@ -177,7 +177,7 @@ export function Earnings() {
         {/* ── Header row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-slate-900">Your Earnings</h2>
+            <h2 className="text-xl font-bold text-white">Your Earnings</h2>
             {/* ── KYC Status Badge ────────────────────────────────────── */}
             {isKYCVerified ? (
               <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export function Earnings() {
                 <button
                   id="kyc-reset-btn"
                   onClick={handleResetKYC}
-                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 border border-gray-200 hover:border-red-300 rounded px-2 py-1 transition-colors"
+                  className="flex items-center gap-1 text-xs text-white/50 hover:text-red-400 border border-white/10 hover:border-red-400/50 rounded px-2 py-1 transition-colors"
                   title="Reset KYC verification for demo purposes"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -221,7 +221,7 @@ export function Earnings() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="flex items-center gap-2 text-sm text-white/50">
               <RefreshCw className="w-4 h-4 animate-spin-slow" />
               <span>Auto-updating every 30s</span>
             </div>
@@ -238,9 +238,9 @@ export function Earnings() {
         </div>
 
         {/* ── Testnet simulation notice ────────────────────────────────── */}
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <FlaskConical className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800 leading-relaxed">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <FlaskConical className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-200/80 leading-relaxed">
             <strong>Testnet Environment.</strong> Balances shown are on{" "}
             {CHAIN.name ?? "a testnet"}. The &quot;Withdraw to Bank Account&quot; button
             opens a <strong>simulated off-ramp</strong> — no real money is
@@ -251,14 +251,14 @@ export function Earnings() {
         {/* ── Earnings cards ───────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Base USDC Card */}
-          <Card className="border-t-4 border-t-primary shadow-sm">
+          <Card className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] border-t-4 border-t-primary shadow-xl">
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div>
-                <p className="text-sm font-medium text-slate-500 mb-1">
+                <p className="text-sm font-medium text-white/50 mb-1">
                   Total Balance
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-slate-900">
+                  <span className="text-3xl font-bold text-white">
                     {isUsdcLoading
                       ? "..."
                       : usdcFormatted !== null
@@ -268,26 +268,26 @@ export function Earnings() {
                         })
                       : "0.00"}
                   </span>
-                  <span className="text-lg font-semibold text-slate-500">USDC</span>
+                  <span className="text-lg font-semibold text-white/50">USDC</span>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <span className="text-xs text-slate-400">Native Wallet Balance</span>
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <span className="text-xs text-white/40">Native Wallet Balance</span>
               </div>
             </CardContent>
           </Card>
 
           {/* EUR (Chainlink Oracle) Card */}
-          <Card className="relative overflow-hidden bg-gradient-to-br from-indigo-50 to-white shadow-sm border-indigo-100">
+          <Card className="relative overflow-hidden bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] shadow-xl">
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div>
                 <div className="flex justify-between items-start mb-1">
-                  <p className="text-sm font-medium text-indigo-700/80">
+                  <p className="text-sm font-medium text-white/50">
                     EUR Equivalent
                   </p>
                   <Badge
                     variant="default"
-                    className="bg-indigo-100/50 text-indigo-700 border-indigo-200 gap-1.5 px-2 py-0.5 shadow-sm"
+                    className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 gap-1.5 px-2 py-0.5 shadow-sm"
                   >
                     <LinkIcon className="w-3 h-3" />
                     <span className="text-[10px] uppercase tracking-wider font-bold">
@@ -296,7 +296,7 @@ export function Earnings() {
                   </Badge>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-3xl font-bold text-indigo-900">
+                  <span className="text-3xl font-bold text-white">
                     €
                     {isUsdcLoading || isEurLoading
                       ? "..."
@@ -310,14 +310,14 @@ export function Earnings() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-indigo-100/50 flex items-center justify-between">
+              <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
                 {isEurDelayed ? (
-                  <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+                  <div className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
                     <AlertTriangle className="w-3.5 h-3.5" />
                     Rate may be delayed
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 text-xs text-indigo-400">
+                  <div className="flex items-center gap-1.5 text-xs text-indigo-300">
                     <Clock className="w-3.5 h-3.5" />
                     {eurUpdatedAtDate
                       ? `Oracle updated: ${eurUpdatedAtDate.toLocaleTimeString()}`
@@ -329,16 +329,16 @@ export function Earnings() {
           </Card>
 
           {/* INR (On-Chain) Card */}
-          <Card className="shadow-sm border-slate-200 bg-white">
+          <Card className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] shadow-xl">
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div>
                 <div className="flex justify-between items-start mb-1">
-                  <p className="text-sm font-medium text-slate-600">
+                  <p className="text-sm font-medium text-white/50">
                     INR Equivalent
                   </p>
                   <Badge
                     variant="default"
-                    className="bg-indigo-50 text-indigo-600 gap-1.5 px-2 py-0.5"
+                    className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 gap-1.5 px-2 py-0.5"
                   >
                     <LinkIcon className="w-3 h-3" />
                     <span className="text-[10px] uppercase tracking-wider font-bold">
@@ -347,7 +347,7 @@ export function Earnings() {
                   </Badge>
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-3xl font-bold text-slate-800">
+                  <span className="text-3xl font-bold text-white">
                     ₹
                     {isUsdcLoading || isInrLoading
                       ? "..."
@@ -362,12 +362,12 @@ export function Earnings() {
               </div>
 
               {isInrDelayed ? (
-                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-xs text-amber-400 font-medium">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Rate may be delayed
                 </div>
               ) : (
-                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs text-indigo-400">
+                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-xs text-indigo-300">
                   <Clock className="w-3.5 h-3.5" />
                   {inrUpdatedAtDate
                     ? `Oracle updated: ${inrUpdatedAtDate.toLocaleTimeString()}`
