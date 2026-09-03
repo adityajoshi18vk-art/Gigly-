@@ -122,15 +122,15 @@ export default function ClientDashboard() {
         <>
           {/* Verified Talent Toggle */}
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-white/50">
               {displayedFreelancers.length} freelancer{displayedFreelancers.length !== 1 ? "s" : ""} found
             </p>
             <button
               onClick={() => setShowVerifiedOnly((v) => !v)}
               className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full border transition-all ${
                 showVerifiedOnly
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  : "bg-white border-gray-200 text-slate-500 hover:border-gray-300"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : "bg-white/5 border-white/10 text-white/70 hover:border-white/20"
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
@@ -138,7 +138,7 @@ export default function ClientDashboard() {
               {/* Toggle indicator */}
               <span
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  showVerifiedOnly ? "bg-emerald-500" : "bg-gray-300"
+                  showVerifiedOnly ? "bg-emerald-500" : "bg-white/20"
                 }`}
               >
                 <span
@@ -153,19 +153,19 @@ export default function ClientDashboard() {
           {!isLoaded ? (
             <div className="text-center py-20">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-slate-500">Loading freelancers...</p>
+              <p className="text-white/50">Loading freelancers...</p>
             </div>
           ) : displayedFreelancers.length === 0 ? (
             <div className="max-w-md mx-auto text-center py-20">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-white/50" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-700 mb-2">
+              <h3 className="text-lg font-bold text-white mb-2">
                 {showVerifiedOnly
                   ? "No verified freelancers yet"
                   : "No freelancers registered yet"}
               </h3>
-              <p className="text-slate-500 text-sm">
+              <p className="text-white/50 text-sm">
                 {showVerifiedOnly
                   ? "Try turning off the verified filter, or check back later."
                   : "Connect as a freelancer to create a profile and appear here!"}

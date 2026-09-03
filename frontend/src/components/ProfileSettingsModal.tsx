@@ -100,7 +100,6 @@ export function ProfileSettingsModal({
   const handleVerifySkills = async () => {
     if (!githubUrl.trim() || !account?.address) return;
 
-    // Extract handle from URL or raw handle
     const handle = githubUrl
       .replace(/^https?:\/\/(www\.)?github\.com\//, "")
       .replace(/\/$/, "")
@@ -133,7 +132,6 @@ export function ProfileSettingsModal({
       setVerifiedSkills(data.verifiedSkills || []);
       setSkillVerificationHash(data.oracleSignature || "");
 
-      // Show success toast
       const skillList = (data.verifiedSkills || []).join(", ");
       setToastMessage(
         skillList
@@ -197,12 +195,11 @@ export function ProfileSettingsModal({
 
   if (!isOpen) return null;
 
-  // Guard: wallet not connected
   if (!account?.address) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <p className="text-slate-500 mb-4">
+          <p className="text-white/50 mb-4">
             Please connect your wallet first to publish a profile.
           </p>
           <Button onClick={onClose}>Close</Button>
@@ -211,11 +208,14 @@ export function ProfileSettingsModal({
     );
   }
 
+  // Base input classes for dark mode
+  const inputClass = "w-full border border-white/10 bg-white/5 text-white placeholder-white/30 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm";
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
       {/* Toast */}
       {showToast && (
-        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 p-3 rounded-lg border border-emerald-200 mb-4">
+        <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 p-3 rounded-lg border border-emerald-500/20 mb-4">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <p className="text-sm font-medium">{toastMessage}</p>
         </div>
@@ -224,41 +224,41 @@ export function ProfileSettingsModal({
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Display Name <span className="text-rose-500">*</span>
+          <label className="block text-sm font-medium text-white/80 mb-1">
+            Display Name <span className="text-rose-400">*</span>
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Riya Sharma"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+            className={inputClass}
           />
         </div>
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Professional Title <span className="text-rose-500">*</span>
+          <label className="block text-sm font-medium text-white/80 mb-1">
+            Professional Title <span className="text-rose-400">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Senior Solidity Engineer"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+            className={inputClass}
           />
         </div>
 
         {/* Domain */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             Domain
           </label>
           <select
             value={domain}
             onChange={(e) => setDomain(e.target.value as FreelancerDomain)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm bg-white"
+            className={`${inputClass} [&>option]:bg-slate-900`}
           >
             {DOMAIN_OPTIONS.map((d) => (
               <option key={d} value={d}>
@@ -270,25 +270,25 @@ export function ProfileSettingsModal({
 
         {/* Hourly Rate */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Hourly Rate (USD) <span className="text-rose-500">*</span>
+          <label className="block text-sm font-medium text-white/80 mb-1">
+            Hourly Rate (USD) <span className="text-rose-400">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+            <span className="absolute left-3 top-2 text-white/50 text-sm">$</span>
             <input
               type="number"
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
               placeholder="0"
               min="1"
-              className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+              className={`${inputClass} pl-7`}
             />
           </div>
         </div>
 
         {/* Skills */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             Skills (max 6)
           </label>
           <div className="flex gap-2">
@@ -298,14 +298,14 @@ export function ProfileSettingsModal({
               onChange={(e) => setSkillsInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="e.g. Solidity, React, Figma"
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+              className={`${inputClass} flex-1`}
               disabled={skills.length >= 6}
             />
             <Button
               variant="outline"
               onClick={handleAddSkills}
               disabled={skills.length >= 6 || !skillsInput.trim()}
-              className="text-xs h-9 px-3"
+              className="text-xs h-9 px-3 bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
             >
               Add
             </Button>
@@ -313,11 +313,11 @@ export function ProfileSettingsModal({
           {skills.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {skills.map((skill) => (
-                <Badge key={skill} variant="default" className="font-medium text-[11px] px-2 gap-1">
+                <Badge key={skill} variant="default" className="font-medium text-[11px] px-2 gap-1 bg-white/10 text-white hover:bg-white/20">
                   {skill}
                   <button
                     onClick={() => handleRemoveSkill(skill)}
-                    className="ml-0.5 hover:text-rose-500 transition-colors"
+                    className="ml-0.5 hover:text-rose-400 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -329,7 +329,7 @@ export function ProfileSettingsModal({
 
         {/* Bio */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             Bio
           </label>
           <textarea
@@ -337,16 +337,16 @@ export function ProfileSettingsModal({
             onChange={(e) => setBio(e.target.value.slice(0, 280))}
             placeholder="Tell clients about your experience..."
             rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm resize-none"
+            className={`${inputClass} resize-none`}
           />
-          <p className="text-xs text-slate-400 text-right mt-0.5">
+          <p className="text-xs text-white/40 text-right mt-0.5">
             {bio.length}/280
           </p>
         </div>
 
         {/* Portfolio URL */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             Portfolio URL
           </label>
           <input
@@ -354,13 +354,13 @@ export function ProfileSettingsModal({
             value={portfolioUrl}
             onChange={(e) => setPortfolioUrl(e.target.value)}
             placeholder="https://yourportfolio.com"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+            className={inputClass}
           />
         </div>
 
         {/* GitHub URL + Verify Button */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             GitHub URL
           </label>
           <div className="flex gap-2">
@@ -369,13 +369,13 @@ export function ProfileSettingsModal({
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
               placeholder="https://github.com/yourname"
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+              className={`${inputClass} flex-1`}
             />
             <Button
               variant="outline"
               onClick={handleVerifySkills}
               disabled={!githubUrl.trim() || isVerifying}
-              className="text-xs h-9 px-3 gap-1.5 shrink-0"
+              className="text-xs h-9 px-3 gap-1.5 shrink-0 bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
             >
               {isVerifying ? (
                 <>
@@ -391,20 +391,20 @@ export function ProfileSettingsModal({
             </Button>
           </div>
           {verifyError && (
-            <p className="text-xs text-rose-500 mt-1">{verifyError}</p>
+            <p className="text-xs text-rose-400 mt-1">{verifyError}</p>
           )}
 
           {/* Verified Skills Display */}
           {verifiedSkills.length > 0 && (
             <div className="mt-2">
-              <p className="text-xs text-slate-500 mb-1">
+              <p className="text-xs text-white/50 mb-1">
                 GitHub-verified skills:
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {verifiedSkills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5"
+                    className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5"
                   >
                     <CheckCircle2 className="w-3 h-3" />
                     {skill}
@@ -418,17 +418,17 @@ export function ProfileSettingsModal({
 
       {/* Error */}
       {saveError && (
-        <div className="flex items-start gap-2 bg-rose-50 text-rose-700 p-3 rounded-lg border border-rose-100 mt-4">
+        <div className="flex items-start gap-2 bg-rose-500/10 text-rose-400 p-3 rounded-lg border border-rose-500/20 mt-4">
           <p className="text-sm">{saveError}</p>
         </div>
       )}
 
       {/* Footer */}
-      <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-4">
-        <Button variant="ghost" onClick={onClose} disabled={isSaving}>
+      <div className="pt-4 flex justify-end gap-3 border-t border-white/10 mt-4">
+        <Button variant="ghost" onClick={onClose} disabled={isSaving} className="text-white/70 hover:text-white hover:bg-white/10">
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!isValid || isSaving}>
+        <Button onClick={handleSubmit} disabled={!isValid || isSaving} className="bg-white text-black hover:bg-white/90">
           {isSaving ? "Saving..." : "Save Profile"}
         </Button>
       </div>
