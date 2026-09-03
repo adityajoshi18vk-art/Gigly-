@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { TransactionButton, useReadContract } from "thirdweb/react";
 import { transfer } from "thirdweb/extensions/erc20";
-import { getContract } from "thirdweb";
+import { getContract, prepareContractCall } from "thirdweb";
 import { formatUnits } from "viem";
 import { usdcContract, client, CHAIN, CHAINLINK_FEEDS } from "@/lib/config";
 import {
@@ -416,13 +416,14 @@ export function WithdrawModal({
 
               {/* Submit — real on-chain USDC transfer */}
               <TransactionButton
-                transaction={() =>
-                  transfer({
+                transaction={() => {
+                  const amountInUnits = BigInt(Math.floor(numAmount * 1e6));
+                  return prepareContractCall({
                     contract: usdcContract,
-                    to: BURN_ADDRESS,
-                    amount: numAmount.toString(),
-                  })
-                }
+                    method: "function transfer(address to, uint256 value) returns (bool)",
+                    params: [BURN_ADDRESS, amountInUnits],
+                  });
+                }}
                 payModal={false}
                 onTransactionConfirmed={(receipt) => {
                   runProcessingAnimation(receipt.transactionHash);
