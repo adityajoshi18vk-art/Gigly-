@@ -1,9 +1,9 @@
-import { AuthAndRouting } from "@/components/AuthAndRouting";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#F9FAFB]">
-      <AuthAndRouting />
+    <main className="flex min-h-screen flex-col bg-background">
+      <LandingPage />
     </main>
   );
 }

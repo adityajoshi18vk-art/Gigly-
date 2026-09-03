@@ -2,22 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+html {
+  scroll-behavior: smooth;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-background text-on-background antialiased;
+    font-family: var(--font-hanken-grotesk), Arial, Helvetica, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-x: hidden;
   }
-}
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  ::selection {
+    @apply bg-accent/30 text-on-background;
+  }
 }
 
 @layer utilities {
@@ -25,10 +24,52 @@ body {
     text-wrap: balance;
   }
   .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
   }
+  .font-mono {
+    font-family: var(--font-jetbrains-mono), monospace;
+  }
+}
+
+@layer components {
+  /* Level 1 Surface Card */
+  .surface-card {
+    @apply bg-surface-container-lowest border border-outline-variant rounded-xl transition-all duration-200;
+  }
+}
+
+/* Twinkling Stars Animation */
+@keyframes twinkle {
+  0% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.2; transform: scale(0.8); }
+}
+
+.star {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  animation: twinkle linear infinite;
+}
+
+/* Custom Scrollbar for a premium light feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-outline-variant/50 rounded-full border-2 border-surface-container-lowest;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-outline-variant;
 }

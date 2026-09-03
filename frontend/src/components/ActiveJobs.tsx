@@ -14,6 +14,7 @@ import { useSendTransaction } from "thirdweb/react";
 import { client as thirdwebClient } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 
@@ -153,100 +154,131 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500">Loading your jobs...</p>
+      <div className="max-w-4xl mx-auto text-center py-20 flex flex-col items-center">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full mb-6"
+        />
+        <p className="text-on-surface-variant font-medium tracking-wide text-sm">Loading your workspace...</p>
       </div>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">No active jobs</h2>
-        <p className="text-slate-500 mb-6">Create a job to start hiring freelancers.</p>
-      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="max-w-4xl mx-auto text-center py-20 surface-card p-12 border-dashed border-outline-variant"
+      >
+        <div className="w-16 h-16 bg-surface-container border border-outline-variant rounded-xl flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        </div>
+        <h2 className="text-xl font-semibold text-on-surface mb-2">No active jobs</h2>
+        <p className="text-on-surface-variant">Create a job to start hiring top-tier freelancers.</p>
+      </motion.div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      {jobs.map((job) => (
-        <Card key={job.id} className="hover:-translate-y-1 transition-transform">
-          <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h3 className="font-semibold text-slate-900 text-lg mb-1">{job.taskTitle || `Job #${job.id}`}</h3>
-              <p className="text-sm text-slate-500 mb-2">
-                Freelancer: {job.freelancer.slice(0, 6)}...{job.freelancer.slice(-4)}
-              </p>
-              <div className="mt-2">
-                {job.status >= 2 && (
-                  job.submissionLink ? (
-                    <a 
-                      href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline bg-primary/5 px-2 py-1 rounded-md"
-                    >
-                      <LinkIcon className="w-3.5 h-3.5" />
-                      View Work
-                    </a>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-sm text-slate-400 bg-slate-50 px-2 py-1 rounded-md italic">
-                      No link submitted
-                    </span>
-                  )
-                )}
-                {job.status === 1 && progressUpdates[job.id] && (
-                  <div className="mt-2 inline-flex flex-col text-sm bg-slate-50 border border-slate-100 rounded-md p-2 w-full">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-slate-700">Progress: {progressUpdates[job.id].percent}%</span>
-                      <span className="text-xs text-slate-400">
-                        updated {Math.max(1, Math.floor((Date.now() / 1000 - progressUpdates[job.id].timestamp) / 60))}m ago
+      <AnimatePresence>
+        {jobs.map((job, index) => (
+          <motion.div
+            key={job.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+          >
+            <div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-6 shadow-xl hover:border-primary/50 transition-all duration-300 group overflow-hidden h-full flex flex-col md:flex-row justify-between gap-6">
+              {/* Hover Glow */}
+              <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500 pointer-events-none" />
+              
+              <div className="flex-1 relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-xs text-white/50 font-mono tracking-widest uppercase bg-white/5 px-2 py-1 rounded-md border border-white/10">Job #{job.id}</span>
+                </div>
+                <h3 className="font-bold text-white text-xl mb-2 group-hover:text-primary transition-colors">{job.taskTitle || `Job #${job.id}`}</h3>
+                <p className="text-sm text-white/50 flex items-center gap-2 mb-4">
+                  <svg className="w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  Freelancer: <span className="font-mono text-white/80">{job.freelancer.slice(0, 6)}...{job.freelancer.slice(-4)}</span>
+                </p>
+                
+                <div>
+                  {job.status >= 2 && (
+                    job.submissionLink ? (
+                      <a 
+                        href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 hover:underline bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-colors"
+                      >
+                        <LinkIcon className="w-4 h-4" />
+                        View Work Submission
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 text-sm text-white/40 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 italic">
+                        No link submitted
                       </span>
+                    )
+                  )}
+                  {job.status === 1 && progressUpdates[job.id] && (
+                    <div className="mt-4 inline-flex flex-col text-sm bg-black/20 border border-white/10 rounded-xl p-4 w-full">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-white flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                          Progress: {progressUpdates[job.id].percent}%
+                        </span>
+                        <span className="text-xs text-white/40 font-medium tracking-wide">
+                          UPDATED {Math.max(1, Math.floor((Date.now() / 1000 - progressUpdates[job.id].timestamp) / 60))}M AGO
+                        </span>
+                      </div>
+                      {progressUpdates[job.id].note && (
+                        <p className="text-white/60 italic bg-white/5 p-3 rounded-lg border border-white/5">&quot;{progressUpdates[job.id].note}&quot;</p>
+                      )}
                     </div>
-                    {progressUpdates[job.id].note && (
-                      <p className="text-slate-600 italic">&quot;{progressUpdates[job.id].note}&quot;</p>
-                    )}
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col md:items-end justify-between gap-6 min-w-[200px] relative z-10">
+                <div className="text-left md:text-right flex flex-col items-start md:items-end gap-2">
+                  <p className="font-bold text-white text-3xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-white/40 font-medium font-sans">USDC</span></p>
+                  <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
+                    {STATUS_MAP[job.status] || "Unknown"}
+                  </Badge>
+                </div>
+                
+                {job.status === 2 && (
+                  <div className="flex flex-col gap-2 w-full">
+                    <Button 
+                      variant="primary" 
+                      onClick={() => handleApprove(job.id)} 
+                      disabled={processingJobId === job.id}
+                      className="w-full shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      {processingJobId === job.id ? "Approving..." : "Approve & Release"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setDisputeModalJobId(job.id);
+                        setDisputeReason("");
+                      }} 
+                      disabled={processingJobId === job.id}
+                      className="w-full text-error hover:text-error hover:bg-error/10 border-white/10 hover:border-error/30 transition-all"
+                    >
+                      Raise Dispute
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex flex-col md:flex-row items-end md:items-center gap-4 md:gap-6">
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="font-bold text-slate-900 text-lg">${formatUnits(job.amount, 6)} USDC</p>
-                </div>
-                <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
-                  {STATUS_MAP[job.status] || "Unknown"}
-                </Badge>
-              </div>
-              
-              {job.status === 2 && (
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setDisputeModalJobId(job.id);
-                      setDisputeReason("");
-                    }} 
-                    disabled={processingJobId === job.id}
-                  >
-                    Raise Dispute
-                  </Button>
-                  <Button 
-                    variant="primary" 
-                    onClick={() => handleApprove(job.id)} 
-                    disabled={processingJobId === job.id}
-                  >
-                    Approve & Release
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       <Modal 
         isOpen={disputeModalJobId !== null} 
@@ -254,17 +286,17 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         title="Raise Dispute"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            Please provide a brief reason for raising this dispute. The arbiter will review this reason along with the submitted work.
+          <p className="text-sm text-on-surface-variant">
+            Please provide a detailed reason for raising this dispute. The decentralized arbiter will review this reason along with the submitted work.
           </p>
           <textarea
             value={disputeReason}
             onChange={(e) => setDisputeReason(e.target.value)}
-            placeholder="e.g. The submitted work does not meet the requirements..."
-            className="w-full min-h-[100px] rounded-md border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="e.g. The submitted work does not meet the technical requirements..."
+            className="w-full min-h-[120px] rounded-lg border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm"
           />
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setDisputeModalJobId(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setDisputeModalJobId(null)}>Cancel</Button>
             <Button 
               variant="primary" 
               onClick={submitDispute}

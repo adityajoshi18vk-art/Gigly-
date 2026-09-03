@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { ThirdwebProvider } from "thirdweb/react";
-import { AnonAadhaarWrapper } from "@/components/AnonAadhaarWrapper";
+import { SpatialWrapper } from "@/components/SpatialWrapper";
+import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { ThirdwebProvider } from "thirdweb/react";
+import { StarryBackground } from "@/components/StarryBackground";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: 'swap',
-});
+const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken-grotesk" });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
 
 export const metadata: Metadata = {
-  title: "Gigly - Web3 Freelance Escrow",
-  description: "Secure, gasless freelance payments on Polygon.",
+  title: "Gigly | On-Chain Escrow",
+  description: "Secure, decentralized freelance escrow built on Polygon.",
 };
 
 export default function RootLayout({
@@ -22,14 +20,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased bg-[#F9FAFB] text-slate-900`}>
+      <body className={`${hanken.variable} ${jetbrains.variable} font-sans bg-background text-on-background antialiased min-h-screen relative`}>
+        <StarryBackground />
         <ThirdwebProvider>
-          <AnonAadhaarWrapper>
-            {children}
-          </AnonAadhaarWrapper>
+          <div className="relative z-10 flex min-h-screen flex-col">
+            <SpatialWrapper>
+              <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+                {children}
+              </main>
+            </SpatialWrapper>
+          </div>
         </ThirdwebProvider>
       </body>
     </html>
   );
 }
-
