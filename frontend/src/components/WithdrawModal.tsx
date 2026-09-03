@@ -423,6 +423,7 @@ export function WithdrawModal({
                     amount: numAmount.toString(),
                   })
                 }
+                payModal={false}
                 onTransactionConfirmed={(receipt) => {
                   runProcessingAnimation(receipt.transactionHash);
                 }}
