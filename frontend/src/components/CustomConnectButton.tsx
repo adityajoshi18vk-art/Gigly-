@@ -1,6 +1,6 @@
 "use client";
 
-import { ConnectButton } from "thirdweb/react";
+import { ConnectButton, useActiveWallet } from "thirdweb/react";
 import { client, wallets, CHAIN } from "@/lib/config";
 
 export interface CustomConnectButtonProps {
@@ -22,6 +22,10 @@ export interface CustomConnectButtonProps {
  * smart-account address that differed from their MetaMask wallet.
  */
 export function CustomConnectButton({ label }: CustomConnectButtonProps) {
+  const activeWallet = useActiveWallet();
+  // Only show "Gas-free" if no wallet is connected yet OR if it's the smart (inApp) wallet
+  const showGaslessText = !activeWallet || activeWallet.id === "inApp";
+
   return (
     <div className="flex flex-col items-center justify-center">
       <div title="In-app wallets are gasless via ERC-4337. External wallets use their own address.">
@@ -33,9 +37,11 @@ export function CustomConnectButton({ label }: CustomConnectButtonProps) {
           connectButton={label ? { label } : undefined}
         />
       </div>
-      <span className="text-[10px] text-slate-400 mt-1 font-medium text-center">
-        ⚡ Gas-free (No ETH needed)
-      </span>
+      {showGaslessText && (
+        <span className="text-[10px] text-slate-400 mt-1 font-medium text-center">
+          ⚡ Gas-free (No ETH needed)
+        </span>
+      )}
     </div>
   );
 }
