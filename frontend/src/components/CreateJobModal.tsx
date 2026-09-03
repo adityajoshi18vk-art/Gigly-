@@ -24,6 +24,7 @@ export interface CreateJobModalProps {
   onSuccess?: () => void;
   freelancerName?: string;
   freelancerAddress?: string;
+  suggestedRate?: number;
 }
 
 type Step =
@@ -39,10 +40,19 @@ export function CreateJobModal({
   onSuccess,
   freelancerName,
   freelancerAddress,
+  suggestedRate,
 }: CreateJobModalProps) {
   const account = useActiveAccount();
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
+
+  // Pre-fill amount from suggested rate when modal opens
+  useEffect(() => {
+    if (isOpen && suggestedRate && !amount) {
+      setAmount(String(suggestedRate));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, suggestedRate]);
   const [step, setStep] = useState<Step>("input");
   const [errorMessage, setErrorMessage] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);

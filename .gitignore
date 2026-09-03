@@ -66,3 +66,6 @@ types/ethers-contracts/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Freelancer registry data (file-backed API)
+frontend/data/

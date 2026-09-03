@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { TransactionButton, useReadContract } from "thirdweb/react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { transfer } from "thirdweb/extensions/erc20";
 import { getContract, prepareContractCall } from "thirdweb";
 import { formatUnits } from "viem";

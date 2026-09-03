@@ -9,6 +9,9 @@ import { IncomingJobs } from "@/components/IncomingJobs";
 import { BrowseGigs } from "@/components/BrowseGigs";
 import { Earnings } from "@/components/Earnings";
 import { DIDTrustCard } from "@/components/DIDTrustCard";
+import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
+import { Button } from "@/components/ui/Button";
+import { UserCog } from "lucide-react";
 
 export default function FreelancerDashboard() {
   const account = useActiveAccount();
@@ -16,6 +19,7 @@ export default function FreelancerDashboard() {
   
   const [activeTab, setActiveTab] = useState("Incoming Tasks");
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Route protection
   useEffect(() => {
@@ -28,12 +32,22 @@ export default function FreelancerDashboard() {
 
   return (
     <div className="min-h-screen p-8 bg-[#F9FAFB]">
-      <header className="flex items-center justify-between border-b border-gray-200 pb-4 mb-8">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Freelancer Dashboard</h1>
           <p className="text-slate-500 text-sm">Manage your gigs and earnings.</p>
         </div>
-        <CustomConnectButton />
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setIsProfileModalOpen(true)}
+            className="flex items-center gap-2 text-sm"
+          >
+            <UserCog className="w-4 h-4" />
+            Edit Profile
+          </Button>
+          <CustomConnectButton />
+        </div>
       </header>
 
       <Tabs 
@@ -66,6 +80,11 @@ export default function FreelancerDashboard() {
           <DIDTrustCard />
         </div>
       )}
+
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 }
