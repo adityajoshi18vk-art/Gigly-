@@ -1,5 +1,7 @@
+"use client";
 import * as React from "react";
 import { X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -9,31 +11,45 @@ export interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Dialog */}
-      <div className="relative z-50 w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-lg sm:mx-0 mx-4">
-        <div className="flex items-center justify-between border-b border-gray-100 p-4">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 bg-on-background/20 backdrop-blur-[2px]"
             onClick={onClose}
-            className="rounded-full p-1 hover:bg-gray-100 text-slate-500 transition-colors"
+          />
+          
+          {/* Dialog */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="relative z-50 w-full max-w-lg mx-4"
           >
-            <X className="h-5 w-5" />
-          </button>
+            <div className="bg-surface-container-lowest border border-outline-variant shadow-level-2 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between border-b border-outline-variant p-4 bg-surface-container-lowest">
+                <h2 className="text-lg font-semibold text-on-surface tracking-tight">{title}</h2>
+                <button
+                  onClick={onClose}
+                  className="rounded-md p-1.5 hover:bg-outline-variant/20 text-on-surface-variant hover:text-on-surface transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="p-6">
+                {children}
+              </div>
+            </div>
+          </motion.div>
         </div>
-        <div className="p-4">
-          {children}
-        </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

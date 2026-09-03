@@ -192,18 +192,18 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500">Loading your gigs...</p>
+      <div className="max-w-4xl mx-auto text-center py-20 flex flex-col items-center">
+        <div className="w-8 h-8 border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-6"></div>
+        <p className="text-on-surface-variant font-medium tracking-wide text-sm">Loading your gigs...</p>
       </div>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-20">
-        <h2 className="text-xl font-semibold text-slate-700 mb-2">No incoming tasks</h2>
-        <p className="text-slate-500 mb-6">Clients will hire you through your profile.</p>
+      <div className="max-w-4xl mx-auto text-center py-20 surface-card p-12 border-dashed border-outline-variant mt-8">
+        <h2 className="text-xl font-semibold text-on-surface mb-2">No incoming tasks</h2>
+        <p className="text-on-surface-variant mb-6">Clients will hire you through your profile.</p>
       </div>
     );
   }
@@ -211,35 +211,37 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       {jobs.map((job) => (
-        <Card key={job.id} className="transition-all hover:shadow-md">
+        <Card key={job.id} className="transition-colors group">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-1">
-                  <h3 className="font-semibold text-slate-900 text-lg">{job.taskTitle || `Job #${job.id}`}</h3>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-xs text-on-surface-variant font-mono tracking-widest uppercase">Job #{job.id}</span>
                   <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
                     {STATUS_MAP[job.status] || "Unknown"}
                   </Badge>
                 </div>
-                <p className="text-sm text-slate-500 mb-2">
-                  Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
+                <h3 className="font-semibold text-on-surface text-xl mb-1 group-hover:text-primary transition-colors">{job.taskTitle || `Job #${job.id}`}</h3>
+                <p className="text-sm text-on-surface-variant mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  Client: <span className="font-mono text-on-surface">{job.client.slice(0, 6)}...{job.client.slice(-4)}</span>
                 </p>
                 {job.submissionLink && job.status >= 2 && (
                   <a 
                     href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
                     target="_blank" 
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-primary hover:underline bg-primary/5 px-2 py-1 rounded-md"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 hover:underline bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-colors"
                   >
-                    <LinkIcon className="w-3.5 h-3.5" />
-                    View Work
+                    <LinkIcon className="w-4 h-4" />
+                    View Work Submission
                   </a>
                 )}
               </div>
               
-              <div className="flex flex-col md:flex-row items-end md:items-center gap-4 md:gap-6">
-                <div className="text-right">
-                  <p className="font-bold text-slate-900 text-lg">${formatUnits(job.amount, 6)} USDC</p>
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 min-w-[200px]">
+                <div className="text-left md:text-right">
+                  <p className="font-bold text-on-surface text-2xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-on-surface-variant font-medium font-sans">USDC</span></p>
                 </div>
                 
                 {/* Status-specific actions */}
@@ -262,6 +264,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                         setWorkLinkInput("");
                       }}
                       disabled={processingJobId === job.id}
+                      variant="primary"
                     >
                       {processingJobId === job.id ? "Processing..." : "Submit work"}
                     </Button>
@@ -278,7 +281,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                 )}
                 
                 {job.status === 4 && ( // Released
-                  <div className="flex items-center gap-2 text-status-success font-medium">
+                  <div className="flex items-center gap-2 text-emerald-700 font-medium bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg">
                     <CheckCircle2 className="w-5 h-5" />
                     Paid
                   </div>
@@ -301,18 +304,18 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Link to your work (optional)</label>
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">Link to your work (optional)</label>
             <input 
               type="text" 
               placeholder="https://github.com/..." 
               value={workLinkInput}
               onChange={(e) => setWorkLinkInput(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-outline-variant bg-surface-container-lowest rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-on-surface transition-all shadow-sm"
             />
-            <p className="text-xs text-slate-500 mt-1">This will be shared with the client so they can review your work.</p>
+            <p className="text-xs text-on-surface-variant mt-1">This will be shared with the client so they can review your work.</p>
           </div>
           
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-4">
             <Button 
               variant="ghost" 
               onClick={() => setSubmitModalJobId(null)}
@@ -323,6 +326,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
             <Button 
               onClick={handleSubmitWork}
               disabled={processingJobId === submitModalJobId}
+              variant="primary"
             >
               {processingJobId === submitModalJobId ? "Submitting on-chain..." : "Submit Work"}
             </Button>
@@ -342,29 +346,29 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Completion Percentage: {progressPercent}%</label>
+            <label className="block text-sm font-medium text-on-surface mb-1">Completion Percentage: {progressPercent}%</label>
             <input 
               type="range"
               min="0"
               max="100"
               value={progressPercent}
               onChange={(e) => setProgressPercent(Number(e.target.value))}
-              className="w-full"
+              className="w-full accent-primary"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Note (optional, max 200 chars)</label>
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">Note (optional, max 200 chars)</label>
             <textarea 
               placeholder="What have you completed so far?" 
               value={progressNote}
               onChange={(e) => setProgressNote(e.target.value)}
               maxLength={200}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-outline-variant bg-surface-container-lowest rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-on-surface transition-all shadow-sm"
               rows={3}
             />
           </div>
           
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-4">
             <Button 
               variant="ghost" 
               onClick={() => setProgressModalJobId(null)}
@@ -375,6 +379,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
             <Button 
               onClick={handleUpdateProgress}
               disabled={processingJobId === progressModalJobId}
+              variant="primary"
             >
               {processingJobId === progressModalJobId ? "Logging..." : "Log Progress"}
             </Button>
@@ -441,7 +446,7 @@ function CountdownAction({
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full text-sm font-medium">
+      <div className="flex items-center gap-1.5 text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg text-sm font-medium">
         <Clock className="w-4 h-4" />
         {timeString} left
       </div>
