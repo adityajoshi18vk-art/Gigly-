@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { readContract } from "thirdweb";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { escrowContract } from "@/lib/config";
+import { upload } from "thirdweb/storage";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
@@ -45,10 +46,27 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     try {
       setProcessingJobId(job.id);
 
-      // GiglyCredential SBT contract not yet deployed — pass empty URI
-      // so the contract skips the mint call in _releaseFunds.
-      // Re-enable IPFS upload once GiglyCredential is deployed and configured.
-      const metadataURI = "";
+      // Generate SBT Metadata
+      let metadataURI = "";
+      try {
+        const metadata = {
+          name: `Completed Gig: ${job.taskTitle || "Job #" + job.id}`,
+          description: "Verifiable Proof of Work issued by Gigly Escrow.",
+          attributes: [
+            { trait_type: "Amount", value: `${formatUnits(job.amount, 6)} USDC` },
+            { trait_type: "Client", value: job.client }
+          ]
+        };
+
+        // Upload to IPFS using Thirdweb Storage
+        metadataURI = await upload({
+          client: thirdwebClient,
+          files: [new File([JSON.stringify(metadata)], "metadata.json", { type: "application/json" })],
+        });
+      } catch (uploadErr) {
+        console.warn("IPFS upload failed, proceeding without credential:", uploadErr);
+        // Continue with empty URI — contract skips mint when URI is empty
+      }
 
       const tx = prepareContractCall({
         contract: escrowContract,
@@ -153,7 +171,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         // client-only actions on-chain, so showing all jobs is safe.
         // This also handles the EOA↔smart-account address mismatch that
         // occurs when accountAbstraction is toggled.
-        const activeJobs = allJobs.filter((job) => job.status < 4); // hide Released/Refunded
+        const activeJobs = allJobs.filter((job) => job !== null);
 
         // Sort descending (newest first)
         setJobs(activeJobs.sort((a, b) => b.id - a.id));

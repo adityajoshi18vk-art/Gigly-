@@ -188,7 +188,20 @@ export function Credentials() {
               </div>
               
               <div className="z-10 mt-2">
-                <h3 className="font-bold text-white text-xl mb-1">{cred.metadata?.name || `Credential #${cred.tokenId}`}</h3>
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="font-bold text-white text-xl">{cred.metadata?.name || `Credential #${cred.tokenId}`}</h3>
+                  {cred.uri && (
+                    <a
+                      href={resolveIpfs(cred.uri)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs flex items-center gap-1 text-primary hover:text-primary/80 transition-colors border border-primary/20 hover:border-primary/50 rounded-full px-2 py-1 bg-primary/5"
+                    >
+                      <ShieldCheck className="w-3 h-3" />
+                      View IPFS Data
+                    </a>
+                  )}
+                </div>
                 <p className="text-sm text-white/50 leading-relaxed mb-4">{cred.metadata?.description || "Verifiable Proof of Work"}</p>
                 
                 {cred.metadata?.attributes && (
