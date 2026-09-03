@@ -41,13 +41,19 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
   const [disputeModalJobId, setDisputeModalJobId] = useState<number | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
 
-  const handleApprove = async (jobId: number) => {
+  const handleApprove = async (job: JobData) => {
     try {
-      setProcessingJobId(jobId);
+      setProcessingJobId(job.id);
+
+      // GiglyCredential SBT contract not yet deployed — pass empty URI
+      // so the contract skips the mint call in _releaseFunds.
+      // Re-enable IPFS upload once GiglyCredential is deployed and configured.
+      const metadataURI = "";
+
       const tx = prepareContractCall({
         contract: escrowContract,
-        method: "function approveAndRelease(uint256 jobId)",
-        params: [BigInt(jobId)],
+        method: "function approveAndRelease(uint256 jobId, string metadataURI)",
+        params: [BigInt(job.id), metadataURI],
       });
       const result = await sendTransaction(tx);
       await waitForReceipt({
@@ -56,9 +62,18 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         transactionHash: result.transactionHash,
       });
       if (onInteractionSuccess) onInteractionSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to approve job:", err);
-      alert("Failed to approve and release funds.");
+      const msg = err?.message || "Unknown error";
+      if (msg.includes("Reverted") || msg.includes("reverted")) {
+        alert(
+          "Transaction reverted. This usually means the connected wallet is not the original client for this job. " +
+          "The on-chain client address must match your current wallet/smart-account address.\n\n" +
+          `Your address: ${account?.address}\nJob client: ${job.client}`
+        );
+      } else {
+        alert("Failed to approve and release funds: " + msg);
+      }
     } finally {
       setProcessingJobId(null);
     }
@@ -255,7 +270,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                   <div className="flex flex-col gap-2 w-full">
                     <Button 
                       variant="primary" 
-                      onClick={() => handleApprove(job.id)} 
+                      onClick={() => handleApprove(job)} 
                       disabled={processingJobId === job.id}
                       className="w-full shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
                     >

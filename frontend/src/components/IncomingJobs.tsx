@@ -106,31 +106,31 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   const handleSubmitWork = async () => {
     if (submitModalJobId === null) return;
     const jobId = submitModalJobId;
-    
+    const link = workLinkInput.trim();
+
+    // Close modal immediately so wallet UI can't block it
+    setSubmitModalJobId(null);
+    setWorkLinkInput("");
+
     try {
       setProcessingJobId(jobId);
 
       const tx = prepareContractCall({
         contract: escrowContract,
         method: "function submitWork(uint256 jobId, string submissionLink)",
-        params: [BigInt(jobId), workLinkInput.trim()],
+        params: [BigInt(jobId), link],
       });
       const result = await sendTransaction(tx);
-      
-      // Close modal while waiting
-      setSubmitModalJobId(null);
-      setWorkLinkInput("");
-      
+
       await waitForReceipt({
         client: thirdwebClient,
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
       onInteractionSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit work:", err);
-      // Ensure modal is closed on failure too so it doesn't hang
-      setSubmitModalJobId(null);
+      alert("Transaction failed: " + (err.message || "Unknown error"));
     } finally {
       setProcessingJobId(null);
     }

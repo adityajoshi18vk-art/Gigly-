@@ -6,6 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+interface IGiglyCredential {
+    function mint(address to, string memory uri) external returns (uint256);
+}
+
 /**
  * @title OptimisticEscrow
  * @author Gigly Team
@@ -28,6 +32,9 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     /// @notice Maximum platform fee in basis points (3% = 300 bps).
     uint256 public constant MAX_FEE_BPS = 300;
 
+    /// @notice Default IPFS URI for auto-claims to prevent spoofing.
+    string public constant DEFAULT_AUTOCLAIM_URI = "ipfs://bafkreihdwdcefgh4dqkjv67uzcmw7oqwj2c7vaxvx3qy3n3yvyg3y7qywe";
+
     // ─── State ───────────────────────────────────────────────────────────
 
     /// @notice The ERC-20 token used for payments (USDC).
@@ -44,6 +51,9 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
 
     /// @notice Auto-incrementing job counter (first job = 1).
     uint256 public jobCount;
+
+    /// @notice The GiglyCredential contract for issuing SBTs.
+    IGiglyCredential public giglyCredential;
 
     // ─── Enums ───────────────────────────────────────────────────────────
 
@@ -269,14 +279,15 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
      *         (before the 24-hour window expires).
      * @dev Deducts the platform fee and sends the net amount to the freelancer.
      * @param jobId The ID of the job to approve.
+     * @param metadataURI The IPFS URI containing the credential metadata.
      */
-    function approveAndRelease(uint256 jobId)
+    function approveAndRelease(uint256 jobId, string calldata metadataURI)
         external
         nonReentrant
         onlyClient(jobId)
         inStatus(jobId, Status.Submitted)
     {
-        _releaseFunds(jobId);
+        _releaseFunds(jobId, metadataURI);
     }
 
     /**
@@ -294,7 +305,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         if (block.timestamp < job.submittedAt + REVIEW_WINDOW)
             revert ReviewWindowNotExpired();
 
-        _releaseFunds(jobId);
+        _releaseFunds(jobId, DEFAULT_AUTOCLAIM_URI);
     }
 
     /**
@@ -376,6 +387,15 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     }
 
     /**
+     * @notice Updates the GiglyCredential SBT contract address.
+     * @param _giglyCredential The new contract address.
+     */
+    function setGiglyCredential(address _giglyCredential) external onlyOwner {
+        if (_giglyCredential == address(0)) revert InvalidAddress();
+        giglyCredential = IGiglyCredential(_giglyCredential);
+    }
+
+    /**
      * @notice Withdraws accumulated platform fees to a specified address.
      * @dev Only callable by the contract owner.
      * @param to The address to send the accumulated fees to.
@@ -397,8 +417,9 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
      * @notice Internal helper that calculates the fee, transfers net funds to the
      *         freelancer, and marks the job as Released.
      * @param jobId The ID of the job to release.
+     * @param metadataURI The IPFS URI containing the credential metadata.
      */
-    function _releaseFunds(uint256 jobId) internal {
+    function _releaseFunds(uint256 jobId, string memory metadataURI) internal {
         Job storage job = jobs[jobId];
         uint256 fee = (job.amount * feeBps) / 10_000;
         uint256 netAmount = job.amount - fee;
@@ -408,6 +429,11 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         accumulatedFees += fee;
 
         paymentToken.safeTransfer(job.freelancer, netAmount);
+
+        // Mint credential if configured
+        if (address(giglyCredential) != address(0) && bytes(metadataURI).length > 0) {
+            giglyCredential.mint(job.freelancer, metadataURI);
+        }
 
         emit FundsReleased(jobId, netAmount, fee);
     }

@@ -40,6 +40,14 @@ console.log(`  Arbiter  : ${ARBITER_ADDRESS}`);
 console.log(`  Fee      : ${FEE_BPS} bps (${(FEE_BPS / 100).toFixed(1)}%)`);
 console.log("══════════════════════════════════════════════════\n");
 
+// ─── Deploy GiglyCredential ──────────────────────────────────────
+
+console.log("📄 Deploying GiglyCredential (SBT)...");
+const credential = await ethers.deployContract("GiglyCredential");
+await credential.waitForDeployment();
+const credentialAddress = await credential.getAddress();
+console.log(`   ✅ GiglyCredential deployed at: ${credentialAddress}\n`);
+
 // ─── Deploy OptimisticEscrow (points to official testnet USDC) ───
 
 console.log("📄 Deploying OptimisticEscrow...");
@@ -52,10 +60,19 @@ await escrow.waitForDeployment();
 const escrowAddress = await escrow.getAddress();
 console.log(`   ✅ OptimisticEscrow deployed at: ${escrowAddress}\n`);
 
+// ─── Link Contracts ──────────────────────────────────────────────
+console.log("🔗 Linking contracts...");
+const tx1 = await credential.setOptimisticEscrow(escrowAddress);
+await tx1.wait();
+const tx2 = await escrow.setGiglyCredential(credentialAddress);
+await tx2.wait();
+console.log(`   ✅ Linked successfully!\n`);
+
 // ─── Save Addresses ──────────────────────────────────────────────
 
 fs.writeFileSync("deployed.json", JSON.stringify({
   USDC: SEPOLIA_USDC,
+  GiglyCredential: credentialAddress,
   OptimisticEscrow: escrowAddress,
   Network: networkName,
 }, null, 2));
@@ -66,9 +83,9 @@ console.log("══════════════════════�
 console.log("  ✅ Deployment Complete!");
 console.log("──────────────────────────────────────────────────");
 console.log(`  Circle Testnet USDC : ${SEPOLIA_USDC}`);
+console.log(`  GiglyCredential     : ${credentialAddress}`);
 console.log(`  OptimisticEscrow    : ${escrowAddress}`);
 console.log(`  Arbiter             : ${ARBITER_ADDRESS}`);
 console.log(`  Fee                 : ${FEE_BPS} bps`);
 console.log("══════════════════════════════════════════════════");
-console.log("\n💡 Update CONTRACTS.OptimisticEscrow in frontend/src/lib/config.ts with:");
-console.log(`   ${escrowAddress}`);
+console.log("\n💡 Update CONTRACTS in frontend/src/lib/config.ts with the new addresses!");
