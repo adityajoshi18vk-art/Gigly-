@@ -16,7 +16,7 @@
     "@x402/svm": "^2.24.0",
     "@zkpassport/sdk": "^0.16.2",
     "clsx": "^2.1.1",
-    "framer-motion": "^13.1.1",
+    "framer-motion": "^13.2.0",
     "lucide-react": "^1.25.0",
     "next": "14.2.35",
     "pino-pretty": "^13.1.3",

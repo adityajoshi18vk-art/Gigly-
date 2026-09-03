@@ -152,7 +152,6 @@ export function FreelancerCard({
               )}
             </div>
           </div>
-          </div>
           <button className="text-xs h-8 px-4 font-bold rounded-full bg-white/5 text-white/70 group-hover:bg-primary group-hover:text-black transition-all">
             Hire Me
           </button>
