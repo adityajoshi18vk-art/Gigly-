@@ -56,8 +56,8 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
       setProcessingJobId(jobId);
       const tx = prepareContractCall({
         contract: escrowContract,
-        method: "function approveAndRelease(uint256 jobId, string metadataURI)",
-        params: [BigInt(jobId), ""],
+        method: "function approveAndRelease(uint256 jobId)",
+        params: [BigInt(jobId)],
       });
       const result = await sendTransaction(tx);
       await waitForReceipt({
