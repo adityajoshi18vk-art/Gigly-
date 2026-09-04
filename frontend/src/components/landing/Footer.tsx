@@ -55,11 +55,6 @@ export function Footer() {
           <div className="text-[#475569] font-medium text-sm mb-4 md:mb-0">
             © 2026 Gigly Escrow. All rights reserved.
           </div>
-          <div className="flex items-center gap-6">
-            <Link href="#" className="text-[#334155] font-semibold hover:text-[#0DA5F0] text-sm transition-colors">Twitter</Link>
-            <Link href="#" className="text-[#334155] font-semibold hover:text-[#0DA5F0] text-sm transition-colors">Discord</Link>
-            <Link href="#" className="text-[#334155] font-semibold hover:text-[#0DA5F0] text-sm transition-colors">Telegram</Link>
-          </div>
         </div>
       </div>
     </footer>
