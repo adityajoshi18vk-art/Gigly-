@@ -13,6 +13,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract GiglyCredential is ERC721, ERC721URIStorage, Ownable {
     uint256 private _nextTokenId;
     address public optimisticEscrow;
+    /// @notice The VotingDispute contract — also authorised to mint contributor SBTs.
+    address public votingDisputeContract;
 
     // Mapping from owner to list of owned token IDs
     mapping(address => uint256[]) private _ownedTokens;
@@ -20,18 +22,28 @@ contract GiglyCredential is ERC721, ERC721URIStorage, Ownable {
     // ─── Events ──────────────────────────────────────────────────────────
 
     event EscrowAddressUpdated(address oldEscrow, address newEscrow);
+    event VotingDisputeAddressUpdated(address oldAddr, address newAddr);
     event CredentialMinted(address indexed to, uint256 indexed tokenId, string uri);
 
     // ─── Errors ──────────────────────────────────────────────────────────
 
     error OnlyEscrowAllowed();
+    error OnlyAuthorisedMinterAllowed();
     error NonTransferableSBT();
     error InvalidAddress();
 
     // ─── Modifiers ───────────────────────────────────────────────────────
 
+    /// @dev Original escrow-only modifier for approveAndRelease flow.
     modifier onlyEscrow() {
         if (msg.sender != optimisticEscrow) revert OnlyEscrowAllowed();
+        _;
+    }
+
+    /// @dev Allows OptimisticEscrow OR VotingDispute to mint credentials.
+    modifier onlyAuthorisedMinter() {
+        if (msg.sender != optimisticEscrow && msg.sender != votingDisputeContract)
+            revert OnlyAuthorisedMinterAllowed();
         _;
     }
 
@@ -54,21 +66,33 @@ contract GiglyCredential is ERC721, ERC721URIStorage, Ownable {
         emit EscrowAddressUpdated(oldEscrow, _escrow);
     }
 
+    /**
+     * @notice Sets the VotingDispute contract address that can also mint "+Contributor" SBTs.
+     * @param _votingDispute Address of the VotingDispute contract.
+     */
+    function setVotingDisputeContract(address _votingDispute) external onlyOwner {
+        if (_votingDispute == address(0)) revert InvalidAddress();
+        address old = votingDisputeContract;
+        votingDisputeContract = _votingDispute;
+        emit VotingDisputeAddressUpdated(old, _votingDispute);
+    }
+
     // ─── Core Minting ────────────────────────────────────────────────────
 
     /**
-     * @notice Mints a new SBT to the freelancer. Only callable by the Escrow contract.
-     * @param to The address of the freelancer receiving the credential.
-     * @param uri The IPFS URI containing the JSON metadata of the gig.
+     * @notice Mints a new SBT credential. Callable by OptimisticEscrow (proof-of-work)
+     *         or VotingDispute (contributor reward).
+     * @param to  The address receiving the credential.
+     * @param uri The IPFS URI containing the JSON metadata.
      * @return tokenId The ID of the newly minted token.
      */
-    function mint(address to, string memory uri) external onlyEscrow returns (uint256) {
+    function mint(address to, string memory uri) external onlyAuthorisedMinter returns (uint256) {
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-        
+
         _ownedTokens[to].push(tokenId);
-        
+
         emit CredentialMinted(to, tokenId, uri);
         return tokenId;
     }

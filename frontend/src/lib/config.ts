@@ -42,8 +42,12 @@ export const CONTRACTS = {
   USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   // Deployed 2026-08-11 — points to Circle Testnet USDC
   OptimisticEscrow: "0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672",
-  // Soulbound Token Credentials Contract — deployed 2026-09-03
-  GiglyCredential: "0xFB43c1182F51583d33E2e191DB32025DE115ea75",
+  // Legacy Soulbound Token (PoW NFTs) — deployed 2026-09-03, used by OptimisticEscrow
+  GiglyCredentialLegacy: "0xFB43c1182F51583d33E2e191DB32025DE115ea75",
+  // New GiglyCredential (dual-minter: escrow + VotingDispute) — deployed 2026-09-04
+  GiglyCredential: "0x7CbC2961526453E48154Bc5A045bc254Eb61B46C",
+  // Community Voting Dispute — deployed 2026-09-04
+  VotingDispute: "0xbaE78ef2777959fE419De8a28Ed1D974216279D2",
 };
 
 export const DEPLOYMENT_BLOCK = BigInt(11425792);
@@ -63,8 +67,22 @@ export const escrowContract = getContract({
   address: CONTRACTS.OptimisticEscrow,
 });
 
+// New credential contract (dual-minter: escrow PoW + VotingDispute contributor NFTs)
 export const credentialContract = getContract({
   client,
   chain: CHAIN,
   address: CONTRACTS.GiglyCredential,
+});
+
+// Legacy credential contract — holds existing PoW NFTs minted before 2026-09-04
+export const legacyCredentialContract = getContract({
+  client,
+  chain: CHAIN,
+  address: CONTRACTS.GiglyCredentialLegacy,
+});
+
+export const votingDisputeContract = getContract({
+  client,
+  chain: CHAIN,
+  address: CONTRACTS.VotingDispute,
 });

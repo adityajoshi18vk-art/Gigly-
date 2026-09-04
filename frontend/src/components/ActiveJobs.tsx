@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { readContract } from "thirdweb";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
-import { escrowContract } from "@/lib/config";
+import { escrowContract, votingDisputeContract as votingContract, CONTRACTS } from "@/lib/config";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
-import { Link as LinkIcon, AlertCircle, ArrowUpRight, Clock } from "lucide-react";
+import { Link as LinkIcon, AlertCircle, ArrowUpRight, Clock, Users, ShieldAlert } from "lucide-react";
 import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
@@ -29,6 +29,12 @@ export interface JobData {
   submissionLink: string;
 }
 
+/** Returns true if VotingDispute contract is deployed (non-zero address) */
+function isVotingContractDeployed(): boolean {
+  const addr = CONTRACTS.VotingDispute;
+  return !!addr && addr !== "0x0000000000000000000000000000000000000000";
+}
+
 export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess?: () => void }) {
   const account = useActiveAccount();
   const [jobs, setJobs] = useState<JobData[]>([]);
@@ -37,16 +43,21 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
+  // Admin dispute modal state
   const [disputeModalJobId, setDisputeModalJobId] = useState<number | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
+
+  // Voting dispute modal state
+  const [votingModalJobId, setVotingModalJobId] = useState<number | null>(null);
+  const [votingReason, setVotingReason] = useState("");
 
   const handleApprove = async (jobId: number) => {
     try {
       setProcessingJobId(jobId);
       const tx = prepareContractCall({
         contract: escrowContract,
-        method: "function approveAndRelease(uint256 jobId)",
-        params: [BigInt(jobId)],
+        method: "function approveAndRelease(uint256 jobId, string metadataURI)",
+        params: [BigInt(jobId), ""],
       });
       const result = await sendTransaction(tx);
       await waitForReceipt({
@@ -63,7 +74,8 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     }
   };
 
-  const submitDispute = async () => {
+  // ── Admin dispute (existing flow) ────────────────────────────────
+  const submitAdminDispute = async () => {
     if (!disputeModalJobId || disputeReason.trim().length < 5) return;
     try {
       setProcessingJobId(disputeModalJobId);
@@ -82,8 +94,35 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
       setDisputeModalJobId(null);
       setDisputeReason("");
     } catch (err) {
-      console.error("Failed to raise dispute:", err);
+      console.error("Failed to raise admin dispute:", err);
       alert("Failed to raise dispute.");
+    } finally {
+      setProcessingJobId(null);
+    }
+  };
+
+  // ── Voting dispute (community jury flow) ─────────────────────────
+  const submitVotingDispute = async () => {
+    if (!votingModalJobId || votingReason.trim().length < 5) return;
+    try {
+      setProcessingJobId(votingModalJobId);
+      const tx = prepareContractCall({
+        contract: votingContract,
+        method: "function raiseVotingDispute(uint256 jobId, string reason)",
+        params: [BigInt(votingModalJobId), votingReason],
+      });
+      const result = await sendTransaction(tx);
+      await waitForReceipt({
+        client: thirdwebClient,
+        chain: votingContract.chain,
+        transactionHash: result.transactionHash,
+      });
+      if (onInteractionSuccess) onInteractionSuccess();
+      setVotingModalJobId(null);
+      setVotingReason("");
+    } catch (err) {
+      console.error("Failed to raise voting dispute:", err);
+      alert("Failed to raise voting dispute. Ensure the VotingDispute contract is deployed and has ≥3 registered jurors.");
     } finally {
       setProcessingJobId(null);
     }
@@ -260,17 +299,34 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                     >
                       {processingJobId === job.id ? "Approving..." : "Approve & Release"}
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setDisputeModalJobId(job.id);
-                        setDisputeReason("");
-                      }} 
-                      disabled={processingJobId === job.id}
-                      className="w-full text-xs font-semibold py-2.5 text-error hover:bg-error/10 border-glass-border hover:border-error/40"
-                    >
-                      Raise Dispute
-                    </Button>
+
+                    {/* ── Dispute options ── */}
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setDisputeModalJobId(job.id);
+                          setDisputeReason("");
+                        }} 
+                        disabled={processingJobId === job.id}
+                        className="text-[11px] font-semibold py-2 text-error hover:bg-error/10 border-glass-border hover:border-error/40 flex items-center justify-center gap-1"
+                      >
+                        <ShieldAlert className="w-3 h-3" />
+                        Dispute – Admin
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setVotingModalJobId(job.id);
+                          setVotingReason("");
+                        }} 
+                        disabled={processingJobId === job.id}
+                        className="text-[11px] font-semibold py-2 text-amber-400 hover:bg-amber-400/10 border-glass-border hover:border-amber-400/40 flex items-center justify-center gap-1"
+                      >
+                        <Users className="w-3 h-3" />
+                        Dispute – Jury
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -279,15 +335,19 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         ))}
       </AnimatePresence>
 
+      {/* ── Admin Dispute Modal (existing arbiter flow) ── */}
       <Modal 
         isOpen={disputeModalJobId !== null} 
         onClose={() => setDisputeModalJobId(null)}
-        title="Raise Dispute"
+        title="Raise Dispute — Admin"
       >
         <div className="space-y-4">
-          <p className="text-sm text-on-surface-variant leading-relaxed">
-            Please provide a detailed reason for raising this dispute. The decentralized Arbiter will review your statement along with the submitted deliverables.
-          </p>
+          <div className="flex items-start gap-3 p-3 bg-error/10 border border-error/20 rounded-xl">
+            <ShieldAlert className="w-4 h-4 text-error mt-0.5 shrink-0" />
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              This dispute will be reviewed by the platform arbiter. Provide a detailed reason — the arbiter will manually split the escrow based on their judgement.
+            </p>
+          </div>
           <textarea
             value={disputeReason}
             onChange={(e) => setDisputeReason(e.target.value)}
@@ -298,10 +358,49 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
             <Button variant="ghost" onClick={() => setDisputeModalJobId(null)}>Cancel</Button>
             <Button 
               variant="danger" 
-              onClick={submitDispute}
+              onClick={submitAdminDispute}
               disabled={disputeReason.trim().length < 5 || processingJobId === disputeModalJobId}
             >
-              {processingJobId === disputeModalJobId ? "Submitting..." : "Confirm Dispute"}
+              {processingJobId === disputeModalJobId ? "Submitting..." : "Confirm Admin Dispute"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Voting Dispute Modal (community jury flow) ── */}
+      <Modal 
+        isOpen={votingModalJobId !== null} 
+        onClose={() => setVotingModalJobId(null)}
+        title="Raise Dispute — Community Jury"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 bg-amber-400/10 border border-amber-400/20 rounded-xl">
+            <Users className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+            <div className="text-xs text-on-surface-variant leading-relaxed space-y-1">
+              <p className="font-semibold text-amber-400">How community voting works:</p>
+              <p>3 jurors (NFT holders) will be randomly assigned. Each independently reviews the submission and votes anonymously.</p>
+              <ul className="mt-2 space-y-1 list-disc list-inside">
+                <li><strong className="text-on-surface">≥ 2/3 votes: project good</strong> → full payment to freelancer</li>
+                <li><strong className="text-on-surface">1/3 votes: project good</strong> → 70% to freelancer, 30% refunded</li>
+                <li><strong className="text-on-surface">0/3 votes: project good</strong> → full refund + free platform fee on your next job</li>
+              </ul>
+              <p className="mt-2 text-amber-400/80">Jurors who vote earn a <strong>+Contributor NFT</strong> on their profile.</p>
+            </div>
+          </div>
+          <textarea
+            value={votingReason}
+            onChange={(e) => setVotingReason(e.target.value)}
+            placeholder="e.g. The submitted deliverable does not match the agreed contract requirements..."
+            className="glass-input min-h-[120px] text-sm resize-none"
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={() => setVotingModalJobId(null)}>Cancel</Button>
+            <Button 
+              onClick={submitVotingDispute}
+              disabled={votingReason.trim().length < 5 || processingJobId === votingModalJobId}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs px-4 py-2 rounded-xl transition-all"
+            >
+              {processingJobId === votingModalJobId ? "Submitting..." : "Start Community Jury"}
             </Button>
           </div>
         </div>
