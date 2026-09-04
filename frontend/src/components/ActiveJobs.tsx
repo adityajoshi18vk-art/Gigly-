@@ -8,8 +8,8 @@ import { upload } from "thirdweb/storage";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
-import { Link as LinkIcon } from "lucide-react";
-import { DeliverableViewer } from "@/components/DeliverableViewer";
+import { Link as LinkIcon, ChevronDown, ChevronUp, Eye } from "lucide-react";
+import { DeliverableViewer, toDeliverableStatus } from "@/components/DeliverableViewer";
 import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
@@ -42,6 +42,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
 
   const [disputeModalJobId, setDisputeModalJobId] = useState<number | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
+  const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
   const handleApprove = async (job: JobData) => {
     try {
@@ -227,13 +228,19 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
           >
-            <div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-6 shadow-xl hover:border-primary/50 transition-all duration-300 group overflow-hidden h-full flex flex-col md:flex-row justify-between gap-6">
+            <div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-6 shadow-xl hover:border-primary/50 transition-all duration-300 group overflow-hidden flex flex-col gap-4">
               {/* Hover Glow */}
               <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500 pointer-events-none" />
               
               <div className="flex-1 relative z-10">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xs text-white/50 font-mono tracking-widest uppercase bg-white/5 px-2 py-1 rounded-md border border-white/10">Job #{job.id}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-white/50 font-mono tracking-widest uppercase bg-white/5 px-2 py-1 rounded-md border border-white/10">Job #{job.id}</span>
+                    <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
+                      {STATUS_MAP[job.status] || "Unknown"}
+                    </Badge>
+                  </div>
+                  <p className="font-bold text-white text-2xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-white/40 font-medium font-sans">USDC</span></p>
                 </div>
                 <h3 className="font-bold text-white text-xl mb-2 group-hover:text-primary transition-colors">{job.taskTitle || `Job #${job.id}`}</h3>
                 <p className="text-sm text-white/50 flex items-center gap-2 mb-4">
@@ -242,23 +249,23 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                 </p>
                 
                 <div>
-                  {job.status >= 2 && (
-                    job.submissionLink ? (() => {
-                      const parts = job.submissionLink.split("|");
-                      const previewUrl = parts[0] || "";
-                      const rawDeliverableUrl = parts[1] || previewUrl;
-                      return (
-                        <DeliverableViewer
-                          previewUrl={previewUrl}
-                          rawDeliverableUrl={rawDeliverableUrl}
-                          jobStatus={job.status}
-                        />
-                      );
-                    })() : (
-                      <span className="inline-flex items-center gap-2 text-sm text-white/40 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 italic">
-                        No link submitted
-                      </span>
-                    )
+                  {job.status >= 2 && job.submissionLink && (() => {
+                    const isExpanded = expandedJobId === job.id;
+                    return (
+                      <button
+                        onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-colors font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Review Deliverables
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+                    );
+                  })()}
+                  {job.status >= 2 && !job.submissionLink && (
+                    <span className="inline-flex items-center gap-2 text-sm text-white/40 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 italic">
+                      No link submitted
+                    </span>
                   )}
                   {job.status === 1 && progressUpdates[job.id] && (
                     <div className="mt-4 inline-flex flex-col text-sm bg-black/20 border border-white/10 rounded-xl p-4 w-full">
@@ -278,39 +285,53 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                   )}
                 </div>
               </div>
-              <div className="flex flex-col md:items-end justify-between gap-6 min-w-[200px] relative z-10">
-                <div className="text-left md:text-right flex flex-col items-start md:items-end gap-2">
-                  <p className="font-bold text-white text-3xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-white/40 font-medium font-sans">USDC</span></p>
-                  <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
-                    {STATUS_MAP[job.status] || "Unknown"}
-                  </Badge>
-                </div>
-                
-                {job.status === 2 && (
-                  <div className="flex flex-col gap-2 w-full">
-                    <Button 
-                      variant="primary" 
-                      onClick={() => handleApprove(job)} 
-                      disabled={processingJobId === job.id}
-                      className="w-full shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
-                    >
-                      {processingJobId === job.id ? "Approving..." : "Approve & Release"}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setDisputeModalJobId(job.id);
-                        setDisputeReason("");
-                      }} 
-                      disabled={processingJobId === job.id}
-                      className="w-full text-error hover:text-error hover:bg-error/10 border-white/10 hover:border-error/30 transition-all"
-                    >
-                      Raise Dispute
-                    </Button>
+
+              {/* ── Expandable deliverable drawer ── */}
+              {expandedJobId === job.id && job.submissionLink && (() => {
+                const parts = job.submissionLink.split("|");
+                const previewUrl = parts[0] || "";
+                const rawUrl = parts[1] || "";
+                const status = toDeliverableStatus(job.status);
+                return (
+                  <div className="w-full relative z-10 border-t border-white/10 pt-4 mt-2">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      <div className="flex-1">
+                        <DeliverableViewer
+                          previewUrl={previewUrl}
+                          rawDeliverableUrl={status === "Completed" ? (rawUrl || previewUrl) : undefined}
+                          jobStatus={status}
+                          jobTitle={job.taskTitle || `Job #${job.id}`}
+                        />
+                      </div>
+                      {job.status === 2 && (
+                        <div className="flex flex-col gap-2 lg:w-52 shrink-0">
+                          <Button 
+                            variant="primary" 
+                            onClick={() => handleApprove(job)} 
+                            disabled={processingJobId === job.id}
+                            className="w-full shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
+                          >
+                            {processingJobId === job.id ? "Approving..." : "Approve & Release"}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setDisputeModalJobId(job.id);
+                              setDisputeReason("");
+                            }} 
+                            disabled={processingJobId === job.id}
+                            className="w-full text-error hover:text-error hover:bg-error/10 border-white/10 hover:border-error/30 transition-all"
+                          >
+                            Raise Dispute
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                );
+              })()}
+
               </div>
-            </div>
           </motion.div>
         ))}
       </AnimatePresence>
