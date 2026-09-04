@@ -6,7 +6,7 @@ import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { escrowContract, votingDisputeContract as votingContract, CONTRACTS, POW_NFT_METADATA_URI } from "@/lib/config";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
-import { Link as LinkIcon, AlertCircle, ArrowUpRight, Clock, Users, ShieldAlert } from "lucide-react";
+import { Link as LinkIcon, ArrowUpRight, Clock, Users, ShieldAlert } from "lucide-react";
 import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { motion, AnimatePresence } from "framer-motion";
 import { DisputeConsentModal } from './DisputeConsentModal';
+import { getRegisteredFreelancers } from "@/lib/freelancerRegistry";
 
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 
@@ -40,6 +41,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
   const account = useActiveAccount();
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [freelancerNames, setFreelancerNames] = useState<Map<string, string>>(new Map());
   const progressUpdates = useProgressUpdates(refreshCounter);
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
@@ -213,6 +215,22 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     fetchJobs();
   }, [account, jobCountData, refreshCounter]);
 
+  // Resolve freelancer addresses → names from registry
+  useEffect(() => {
+    if (jobs.length === 0) return;
+    let cancelled = false;
+    async function resolveNames() {
+      const profiles = await getRegisteredFreelancers();
+      const nameMap = new Map<string, string>();
+      for (const p of profiles) {
+        nameMap.set(p.address.toLowerCase(), p.name);
+      }
+      if (!cancelled) setFreelancerNames(nameMap);
+    }
+    resolveNames();
+    return () => { cancelled = true; };
+  }, [jobs]);
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20 flex flex-col items-center">
@@ -264,7 +282,9 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                 <h3 className="font-display font-semibold text-on-surface text-xl mb-2 group-hover:text-accent-light transition-colors">{job.taskTitle || `Job #${job.id}`}</h3>
                 <p className="text-sm text-on-surface-variant flex items-center gap-2 mb-4">
                   <svg className="w-4 h-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                  Freelancer: <span className="font-mono text-on-surface">{job.freelancer.slice(0, 6)}...{job.freelancer.slice(-4)}</span>
+                  Freelancer: <span className="font-mono text-on-surface">
+                    {freelancerNames.get(job.freelancer.toLowerCase()) || `${job.freelancer.slice(0, 6)}...${job.freelancer.slice(-4)}`}
+                  </span>
                 </p>
                 
                 <div>

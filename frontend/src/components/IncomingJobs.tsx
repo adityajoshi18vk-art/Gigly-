@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 import { JobData } from "./ActiveJobs";
-import { CheckCircle2, Clock, Link as LinkIcon, ArrowUpRight, Check, Send } from "lucide-react";
+import { CheckCircle2, Clock, Link as LinkIcon, ArrowUpRight, Check, Send, ExternalLink } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useJobs } from "@/lib/useJobs";
 
@@ -184,7 +184,16 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                 {job.taskTitle || `Job #${job.id}`}
               </h3>
               <p className="text-xs text-on-surface-variant mb-3 flex items-center gap-1.5 font-mono">
-                Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
+                Client:{" "}
+                <a
+                  href={`https://sepolia.etherscan.io/address/${job.client}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-accent-light hover:text-white hover:underline transition-colors"
+                >
+                  {job.client.slice(0, 6)}...{job.client.slice(-4)}
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
               </p>
 
               {job.submissionLink && job.status >= 2 && (
