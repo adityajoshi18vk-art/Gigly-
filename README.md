@@ -24,7 +24,9 @@ The traditional freelance gig economy is broken for both freelancers and clients
 - **Zero-Knowledge Compliance (ZK-KYC)**: Identity validation using ZK-SNARKs without storing PII on-chain or off-chain.
 - **Soulbound Token (SBT) Reputation System**: Verifiable on-chain reputation linked to successful escrow settlements.
 - **Escrow-Gated Deliverable Sandbox**: Source code and deliverables remain locked and watermarked until escrow is settled.
-- **Optimistic Smart Escrow**: 3-minute time-locked auto-claims for seamless, dispute-free project resolution.
+- **Optimistic Smart Escrow**: Dynamically configurable time-locked auto-claims for seamless, dispute-free project resolution.
+- **Decentralized Community Dispute Resolution**: Collision dispute handling through on-chain community voting, replacing centralized arbiters.
+- **Dynamic Protocol Admin Panel**: Live management of escrow parameters (review window, fees, treasury) via an interactive UI without requiring contract upgrades.
 
 ---
 
@@ -32,18 +34,18 @@ The traditional freelance gig economy is broken for both freelancers and clients
 
 Gigly leverages zero-knowledge cryptography and decentralized infrastructure to rebuild the gig economy on trustless architecture:
 
-### ⛓️ Smart Contract Escrow (`OptimisticEscrow.sol`)
+### ⛓️ Smart Contract Escrow (`OptimisticEscrow.sol` & `VotingDispute.sol`)
 
-Immutable payment routing ensures funds are locked securely before work begins. The protocol extracts a minimal **2.5% platform fee** (`250` basis points), bypassing the 20% Web2 standard. Disputes are handled by an impartial, on-chain **Arbiter**.
+Immutable payment routing ensures funds are locked securely before work begins. The protocol extracts a minimal platform fee, bypassing the 20% Web2 standard. Escrow parameters are dynamically managed via the **Admin Panel**, and disputes are resolved either by an Arbiter or through **Decentralized Community Voting (Collision Dispute System)**.
 
 | Phase | Description |
 |-------|-------------|
 | **Fund** | Client locks USDC into the escrow contract with a task description and freelancer address. |
-| **Submit** | Freelancer submits a proof-of-work link, triggering a **timed review window**. |
+| **Submit** | Freelancer submits a proof-of-work link, triggering a **dynamic review window** (e.g., 3 minutes or 24 hours). |
 | **Optimistic Release** | If the client does not dispute within the window, **anyone** can trigger the release — silence equals approval. |
-| **Dispute → Arbiter** | If disputed, a pre-set on-chain arbiter resolves the split. Fee is only taken from the freelancer's portion. |
+| **Dispute → Voting** | If disputed, it enters the **VotingDispute** system where community members vote on the outcome, earning contributor SBTs for fair participation. |
 
-- **Platform fee**: Configurable, capped at **3% max** (`MAX_FEE_BPS = 300`) — currently set to 2.5%.
+- **Dynamic Protocol Configuration**: Platform fee, treasury wallet, and review windows are fully configurable in real-time by admins.
 - **No fund freezes**: The contract is governed by immutable code, not a corporate policy team.
 - **Security**: Built with OpenZeppelin's `ReentrancyGuard`, `Ownable`, and `SafeERC20`.
 
@@ -54,13 +56,15 @@ Integrating **`@anon-aadhaar/react`** (India) and **`@zkpassport/sdk`** (Global/
 | Jurisdiction | Protocol | How It Works |
 |---|---|---|
 | 🇮🇳 **India** (RBI Compliant) | **[Anon Aadhaar](https://github.com/privacy-scaling-explorations/anon-aadhaar)** by PSE (Ethereum Foundation) | User uploads their Aadhaar QR code. A **Groth16 ZK-SNARK** proof is generated **entirely in the browser** via WebAssembly. The proof attests "this person holds a valid Aadhaar" without revealing name, number, or photo. |
-| 🌍 **Global / EU** (GDPR Compliant) | **[ZKPassport](https://zkpassport.id/)** | User taps their **NFC-enabled e-Passport** against their phone. The ZKPassport app reads the ICAO 9303 chip, verifies the government digital signature, and generates a ZK proof — all **client-side**. No PII is transmitted. |
+| 🌍 **Global / EU** (GDPR Compliant) | **[ZKPassport](https://zkpassport.id/)** | User taps their **NFC-enabled e-Passport** against their phone. The ZKPassport app reads the ICAO 9303 chip, verifying the government digital signature, and generates a ZK proof — all **client-side**. No PII is transmitted. |
 
 > **🔒 Zero-Knowledge Guarantee:** Gigly is compliant with **GDPR Article 25** (Data Protection by Design), **FATF Travel Rule**, **eIDAS**, and **RBI KYC norms** — because zero data stored means zero data to breach.
 
 ### 🏅 Soulbound NFTs (SBTs) & Verifiable Credentials
 
-Reputation on Gigly is mathematically verifiable and backed by **Soulbound Tokens (SBTs)** — non-transferable NFTs acting as permanent Proof-of-Work.
+Reputation on Gigly is mathematically verifiable and backed by **Soulbound Tokens (SBTs)** — non-transferable NFTs acting as permanent Proof-of-Work. 
+
+Additionally, community members who participate in resolving collision disputes are rewarded with **+Contributor SBTs**.
 
 #### How It Works Under the Hood:
 
@@ -98,14 +102,14 @@ Reputation on Gigly is mathematically verifiable and backed by **Soulbound Token
   ┌──────────────────────────────────────────────────────────────────────┐
   │  4. GIG LIFECYCLE                                                    │
   │                                                                      │
-  │  Funded ──▶ Freelancer Submits Work ──▶ Review Window Timer Starts   │
+  │  Funded ──▶ Freelancer Submits Work ──▶ Dynamic Review Window Starts │
   │                                              │                       │
   │                              ┌───────────────┴───────────────┐       │
   │                              ▼                               ▼       │
   │                     No Dispute?                      Disputed?       │
   │                     ──────────                       ─────────       │
-  │                     Optimistic Release               Arbiter         │
-  │                     (anyone can trigger)              Resolves       │
+  │                     Optimistic Release         Community Voting      │
+  │                     (anyone can trigger)     (VotingDispute System)  │
   │                              │                               │       │
   │                              └───────────────┬───────────────┘       │
   │                                              ▼                       │
@@ -118,7 +122,7 @@ Reputation on Gigly is mathematically verifiable and backed by **Soulbound Token
   │                                                                      │
   │  • FundsReleased tx hash ──▶ Latest VC Proof Hash                    │
   │  • On-chain job stats    ──▶ Trust Score (verified / total × 100)    │
-  │  • DID: did:ethr:sepolia:<wallet>                                    │
+  │  • Honest Voters         ──▶ +Contributor SBT Minted                 │
   │                                                                      │
   │  Reputation is ONLY derived from successful escrow settlements.      │
   │  No escrow release = no credential = no fake reviews. Period.        │
@@ -157,7 +161,6 @@ The blockchain architecture uses public Remote Procedure Call (RPC) nodes to int
 | `BASE_SEPOLIA_RPC_URL` | Connects to the Base Sepolia testnet via the official Base endpoint (`https://sepolia.base.org`). |
 | `DEPLOYER_PRIVATE_KEY` | The private key of the test wallet responsible for paying gas fees and deploying the `OptimisticEscrow.sol` smart contract. **⚠️ Must be a testnet-only wallet. Never use a wallet containing real funds.** |
 | `ARBITER_ADDRESS` | The designated wallet address acting as the third-party judge to resolve gig disputes between clients and freelancers. |
-| `FEE_BPS` | The platform fee configured in basis points. Set to `250`, which equates to a **2.5% protocol fee** dynamically extracted upon successful escrow settlement. |
 
 ---
 
@@ -166,7 +169,7 @@ The blockchain architecture uses public Remote Procedure Call (RPC) nodes to int
 - **Frontend**: Next.js 14
 - **Web3 Integrations**: Thirdweb v5
 - **Smart Contracts**: Solidity
-- **Framework & Security**: OpenZeppelin v5 (specifically `OptimisticEscrow.sol` and `GiglyCredential.sol`)
+- **Framework & Security**: OpenZeppelin v5 (specifically `OptimisticEscrow.sol`, `GiglyCredential.sol`, and `VotingDispute.sol`)
 
 ---
 
@@ -256,17 +259,9 @@ BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
 DEPLOYER_PRIVATE_KEY=your_deployer_private_key
 ARBITER_ADDRESS=0xYourArbiterAddress
-FEE_BPS=250
 ```
 
 > **⚠️ Security:** Never commit `.env` files. The `DEPLOYER_PRIVATE_KEY` should be a **testnet-only wallet** with Sepolia ETH for gas. Never use a wallet containing real funds.
-
-### 📍 Deployed Contract Addresses (Sepolia)
-
-| Contract | Address |
-|----------|---------|
-| **OptimisticEscrow** | [`0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672`](https://sepolia.etherscan.io/address/0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672) |
-| **USDC (Circle Testnet)** | [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/address/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238) |
 
 ---
 
@@ -280,7 +275,7 @@ gigly/
 │   │   │   ├── api/                # Next.js API Routes (ZKPassport integration)
 │   │   │   ├── client/             # Client dashboard (create jobs, fund escrow)
 │   │   │   ├── freelancer/         # Freelancer dashboard (browse, submit, earn)
-│   │   │   ├── admin/              # Platform admin panel
+│   │   │   ├── admin/              # Dynamic Protocol Admin Panel
 │   │   │   └── layout.tsx          # Root layout (ThirdwebProvider + AnonAadhaarWrapper)
 │   │   ├── components/
 │   │   │   ├── landing/            # 🎨 New immersive landing page (HeroSection, InteractiveProcess, etc.)
@@ -292,9 +287,7 @@ gigly/
 │   │   │   ├── ActiveJobs.tsx      # 📋 Job lifecycle tracking
 │   │   │   ├── IncomingJobs.tsx    # 📥 Freelancer job queue
 │   │   │   ├── Earnings.tsx        # 💰 Earnings dashboard with oracle feeds
-│   │   │   ├── WithdrawModal.tsx   # 🏦 USDC withdrawal with KYC gate
-│   │   │   ├── AtmosphericBackground.tsx # 🌌 Interactive canvas background
-│   │   │   └── BrowseGigs.tsx      # 🔍 Gig marketplace browser
+│   │   │   └── VotingDisputeUi.tsx # 🗳️ Community Collision Dispute System UI
 │   │   └── lib/
 │   │       ├── config.ts           # Chain, contract, wallet & oracle configuration
 │   │       └── constants.ts        # App-wide constants
@@ -303,6 +296,8 @@ gigly/
 ├── contracts/                      # Hardhat 3 Smart Contracts
 │   ├── contracts/
 │   │   ├── OptimisticEscrow.sol    # ⛓️ Core escrow contract
+│   │   ├── VotingDispute.sol       # 🗳️ Community collision dispute contract
+│   │   ├── GiglyCredential.sol     # 🏅 SBT credential contract
 │   │   ├── MockUSDC.sol            # 🪙 ERC-20 mock for local testing
 │   │   └── MockINRFeed.sol         # 📊 Chainlink-style INR/USD price feed
 │   ├── scripts/                    # Deployment & migration scripts
@@ -322,7 +317,7 @@ gigly/
 
 | Criterion | Gigly Implementation |
 |-----------|----------------------|
-| On-chain logic | `OptimisticEscrow.sol` — all escrow state (fund, submit, dispute, release, refund) is **100% on-chain**. No off-chain relayers or centralized backends. |
+| On-chain logic | `OptimisticEscrow.sol` & `VotingDispute.sol` — all escrow state, dispute voting, and parameters are **100% on-chain**. No off-chain relayers or centralized backends. |
 | Decentralized frontend | Next.js app reads directly from the blockchain via Thirdweb SDK. No proprietary API layer. |
 | Gasless UX | ERC-4337 Smart Accounts with **sponsored gas** via Thirdweb — users never need to hold ETH. |
 | Token standard | Uses **Circle's official USDC** on Sepolia — not a custom token. |
@@ -351,16 +346,7 @@ gigly/
 
 - **Deliverable Protection**: The UI strictly hides raw final deliverables and source code links behind an escrow gate until final settlement is completed.
 - **Anti-Spoofing Auto-Claims**: In the event of an expired review window, a fallback URI is utilized to ensure seamless auto-claims, preventing malicious clients from indefinitely stalling releases.
-
----
-
-## 🗺️ Roadmap
-
-- [ ] **Mainnet deployment** — Polygon PoS / Base for production escrows
-- [ ] **On-chain VC minting** — Issue W3C Verifiable Credentials as Soulbound Tokens (SBTs)
-- [ ] **Multi-chain escrow** — Cross-chain USDC escrows via CCIP
-- [ ] **DAO Governance** — Community-elected arbiter pools for dispute resolution
-- [ ] **ZK-Credential Portability** — Export Gigly reputation to other platforms via DID-linked VCs
+- **Democratic Collision Resolution**: Collisions are handled via the VotingDispute module, ensuring no single entity (not even the protocol admins) can unilaterally freeze or extract funds.
 
 ---
 
@@ -374,7 +360,7 @@ Because the platform relies on smart accounts that map 1:1 to email addresses, i
 
 * **Client:** `giglytest1@yopmail.com`
 * **Freelancer:** `giglytest2@yopmail.com`
-* **Admin (Arbiter):** `giglytest3@yopmail.com`
+* **Admin / Voter:** `giglytest3@yopmail.com`
 
 > **Note:** OTPs for these accounts can be checked at [yopmail.com](https://yopmail.com).
 
@@ -388,7 +374,6 @@ Because the platform relies on smart accounts that map 1:1 to email addresses, i
 5. Click on **Giglytest Freelancer** (This profile is hardcoded to route funds to the `giglytest2` smart account).
 6. Enter a Task Title (e.g., "Build Landing Page") and an Amount (e.g., "50").
 7. Click **Create Job**.
-   * *If this is your first time, you may need to approve the USDC spend first.*
 8. Once successful, the job will appear in the **Active Jobs** tab.
 
 #### 2. Freelancer: Submit Work
@@ -398,7 +383,6 @@ Because the platform relies on smart accounts that map 1:1 to email addresses, i
 4. You should see the job created by the client. Click **Submit Work**.
 5. Enter a mock URL (e.g., `https://github.com/...`) and confirm.
 6. The job status will update to "Submitted".
-7. *Optional:* Check the **Earnings** tab to see real-time, gasless dashboard stats, including the Chainlink Oracle conversion to EUR.
 
 #### 3. Client: Approve & Release
 1. Return to the Client window (`giglytest1@yopmail.com`).
@@ -407,24 +391,31 @@ Because the platform relies on smart accounts that map 1:1 to email addresses, i
 4. Click **Approve & Release**.
 5. The smart contract will immediately release the USDC to the freelancer's smart account.
 
-### Testing the Dispute Flow
+### Testing the Collision Dispute (Community Voting) Flow
 
 #### 1. Client: Raise a Dispute
 1. Repeat steps 1 & 2 from the Happy Path to create and submit a new job.
 2. As the Client (`giglytest1@yopmail.com`), go to **Active Jobs**.
 3. Instead of approving, click **Raise Dispute**.
 4. Enter a reason (e.g., "The design does not match the Figma file") and submit.
-5. The job status will change to "Disputed".
+5. The job enters the **VotingDispute** system.
 
-#### 2. Admin: Resolve the Dispute
+#### 2. Community: Vote on Dispute
+1. Open a new window and sign in as a community voter (e.g. `giglytest3@yopmail.com`).
+2. Navigate to the **Active Disputes / Community Resolution** area.
+3. Review the Freelancer's submission and the Client's dispute reason.
+4. Cast your vote (e.g., "Favor Client" or "Favor Freelancer").
+5. Upon conclusion, the smart contract enacts the community consensus. Honest voters are rewarded with a `+Contributor` SBT credential for participating.
+
+### Testing the Dynamic Admin Panel
+
+#### 1. Admin: Configure Escrow Parameters
 1. Open a new window and navigate directly to `http://localhost:3000/admin`.
-2. Instead of the standard login, click the dedicated **Sign in as giglytest3@yopmail.com** button. (This account is authorized on-chain as the Arbiter).
-3. You will see a list of all Disputed Jobs.
-4. Review the Freelancer's submission link alongside the Client's dispute reason.
-5. Enter the **Amount to Freelancer (USDC)**.
-   * *Example: If the job was 50 USDC, you can enter 25 to split the funds 50/50.*
-6. Click **Resolve**.
-7. The contract will distribute the specified amount to the freelancer and refund the remainder to the client.
+2. Ensure you are signed in with the contract owner/deployer wallet.
+3. You will see the **Protocol Configuration Dashboard**.
+4. Change the **Review Window** (e.g., from 24 Hours to 3 Minutes) to accelerate testing of Optimistic Auto-Claims.
+5. Modify the **Platform Fee** percentage dynamically.
+6. These updates are immediately broadcast on-chain and reflect across all dashboards.
 
 ---
 
