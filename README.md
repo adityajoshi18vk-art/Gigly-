@@ -19,6 +19,15 @@ The traditional freelance gig economy is broken for both freelancers and clients
 
 ---
 
+## 🌟 Core Features
+
+- **Zero-Knowledge Compliance (ZK-KYC)**: Identity validation using ZK-SNARKs without storing PII on-chain or off-chain.
+- **Soulbound Token (SBT) Reputation System**: Verifiable on-chain reputation linked to successful escrow settlements.
+- **Escrow-Gated Deliverable Sandbox**: Source code and deliverables remain locked and watermarked until escrow is settled.
+- **Optimistic Smart Escrow**: 3-minute time-locked auto-claims for seamless, dispute-free project resolution.
+
+---
+
 ## 🛡️ The Gigly Solution
 
 Gigly leverages zero-knowledge cryptography and decentralized infrastructure to rebuild the gig economy on trustless architecture:
@@ -150,6 +159,15 @@ The blockchain architecture uses public Remote Procedure Call (RPC) nodes to int
 
 ---
 
+## 🏛️ Technical Architecture
+
+- **Frontend**: Next.js 14
+- **Web3 Integrations**: Thirdweb v5
+- **Smart Contracts**: Solidity
+- **Framework & Security**: OpenZeppelin v5 (specifically `OptimisticEscrow.sol` and `GiglyCredential.sol`)
+
+---
+
 ## 💻 Tech Stack
 
 | Layer | Technology | Details |
@@ -263,13 +281,17 @@ gigly/
 │   │   │   ├── admin/              # Platform admin panel
 │   │   │   └── layout.tsx          # Root layout (ThirdwebProvider + AnonAadhaarWrapper)
 │   │   ├── components/
+│   │   │   ├── landing/            # 🎨 New immersive landing page (HeroSection, InteractiveProcess, etc.)
+│   │   │   ├── ui/                 # 🧩 Reusable design system elements (PixelCard, Buttons, Modals, Tabs)
 │   │   │   ├── KYCModal.tsx        # 🔐 ZK-KYC Gate (Anon Aadhaar + ZKPassport)
 │   │   │   ├── DIDTrustCard.tsx    # 🆔 W3C DID & Verifiable Credentials display
+│   │   │   ├── Credentials.tsx     # 🏅 Soulbound NFT Credentials Display
 │   │   │   ├── CreateJobModal.tsx  # 💼 Escrow creation with currency conversion
 │   │   │   ├── ActiveJobs.tsx      # 📋 Job lifecycle tracking
 │   │   │   ├── IncomingJobs.tsx    # 📥 Freelancer job queue
 │   │   │   ├── Earnings.tsx        # 💰 Earnings dashboard with oracle feeds
 │   │   │   ├── WithdrawModal.tsx   # 🏦 USDC withdrawal with KYC gate
+│   │   │   ├── AtmosphericBackground.tsx # 🌌 Interactive canvas background
 │   │   │   └── BrowseGigs.tsx      # 🔍 Gig marketplace browser
 │   │   └── lib/
 │   │       ├── config.ts           # Chain, contract, wallet & oracle configuration
@@ -320,6 +342,13 @@ gigly/
 | **Sybil accounts** | ZK-KYC gates ensure one real identity = one verified wallet. Creating 100 wallets doesn't create 100 verified identities. |
 | **Rating manipulation** | Trust Score = `(released gigs / total completed gigs) × 100`. Computed deterministically from immutable on-chain state. No human moderation. |
 | **Proof hash forgery** | Each VC proof hash is a real Ethereum `transactionHash` — verifiable by anyone on Etherscan. |
+
+---
+
+## 🔐 Security & Trust Assumptions
+
+- **Deliverable Protection**: The UI strictly hides raw final deliverables and source code links behind an escrow gate until final settlement is completed.
+- **Anti-Spoofing Auto-Claims**: In the event of an expired review window, a fallback URI is utilized to ensure seamless auto-claims, preventing malicious clients from indefinitely stalling releases.
 
 ---
 
@@ -411,3 +440,13 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 *The future of work is decentralized.*
 
 </div>
+
+---
+
+## 👥 Team FinNova (Smart Horizon 2026 Hackathon)
+
+- Aditya Joshi (Team Lead)
+- Daiwik Roy
+- Saswat Dutta
+- Puvaladas Sai Vaibhav
+- Shaik Fariza
