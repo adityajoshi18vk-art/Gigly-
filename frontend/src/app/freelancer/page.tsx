@@ -10,6 +10,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { IncomingJobs } from "@/components/IncomingJobs";
 import { BrowseGigs } from "@/components/BrowseGigs";
 import { PastJobs } from "@/components/PastJobs";
+import { clearJobsCache } from "@/lib/useJobs";
 import { Earnings } from "@/components/Earnings";
 import { DIDTrustCard } from "@/components/DIDTrustCard";
 import { Credentials } from "@/components/Credentials";
@@ -66,7 +67,7 @@ export default function FreelancerDashboard() {
       {activeTab === "Active Jobs" && (
         <IncomingJobs 
           refreshCounter={refreshCounter} 
-          onInteractionSuccess={() => { sessionStorage.removeItem("gigly_jobs_cache"); setRefreshCounter(c => c + 1); }}
+          onInteractionSuccess={() => { clearJobsCache(); setRefreshCounter(c => c + 1); }}
         />
       )}
 
@@ -78,7 +79,7 @@ export default function FreelancerDashboard() {
         <BrowseGigs 
           refreshCounter={refreshCounter}
           onInteractionSuccess={() => {
-            sessionStorage.removeItem("gigly_jobs_cache");
+            clearJobsCache();
             setRefreshCounter(c => c + 1);
             setActiveTab("Active Jobs");
           }}

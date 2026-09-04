@@ -13,6 +13,7 @@ import { CreateJobModal } from "@/components/CreateJobModal";
 import { ActiveJobs } from "@/components/ActiveJobs";
 import { PastJobs } from "@/components/PastJobs";
 import { PublicGigs } from "@/components/PublicGigs";
+import { clearJobsCache } from "@/lib/useJobs";
 import {
   getRegisteredFreelancers,
   type FreelancerProfile,
@@ -100,7 +101,7 @@ export default function ClientDashboard() {
       />
 
       {activeTab === "Active Jobs" && (
-        <ActiveJobs refreshCounter={refreshCounter} onInteractionSuccess={() => { sessionStorage.removeItem("gigly_jobs_cache"); setRefreshCounter(c => c + 1); }} />
+        <ActiveJobs refreshCounter={refreshCounter} onInteractionSuccess={() => { clearJobsCache(); setRefreshCounter(c => c + 1); }} />
       )}
 
       {activeTab === "Past Jobs" && (
@@ -206,7 +207,7 @@ export default function ClientDashboard() {
           setIsPostJobModalOpen(false);
         }}
         onSuccess={() => {
-          sessionStorage.removeItem("gigly_jobs_cache");
+          clearJobsCache();
           setRefreshCounter(c => c + 1);
           handleProfileSaved();
         }}

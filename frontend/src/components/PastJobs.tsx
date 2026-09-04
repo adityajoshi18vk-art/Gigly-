@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useActiveAccount } from "thirdweb/react";
-import { useJobs } from "@/lib/useJobs";
+import { useJobs, clearJobsCache } from "@/lib/useJobs";
 import { formatUnits } from "viem";
 import { Badge } from "@/components/ui/Badge";
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";

@@ -16,6 +16,7 @@ import { Modal } from "@/components/ui/Modal";
 import { motion, AnimatePresence } from "framer-motion";
 import { DisputeConsentModal } from './DisputeConsentModal';
 import { getRegisteredFreelancers } from "@/lib/freelancerRegistry";
+import { clearJobsCache } from "@/lib/useJobs";
 
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 
@@ -86,7 +87,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       if (onInteractionSuccess) onInteractionSuccess();
     } catch (err) {
       console.error("Failed to approve job:", err);
@@ -112,7 +113,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       if (onInteractionSuccess) onInteractionSuccess();
       setDisputeModalJobId(null);
       setDisputeReason("");
@@ -140,7 +141,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         chain: votingContract.chain,
         transactionHash: result.transactionHash,
       });
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       if (onInteractionSuccess) onInteractionSuccess();
       setVotingModalJobId(null);
       setVotingReason("");

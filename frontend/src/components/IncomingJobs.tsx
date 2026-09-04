@@ -11,7 +11,7 @@ import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 import { JobData } from "./ActiveJobs";
 import { CheckCircle2, Clock, Link as LinkIcon, ArrowUpRight, Check, Send, ExternalLink } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { useJobs } from "@/lib/useJobs";
+import { useJobs, clearJobsCache } from "@/lib/useJobs";
 
 export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
@@ -85,7 +85,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to submit work:", err);
@@ -118,7 +118,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to log progress:", err);
@@ -142,7 +142,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to claim payment:", err);

@@ -9,7 +9,7 @@ import { formatUnits } from "viem";
 import { JobData } from "./ActiveJobs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
-import { useJobs } from "@/lib/useJobs";
+import { useJobs, clearJobsCache } from "@/lib/useJobs";
 
 export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
@@ -48,7 +48,7 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
         transactionHash: result.transactionHash,
       });
       
-      sessionStorage.removeItem("gigly_jobs_cache");
+      clearJobsCache();
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to accept job:", err);
