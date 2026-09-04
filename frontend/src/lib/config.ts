@@ -41,18 +41,18 @@ export const CONTRACTS = {
   // Faucet: https://faucet.circle.com/
   USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   // Fresh deployment 2026-09-04 — wired to GiglyCredential + VotingDispute as arbiter
-  OptimisticEscrow: "0x80C53026081b2710b0e2705332790322DC7e7300",
+  OptimisticEscrow: "0xAD14d8b77b661997A92a32fCf45FA65B2E2Ae802",
   // Legacy Soulbound Token (PoW NFTs) — deployed 2026-09-03, used by OptimisticEscrow
   GiglyCredentialLegacy: "0xFB43c1182F51583d33E2e191DB32025DE115ea75",
   // New GiglyCredential (dual-minter: escrow + VotingDispute) — deployed 2026-09-04
   GiglyCredential: "0x7CbC2961526453E48154Bc5A045bc254Eb61B46C",
-  // Community Voting Dispute — deployed 2026-09-04 (with legacy credential check and fallback picker)
-  VotingDispute: "0xbd808E4992Acf83d1Fd0454B6962c1f937a5dB1F",
+  // Community Voting Dispute — deployed 2026-09-04 (with 3 auto-registered jurors, legacy check & fallback)
+  VotingDispute: "0xA963219334f02d23c6e041e1d4af1491a2eF89D0",
   // On-chain freelancer profile registry — deployed 2026-09-04
   FreelancerRegistry: "0xd78CF42205dE581c06bFBc28928F20898B244eDA",
 };
 
-export const DEPLOYMENT_BLOCK = BigInt(11631800);
+export const DEPLOYMENT_BLOCK = BigInt(11631900);
 
 export const usdcContract = getContract({
   client,

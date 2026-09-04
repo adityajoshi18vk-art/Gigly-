@@ -120,9 +120,21 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
       if (onInteractionSuccess) onInteractionSuccess();
       setVotingModalJobId(null);
       setVotingReason("");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to raise voting dispute:", err);
-      alert("Failed to raise voting dispute. Ensure the VotingDispute contract is deployed and has ≥3 registered jurors.");
+      const errStr = String(err);
+      if (errStr.includes("ReviewWindowExpired") || errStr.includes("0x0ccd4ec5")) {
+        alert("Cannot dispute: the review window has expired.");
+      } else if (errStr.includes("NotEnoughJurors") || errStr.includes("0x325d6d39")) {
+        alert("Cannot raise dispute: not enough registered jurors in the pool (need at least 3).");
+      } else if (errStr.includes("NotClient") || errStr.includes("0x20dbc874")) {
+        alert("Only the client who funded this job can raise a dispute.");
+      } else if (errStr.includes("DisputeAlreadyExists") || errStr.includes("0x28bea7b9")) {
+        alert("A dispute has already been raised for this job.");
+      } else {
+        const errorObj = err as { shortMessage?: string; message?: string };
+        alert(errorObj?.shortMessage || errorObj?.message || "Failed to raise voting dispute. Check console for details.");
+      }
     } finally {
       setProcessingJobId(null);
     }

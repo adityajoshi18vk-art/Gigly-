@@ -26,8 +26,8 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
 
     // ─── Constants ───────────────────────────────────────────────────────
 
-    /// @notice Duration of the review window after work submission (3 minutes for testing).
-    uint256 public constant REVIEW_WINDOW = 3 minutes;
+    /// @notice Duration of the review window after work submission (24 hours default, matches UI).
+    uint256 public reviewWindow = 24 hours;
 
     /// @notice Maximum platform fee in basis points (3% = 300 bps).
     uint256 public constant MAX_FEE_BPS = 300;
@@ -302,7 +302,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         inStatus(jobId, Status.Submitted)
     {
         Job storage job = jobs[jobId];
-        if (block.timestamp < job.submittedAt + REVIEW_WINDOW)
+        if (block.timestamp < job.submittedAt + reviewWindow)
             revert ReviewWindowNotExpired();
 
         _releaseFunds(jobId, DEFAULT_AUTOCLAIM_URI);
@@ -320,7 +320,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         inStatus(jobId, Status.Submitted)
     {
         Job storage job = jobs[jobId];
-        if (block.timestamp >= job.submittedAt + REVIEW_WINDOW)
+        if (block.timestamp >= job.submittedAt + reviewWindow)
             revert ReviewWindowExpired();
 
         job.status = Status.Disputed;
@@ -338,7 +338,7 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
         inStatus(jobId, Status.Submitted)
     {
         Job storage job = jobs[jobId];
-        if (block.timestamp >= job.submittedAt + REVIEW_WINDOW)
+        if (block.timestamp >= job.submittedAt + reviewWindow)
             revert ReviewWindowExpired();
 
         job.status = Status.Disputed;
@@ -411,6 +411,14 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     function setGiglyCredential(address _giglyCredential) external onlyOwner {
         if (_giglyCredential == address(0)) revert InvalidAddress();
         giglyCredential = IGiglyCredential(_giglyCredential);
+    }
+
+    /**
+     * @notice Updates the review window duration. Only callable by the contract owner.
+     * @param newReviewWindow The new duration in seconds (e.g. 1 hours or 24 hours).
+     */
+    function setReviewWindow(uint256 newReviewWindow) external onlyOwner {
+        reviewWindow = newReviewWindow;
     }
 
     /**
