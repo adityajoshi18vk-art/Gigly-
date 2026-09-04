@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 import Link from "next/link";
-import { Home, Sparkles, UserCog, RefreshCw } from "lucide-react";
+import { Home, Sparkles, UserCog, RefreshCw, Loader2 } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
@@ -17,6 +17,7 @@ import { Credentials } from "@/components/Credentials";
 import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { Button } from "@/components/ui/Button";
 import { usePortalAuth } from "@/lib/usePortalAuth";
+import { getFreelancerProfile } from "@/lib/freelancerRegistry";
 
 export default function FreelancerDashboard() {
   const { account } = usePortalAuth("freelancer");
@@ -24,7 +25,44 @@ export default function FreelancerDashboard() {
   const [activeTab, setActiveTab] = useState("Active Jobs");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isOnboarding, setIsOnboarding] = useState(false);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Check if connected freelancer has a registered profile in Supabase
+  useEffect(() => {
+    let cancelled = false;
+    if (!account?.address) {
+      setIsCheckingProfile(false);
+      return;
+    }
+
+    async function checkProfile() {
+      setIsCheckingProfile(true);
+      try {
+        const profile = await getFreelancerProfile(account!.address);
+        if (cancelled) return;
+        // If no profile found or essential details are missing, initiate onboarding
+        if (!profile || !profile.name?.trim() || !profile.title?.trim()) {
+          setIsOnboarding(true);
+          setIsProfileModalOpen(true);
+        } else {
+          setIsOnboarding(false);
+        }
+      } catch (err) {
+        console.warn("Failed to check freelancer profile:", err);
+      } finally {
+        if (!cancelled) {
+          setIsCheckingProfile(false);
+        }
+      }
+    }
+
+    checkProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [account?.address]);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -35,6 +73,33 @@ export default function FreelancerDashboard() {
 
   return (
     <div className="min-h-screen py-4 sm:py-6 relative text-on-background">
+      {/* Onboarding Notice Banner */}
+      {isOnboarding && (
+        <div className="mb-6 p-4 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center text-accent-light">
+              <UserCog className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-on-surface">
+                Profile Setup Required
+              </p>
+              <p className="text-[11px] text-on-surface-variant">
+                Complete your profile details to unlock the freelancer dashboard and receive gigs.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setIsProfileModalOpen(true)}
+            className="text-xs shrink-0"
+          >
+            Resume Setup
+          </Button>
+        </div>
+      )}
+
       {/* Top Header */}
       <header className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between surface-card p-4 sm:p-5 rounded-3xl mb-8 shadow-level-1">
         <div className="flex items-center gap-4 px-2">
@@ -114,7 +179,15 @@ export default function FreelancerDashboard() {
 
       <ProfileSettingsModal
         isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
+        isOnboarding={isOnboarding}
+        onClose={() => {
+          setIsProfileModalOpen(false);
+          setIsOnboarding(false);
+        }}
+        onSaved={() => {
+          setIsOnboarding(false);
+          setIsProfileModalOpen(false);
+        }}
       />
     </div>
   );

@@ -9,9 +9,10 @@ export interface ModalProps {
   title: string;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  isDismissible?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children, size = "lg" }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = "lg", isDismissible = true }: ModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -23,7 +24,7 @@ export function Modal({ isOpen, onClose, title, children, size = "lg" }: ModalPr
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-[#071014]/50 backdrop-blur-sm"
-            onClick={onClose}
+            onClick={isDismissible ? onClose : undefined}
           />
           
           {/* Dialog */}
@@ -46,12 +47,14 @@ export function Modal({ isOpen, onClose, title, children, size = "lg" }: ModalPr
               {/* Header */}
               <div className="flex items-center justify-between border-b border-glass-border p-5">
                 <h2 className="text-lg font-semibold text-on-surface tracking-tight">{title}</h2>
-                <button
-                  onClick={onClose}
-                  className="rounded-lg p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-glass-light transition-all duration-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                {isDismissible && (
+                  <button
+                    onClick={onClose}
+                    className="rounded-lg p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-glass-light transition-all duration-200"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
               {/* Content */}

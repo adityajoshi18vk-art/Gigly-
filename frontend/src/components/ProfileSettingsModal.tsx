@@ -27,12 +27,14 @@ export interface ProfileSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  isOnboarding?: boolean;
 }
 
 export function ProfileSettingsModal({
   isOpen,
   onClose,
   onSaved,
+  isOnboarding = false,
 }: ProfileSettingsModalProps) {
   const account = useActiveAccount();
 
@@ -207,8 +209,29 @@ export function ProfileSettingsModal({
     );
   }
 
+  const modalTitle = isOnboarding
+    ? "Welcome to Gigly! Set Up Your Freelancer Profile"
+    : "Freelancer Profile & Verification";
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Freelancer Profile &amp; Verification">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={modalTitle}
+      isDismissible={!isOnboarding}
+    >
+      {/* Onboarding Welcome Banner */}
+      {isOnboarding && (
+        <div className="bg-accent/10 border border-accent/25 rounded-xl p-3.5 mb-4 text-xs text-on-surface leading-relaxed">
+          <p className="font-semibold text-accent-light mb-1">
+            🚀 Quick Onboarding
+          </p>
+          <p className="text-on-surface-variant">
+            Please complete your profile details and skills so clients can discover and hire you from the talent marketplace. Your profile will be safely published to the decentralized Supabase registry.
+          </p>
+        </div>
+      )}
+
       {/* Toast */}
       {showToast && (
         <div className="flex items-center gap-2 bg-success/15 text-success-light p-3 rounded-xl border border-success/30 mb-4 text-xs font-medium">
@@ -421,11 +444,13 @@ export function ProfileSettingsModal({
       )}
 
       <div className="pt-4 flex justify-end gap-2.5 border-t border-glass-border mt-4">
-        <Button variant="ghost" onClick={onClose} disabled={isSaving}>
-          Cancel
-        </Button>
+        {!isOnboarding && (
+          <Button variant="ghost" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+        )}
         <Button onClick={handleSubmit} disabled={!isValid || isSaving} variant="primary" className="px-6 shadow-glow-accent">
-          {isSaving ? "Saving..." : "Save Profile"}
+          {isSaving ? "Publishing Profile..." : isOnboarding ? "Complete Profile & Enter Hub" : "Save Profile"}
         </Button>
       </div>
     </Modal>
