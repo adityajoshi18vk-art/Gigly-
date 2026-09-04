@@ -28,7 +28,8 @@ function readProfiles(): FreelancerProfile[] {
   try {
     if (!fs.existsSync(DATA_FILE)) return [];
     const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    return JSON.parse(raw) as FreelancerProfile[];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FreelancerProfile[]) : [];
   } catch {
     return [];
   }

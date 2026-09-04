@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import {
   LogInWithAnonAadhaar,
   useAnonAadhaar,
@@ -14,8 +15,6 @@ import {
   CheckCircle2,
   Lock,
 } from "lucide-react";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface KYCModalProps {
   isOpen: boolean;
@@ -66,9 +65,6 @@ const COUNTRIES = [
   "Other",
 ] as const;
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
-// ── Elapsed timer sub-component ──────────────────────────────────────────────
 function ProofTimer() {
   const [elapsed, setElapsed] = useState(0);
 
@@ -82,7 +78,6 @@ function ProofTimer() {
   return <>{mins > 0 ? `${mins}m ${secs}s` : `${secs}s`} elapsed</>;
 }
 
-// ── Animated progress steps during proof generation ──────────────────────────
 const PROOF_PROGRESS_MESSAGES = [
   "🔍 Loading ZK circuit artifacts (WASM + zkey)...",
   "📦 Decompressing witness generation module...",
@@ -97,7 +92,7 @@ function ProofProgressSteps() {
 
   useEffect(() => {
     if (visibleCount >= PROOF_PROGRESS_MESSAGES.length) return;
-    const delay = 4000 + Math.random() * 6000; // 4-10s per step
+    const delay = 4000 + Math.random() * 6000;
     const timer = setTimeout(() => setVisibleCount((c) => c + 1), delay);
     return () => clearTimeout(timer);
   }, [visibleCount]);
@@ -109,14 +104,14 @@ function ProofProgressSteps() {
         return (
           <div
             key={i}
-            className={`flex items-start gap-2 transition-opacity duration-500 ${
-              isDone ? "text-emerald-400" : "text-cyan-300"
+            className={`flex items-start gap-2 transition-opacity duration-500 text-xs font-mono ${
+              isDone ? "text-success-light" : "text-accent-light"
             }`}
           >
             {isDone ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-success-light" />
             ) : (
-              <Loader2 className="w-4 h-4 shrink-0 mt-0.5 animate-spin" />
+              <Loader2 className="w-4 h-4 shrink-0 mt-0.5 animate-spin text-accent-light" />
             )}
             <span className="leading-relaxed">{msg}</span>
           </div>
@@ -125,8 +120,6 @@ function ProofProgressSteps() {
     </>
   );
 }
-
-// ── Main KYCModal ────────────────────────────────────────────────────────────
 
 export function KYCModal({
   isOpen,
@@ -139,14 +132,11 @@ export function KYCModal({
   const [verificationStepIndex, setVerificationStepIndex] = useState(-1);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Anon Aadhaar SDK hook
   const [anonAadhaar] = useAnonAadhaar();
 
-  // Global/EU fields
   const [documentId, setDocumentId] = useState("");
   const [country, setCountry] = useState("");
 
-  // ── Listen for real ZK proof completion from Anon Aadhaar SDK ───────────
   useEffect(() => {
     if (anonAadhaar.status === "logged-in" && isOpen && jurisdiction === "india") {
       localStorage.setItem(`finguard_kyc_${walletAddress}`, "true");
@@ -155,11 +145,9 @@ export function KYCModal({
     }
   }, [anonAadhaar.status, walletAddress, onVerified, onClose, isOpen, jurisdiction]);
 
-  // ── Form validation (Global/EU tab only — India uses SDK button) ────────
   const isGlobalFormValid =
     documentId.trim().length >= 4 && country.length > 0;
 
-  // ── Reset state ────────────────────────────────────────────────────────
   const resetModal = useCallback(() => {
     setIsVerifying(false);
     setVerificationStepIndex(-1);
@@ -169,12 +157,11 @@ export function KYCModal({
   }, []);
 
   const handleClose = useCallback(() => {
-    if (isVerifying) return; // Prevent closing during verification
+    if (isVerifying) return;
     resetModal();
     onClose();
   }, [isVerifying, onClose, resetModal]);
 
-  // ── Simulated ZK verification flow (Global/EU tab only) ────────────────
   const handleGlobalVerify = useCallback(async () => {
     setIsVerifying(true);
     setVerificationStepIndex(0);
@@ -184,12 +171,8 @@ export function KYCModal({
       await new Promise((r) => setTimeout(r, VERIFICATION_STEPS[i].delay));
     }
 
-    // Persist verification
     localStorage.setItem(`finguard_kyc_${walletAddress}`, "true");
-
     setShowSuccess(true);
-
-    // Brief pause to show success state
     await new Promise((r) => setTimeout(r, 1200));
 
     onVerified();
@@ -203,41 +186,39 @@ export function KYCModal({
       onClose={handleClose}
       title="🛡️ International Compliance Gate"
     >
-      <div className="space-y-5">
-        {/* ── Success overlay ────────────────────────────────────────────── */}
+      <div className="space-y-5 relative">
+        {/* Success overlay */}
         {showSuccess && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm rounded-xl">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4 animate-bounce">
-              <CheckCircle2 className="w-9 h-9 text-emerald-500" />
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface/95 backdrop-blur-md rounded-2xl p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-success/15 border border-success/30 flex items-center justify-center mb-4 shadow-glow-success">
+              <CheckCircle2 className="w-8 h-8 text-success-light" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">
+            <h3 className="font-display text-lg font-bold text-on-surface">
               Identity Verified
             </h3>
-            <p className="text-sm text-slate-500 mt-1">
-              ZK-KYC Proof accepted. Withdrawals unlocked.
+            <p className="text-xs text-on-surface-variant mt-1 max-w-xs">
+              ZK-KYC Proof validated off-chain. Fiat banking off-ramp unlocked.
             </p>
           </div>
         )}
 
-        {/* ── Jurisdiction tabs ──────────────────────────────────────────── */}
+        {/* Jurisdiction tabs */}
         <div className="grid grid-cols-2 gap-2">
           <button
             id="kyc-tab-india"
             onClick={() => !isVerifying && setJurisdiction("india")}
             disabled={isVerifying}
-            className={`flex items-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
               jurisdiction === "india"
-                ? "border-teal-500 bg-teal-50 text-teal-700 shadow-sm"
-                : "border-gray-200 bg-white text-slate-600 hover:border-gray-300"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                ? "border-accent/50 bg-accent/15 text-white shadow-glow-accent"
+                : "border-glass-border bg-glass-light text-on-surface-variant hover:border-glass-border-light hover:text-on-surface"
+            } disabled:opacity-50`}
           >
-            <Fingerprint className="w-4 h-4 shrink-0" />
-            <div className="text-left">
-              <div className="font-semibold leading-tight">
-                India (RBI Compliant)
-              </div>
-              <div className="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">
-                Aadhaar / DigiLocker Verification via ZK-SNARK
+            <Fingerprint className="w-4 h-4 shrink-0 text-accent-light" />
+            <div>
+              <div className="text-xs font-semibold leading-tight">India (RBI)</div>
+              <div className="text-[10px] text-on-surface-variant/70 leading-tight mt-0.5">
+                Aadhaar ZK-SNARK
               </div>
             </div>
           </button>
@@ -246,105 +227,69 @@ export function KYCModal({
             id="kyc-tab-global"
             onClick={() => !isVerifying && setJurisdiction("global")}
             disabled={isVerifying}
-            className={`flex items-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+            className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
               jurisdiction === "global"
-                ? "border-teal-500 bg-teal-50 text-teal-700 shadow-sm"
-                : "border-gray-200 bg-white text-slate-600 hover:border-gray-300"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                ? "border-accent/50 bg-accent/15 text-white shadow-glow-accent"
+                : "border-glass-border bg-glass-light text-on-surface-variant hover:border-glass-border-light hover:text-on-surface"
+            } disabled:opacity-50`}
           >
-            <Globe className="w-4 h-4 shrink-0" />
-            <div className="text-left">
-              <div className="font-semibold leading-tight">
-                Global / EU (GDPR Compliant)
-              </div>
-              <div className="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">
-                Zero-Knowledge National ID Proof
+            <Globe className="w-4 h-4 shrink-0 text-accent-light" />
+            <div>
+              <div className="text-xs font-semibold leading-tight">Global / EU (GDPR)</div>
+              <div className="text-[10px] text-on-surface-variant/70 leading-tight mt-0.5">
+                ZK National ID Proof
               </div>
             </div>
           </button>
         </div>
 
-        {/* ── India tab: Anon Aadhaar SDK ─────────────────────────────────── */}
+        {/* India tab: Anon Aadhaar SDK */}
         {jurisdiction === "india" && !isVerifying && (
           <div className="space-y-4">
-            {/* Status indicator */}
             {anonAadhaar.status === "logged-in" ? (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span className="text-xs font-medium text-emerald-700">
-                  ZK Proof verified — identity confirmed on-device
-                </span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-success/15 border border-success/30 text-success-light text-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>ZK Proof verified — identity confirmed on-device</span>
               </div>
             ) : anonAadhaar.status === "logging-in" ? (
-              /* ── Rich animated progress terminal ────────────────────── */
               <div className="space-y-3">
-                <div className="rounded-xl bg-slate-900 border border-slate-700 p-4 space-y-3 font-mono text-xs">
-                  {/* Terminal chrome */}
-                  <div className="flex items-center gap-2 text-slate-400 mb-1">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                    </div>
-                    <span className="text-[10px] uppercase tracking-wider">
-                      ZK-SNARK Proof Engine
-                    </span>
-                    {/* Elapsed timer */}
-                    <span className="ml-auto text-[10px] text-slate-500">
-                      <ProofTimer />
-                    </span>
+                <div className="rounded-xl bg-surface-container-lowest border border-glass-border p-4 space-y-3">
+                  <div className="flex items-center justify-between text-on-surface-variant mb-1 font-mono text-[10px]">
+                    <span>ZK-SNARK PROOF ENGINE</span>
+                    <ProofTimer />
                   </div>
-
-                  {/* Animated steps */}
                   <ProofProgressSteps />
                 </div>
-
-                {/* Reassurance bar */}
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
-                  <Loader2 className="w-4 h-4 text-amber-600 animate-spin shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-amber-800">
-                      Generating cryptographic proof — please keep this tab open
-                    </p>
-                    <p className="text-[10px] text-amber-600 mt-0.5">
-                      This runs entirely in your browser via WebAssembly. Typical time: 30–90 seconds depending on device.
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/20 text-warning text-xs">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <p>Generating cryptographic proof locally in browser (30–90s)...</p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
-                <Shield className="w-4 h-4 text-slate-400" />
-                <span className="text-xs font-medium text-slate-500">
-                  Upload your Aadhaar QR to generate a zero-knowledge proof
-                </span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-glass-light border border-glass-border text-on-surface-variant text-xs">
+                <Shield className="w-4 h-4 text-accent-light shrink-0" />
+                <span>Upload your Aadhaar QR to generate zero-knowledge proof</span>
               </div>
             )}
 
-            {/* Anon Aadhaar SDK login button */}
             <div className="flex justify-center py-2">
-              <LogInWithAnonAadhaar
-                nullifierSeed={1234}
-              />
+              <LogInWithAnonAadhaar nullifierSeed={1234} />
             </div>
 
-            {/* PSE attribution & privacy notice */}
-            <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3">
-              <Fingerprint className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-indigo-700 leading-relaxed">
-                <strong>Powered by Privacy &amp; Scaling Explorations (PSE).</strong>{" "}
-                Your ID is verified locally via ZK-SNARKs and never leaves your
-                device. No personal data is transmitted or stored on any server.
+            <div className="flex items-start gap-2.5 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+              <Fingerprint className="w-4 h-4 text-accent-light shrink-0 mt-0.5" />
+              <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                <strong>Privacy &amp; Scaling Explorations (PSE):</strong> Verified entirely on-device via Groth16 ZK-SNARKs. No Aadhaar numbers or personal identifiers ever touch our servers.
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Global / EU form ──────────────────────────────────────────── */}
+        {/* Global / EU form */}
         {jurisdiction === "global" && !isVerifying && (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5 block">
                 Document ID (Passport / National ID)
               </label>
               <input
@@ -353,23 +298,21 @@ export function KYCModal({
                 value={documentId}
                 onChange={(e) => setDocumentId(e.target.value)}
                 placeholder="e.g. AB1234567"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-sm font-semibold text-slate-800 transition-all"
+                className="glass-input text-sm"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+              <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5 block">
                 Country of Issuance
               </label>
               <select
                 id="kyc-country-select"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-sm font-semibold text-slate-800 transition-all bg-white appearance-none cursor-pointer"
+                className="glass-input text-sm [&>option]:bg-surface-container [&>option]:text-on-surface"
               >
-                <option value="" disabled>
-                  Select country…
-                </option>
+                <option value="" disabled>Select country…</option>
                 {COUNTRIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -377,37 +320,35 @@ export function KYCModal({
                 ))}
               </select>
             </div>
+
+            <Button
+              id="kyc-verify-btn"
+              onClick={handleGlobalVerify}
+              disabled={!isGlobalFormValid}
+              variant="primary"
+              className="w-full py-3 shadow-glow-accent text-xs font-semibold"
+            >
+              <Shield className="w-4 h-4" />
+              Generate ZK Proof &amp; Verify
+            </Button>
           </div>
         )}
 
-        {/* ── Verification terminal (Global/EU only) ──────────────────────── */}
+        {/* Verification terminal */}
         {isVerifying && (
-          <div className="rounded-xl bg-slate-900 border border-slate-700 p-4 space-y-3 font-mono text-xs">
-            <div className="flex items-center gap-2 text-slate-400 mb-2">
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-              </div>
-              <span className="text-[10px] uppercase tracking-wider">
-                ZK-SNARK Verification Terminal
-              </span>
+          <div className="rounded-xl bg-surface-container-lowest border border-glass-border p-4 space-y-2.5 font-mono text-xs">
+            <div className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">
+              ZK-SNARK Verification Terminal
             </div>
 
             {VERIFICATION_STEPS.map((step, i) => {
               if (i > verificationStepIndex) return null;
               const isDone = i < verificationStepIndex;
-              const isCurrent = i === verificationStepIndex;
-
               return (
                 <div
                   key={i}
-                  className={`flex items-start gap-2 transition-opacity duration-300 ${
-                    isDone
-                      ? "text-emerald-400"
-                      : isCurrent
-                      ? "text-cyan-300"
-                      : "text-slate-600"
+                  className={`flex items-start gap-2 ${
+                    isDone ? "text-success-light" : "text-accent-light"
                   }`}
                 >
                   {isDone ? (
@@ -415,35 +356,19 @@ export function KYCModal({
                   ) : (
                     <Loader2 className="w-4 h-4 shrink-0 mt-0.5 animate-spin" />
                   )}
-                  <span className="leading-relaxed">{step.message}</span>
+                  <span>{step.message}</span>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* ── Compliance notice ──────────────────────────────────────────── */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-slate-600 leading-relaxed">
-            <strong>🔒 Zero-Knowledge Guarantee:</strong> Your sensitive
-            identity data is hashed and verified off-chain. No PII is recorded
-            on the blockchain (GDPR Article 25 &amp; FATF Compliant).
+        <div className="flex items-start gap-2.5 rounded-xl border border-glass-border bg-glass-subtle px-4 py-3">
+          <Lock className="w-4 h-4 text-on-surface-variant shrink-0 mt-0.5" />
+          <p className="text-[11px] text-on-surface-variant/80 leading-relaxed">
+            <strong>Zero-Knowledge Guarantee:</strong> Identity credentials are authenticated without disclosing raw identity parameters (GDPR Art. 25 &amp; FATF aligned).
           </p>
         </div>
-
-        {/* ── Submit button (Global/EU tab only) ──────────────────────────── */}
-        {jurisdiction === "global" && !isVerifying && (
-          <button
-            id="kyc-verify-btn"
-            onClick={handleGlobalVerify}
-            disabled={!isGlobalFormValid}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-semibold text-sm shadow-lg shadow-teal-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-          >
-            <Shield className="w-4 h-4" />
-            Generate ZK Proof &amp; Verify
-          </button>
-        )}
       </div>
     </Modal>
   );

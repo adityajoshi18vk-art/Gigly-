@@ -6,91 +6,110 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { FreelancerCard } from "@/components/FreelancerCard";
-import { ShieldCheck, Clock, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Clock, AlertTriangle, Sparkles } from "lucide-react";
 
 export default function StyleGuide() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-12 font-sans text-foreground">
+    <div className="min-h-screen p-6 lg:p-12 font-sans text-on-surface">
       <div className="max-w-5xl mx-auto space-y-12">
         
-        <header className="border-b border-gray-200 pb-6">
-          <h1 className="text-3xl font-bold text-slate-900">Gigly Design System</h1>
-          <p className="text-slate-500 mt-2">Clean, Web2-style aesthetic for freelance escrow.</p>
+        <header className="border-b border-glass-border pb-6 flex items-center justify-between">
+          <div>
+            <div className="pill-badge mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-accent-light" />
+              <span className="text-xs font-semibold text-accent-light uppercase">Design Tokens v2.0</span>
+            </div>
+            <h1 className="font-display text-3xl font-bold text-on-surface">Gigly Design System</h1>
+            <p className="text-on-surface-variant text-sm mt-1">Deep space navy aesthetic with radial atmospheric glow and translucent glass surfaces.</p>
+          </div>
         </header>
 
-        {/* --- Buttons & Badges (Refined Check) --- */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-slate-800">1. Action & Status Contrast (Refinement Check)</h2>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-500 mb-4">
-                Ensuring primary teal buttons and emerald status badges are visually distinct.
-              </p>
-              <div className="flex flex-wrap items-center gap-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <Button>
-                  Primary Action
-                </Button>
-                <div className="h-8 w-px bg-gray-300 hidden sm:block" />
-                <Badge variant="success">
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                  Released
-                </Badge>
-                <Badge variant="pending">
-                  <Clock className="w-3.5 h-3.5 mr-1" />
-                  Pending Review
-                </Badge>
-                <Badge variant="danger">
-                  <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                  Disputed
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* --- Buttons --- */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-slate-800">2. Buttons</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-slate-500">Primary</p>
-              <Button className="w-full">Default</Button>
-              <Button className="w-full hover:bg-primary-hover">Hovered</Button>
-              <Button className="w-full" disabled>Disabled</Button>
-            </div>
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-slate-500">Outline</p>
-              <Button variant="outline" className="w-full">Default</Button>
-              <Button variant="outline" className="w-full bg-gray-50">Hovered</Button>
-              <Button variant="outline" className="w-full" disabled>Disabled</Button>
-            </div>
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-slate-500">Ghost</p>
-              <Button variant="ghost" className="w-full">Default</Button>
-              <Button variant="ghost" className="w-full bg-gray-100">Hovered</Button>
-              <Button variant="ghost" className="w-full" disabled>Disabled</Button>
+        {/* --- Buttons & Badges --- */}
+        <section className="space-y-4">
+          <h2 className="font-display text-lg font-semibold text-on-surface">1. Action &amp; Status Contrast</h2>
+          <div className="surface-card rounded-2xl p-6">
+            <p className="text-xs text-on-surface-variant mb-4">
+              Demonstrating primary violet gradient buttons alongside dark glass status pills.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 p-4 bg-glass-light rounded-xl border border-glass-border">
+              <Button variant="primary">
+                Primary Action
+              </Button>
+              <Button variant="outline">
+                Glass Outline
+              </Button>
+              <Button variant="ghost">
+                Ghost
+              </Button>
+              <div className="h-6 w-px bg-glass-border hidden sm:block" />
+              <Badge variant="success">
+                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                Released
+              </Badge>
+              <Badge variant="pending">
+                <Clock className="w-3.5 h-3.5 mr-1" />
+                Pending Review
+              </Badge>
+              <Badge variant="danger">
+                <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                Disputed
+              </Badge>
             </div>
           </div>
         </section>
 
-        {/* --- Freelancer Grid Reflow --- */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-slate-800">3. Mobile-First Grid Reflow</h2>
-            <span className="text-sm text-slate-500 hidden sm:inline-block">Resize window to see reflow</span>
+        {/* --- Buttons Variants & Sizes --- */}
+        <section className="space-y-4">
+          <h2 className="font-display text-lg font-semibold text-on-surface">2. Button Variants</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="space-y-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">Primary</p>
+              <Button variant="primary" className="w-full">Default</Button>
+              <Button variant="primary" size="sm" className="w-full">Small</Button>
+              <Button variant="primary" className="w-full" disabled>Disabled</Button>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">Outline</p>
+              <Button variant="outline" className="w-full">Default</Button>
+              <Button variant="outline" size="sm" className="w-full">Small</Button>
+              <Button variant="outline" className="w-full" disabled>Disabled</Button>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">Ghost</p>
+              <Button variant="ghost" className="w-full">Default</Button>
+              <Button variant="ghost" size="sm" className="w-full">Small</Button>
+              <Button variant="ghost" className="w-full" disabled>Disabled</Button>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">Danger</p>
+              <Button variant="danger" className="w-full">Dispute</Button>
+              <Button variant="danger" size="sm" className="w-full">Cancel</Button>
+              <Button variant="danger" className="w-full" disabled>Disabled</Button>
+            </div>
+          </div>
+        </section>
+
+        {/* --- Freelancer Showcase --- */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold text-on-surface">3. Verified Profile Cards</h2>
+            <span className="text-xs text-on-surface-variant font-mono">Mobile-first flex reflow</span>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <FreelancerCard 
               name="Alice Cooper"
-              title="Senior Full-Stack Developer"
+              title="Senior Full-Stack Web3 Developer"
               avatarFallback="AC"
               rating={4.9}
               reviews={124}
               hourlyRate="$60/hr"
               skills={["React", "Node.js", "Solidity", "TypeScript"]}
+              verifiedSkills={["Solidity", "TypeScript"]}
+              domain="Smart Contracts"
+              isVerified={true}
             />
             <FreelancerCard 
               name="Bob Builder"
@@ -99,39 +118,46 @@ export default function StyleGuide() {
               rating={5.0}
               reviews={89}
               hourlyRate="$45/hr"
-              skills={["Figma", "Prototyping", "Wireframing"]}
+              skills={["Figma", "Design Systems", "Framer"]}
+              domain="UI/UX"
+              isVerified={true}
             />
             <FreelancerCard 
               name="Charlie Davis"
-              title="Smart Contract Auditor"
+              title="Smart Contract Security Auditor"
               avatarFallback="CD"
               rating={4.8}
               reviews={42}
               hourlyRate="$120/hr"
-              skills={["Security", "Yul", "Hardhat"]}
+              skills={["Slither", "Foundry", "Yul"]}
+              verifiedSkills={["Foundry"]}
+              domain="Auditing"
+              isVerified={false}
             />
           </div>
         </section>
 
-        {/* --- Modals & Cards --- */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-slate-800">4. Cards & Modals</h2>
+        {/* --- Modals & Glass Surfaces --- */}
+        <section className="space-y-4">
+          <h2 className="font-display text-lg font-semibold text-on-surface">4. Glass Morphism &amp; Dialogs</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Standard Card</CardTitle>
+                <CardTitle>Interactive 3D Glass Card</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-600 mb-4">
-                  Cards use a soft 1px border, 12px border-radius, and a very subtle drop shadow that elevates on hover.
+                <p className="text-sm text-on-surface-variant mb-4 leading-relaxed">
+                  Cards feature subtle mouse-reactive 3D tilt, violet glare reflections, and a luminous top edge highlight line.
                 </p>
-                <Button onClick={() => setIsModalOpen(true)}>Open Modal</Button>
+                <Button onClick={() => setIsModalOpen(true)}>Open Demo Modal</Button>
               </CardContent>
             </Card>
 
-            <Card className="flex items-center justify-center bg-gray-50 border-dashed">
-              <p className="text-sm text-slate-400">Empty State Placeholder</p>
-            </Card>
+            <div className="surface-card rounded-2xl p-8 flex flex-col items-center justify-center text-center border-dashed border-glass-border">
+              <Sparkles className="w-8 h-8 text-accent-light mb-2" />
+              <p className="text-sm font-semibold text-on-surface">Translucent Dark Surface</p>
+              <p className="text-xs text-on-surface-variant mt-1">backdrop-blur-xl with space-navy palette</p>
+            </div>
           </div>
         </section>
 
@@ -141,17 +167,16 @@ export default function StyleGuide() {
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
-        title="Submit Work"
+        title="Escrow Action Confirmation"
       >
-        <p className="text-sm text-slate-600 mb-6">
-          Are you sure you want to submit this milestone for review? The client will have 24 hours to approve or dispute.
+        <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
+          Are you sure you want to submit this milestone deliverable on-chain? A 24-hour review window will begin immediately.
         </p>
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 pt-2 border-t border-glass-border">
           <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-          <Button onClick={() => setIsModalOpen(false)}>Confirm Submission</Button>
+          <Button variant="primary" onClick={() => setIsModalOpen(false)}>Confirm Submission</Button>
         </div>
       </Modal>
-
     </div>
   );
 }

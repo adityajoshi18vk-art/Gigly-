@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -9,48 +8,53 @@ export interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const content = (
+export function Modal({ isOpen, onClose, title, children, size = "lg" }: ModalProps) {
+  return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop — deep navy tint with blur */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 bg-on-background/20 backdrop-blur-[2px]"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-background/60 backdrop-blur-md"
             onClick={onClose}
           />
           
           {/* Dialog */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 10 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative z-[10000] w-full max-w-lg mx-4"
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className={`relative z-50 w-full mx-4 ${
+              size === "sm" ? "max-w-sm" :
+              size === "md" ? "max-w-md" :
+              size === "lg" ? "max-w-lg" :
+              "max-w-xl"
+            }`}
           >
-            <div className="bg-surface-container-lowest border border-outline-variant shadow-level-2 rounded-xl overflow-hidden">
-              <div className="flex items-center justify-between border-b border-outline-variant p-4 bg-surface-container-lowest">
+            <div className="relative overflow-hidden rounded-2xl border border-glass-border-light bg-surface backdrop-blur-xl shadow-level-3">
+              {/* Top edge highlight */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-glass-border p-5">
                 <h2 className="text-lg font-semibold text-on-surface tracking-tight">{title}</h2>
                 <button
-                  type="button"
                   onClick={onClose}
-                  className="rounded-md p-1.5 hover:bg-outline-variant/20 text-on-surface-variant hover:text-on-surface transition-colors"
+                  className="rounded-lg p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-glass-light transition-all duration-200"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
+
+              {/* Content */}
               <div className="p-6">
                 {children}
               </div>
@@ -60,8 +64,4 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       )}
     </AnimatePresence>
   );
-
-  // Portal to document.body to escape SpatialWrapper's transform stacking context
-  if (!mounted) return null;
-  return createPortal(content, document.body);
 }

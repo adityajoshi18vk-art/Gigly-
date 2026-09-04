@@ -16,6 +16,8 @@ import {
   Wallet,
   Copy,
   Check,
+  ShieldCheck,
+  Zap,
 } from "lucide-react";
 import { parseUnits } from "viem";
 
@@ -47,13 +49,12 @@ export function CreateJobModal({
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
 
-  // Pre-fill amount from suggested rate when modal opens
   useEffect(() => {
     if (isOpen && suggestedRate && !amount) {
       setAmount(String(suggestedRate));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, suggestedRate]);
+  }, [isOpen, suggestedRate, amount]);
+
   const [step, setStep] = useState<Step>("input");
   const [errorMessage, setErrorMessage] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -98,7 +99,6 @@ export function CreateJobModal({
   const targetAddress =
     freelancerAddress || "0x0000000000000000000000000000000000000000";
 
-  // Copy smart wallet address to clipboard
   const handleCopyAddress = () => {
     if (!account) return;
     navigator.clipboard.writeText(account.address);
@@ -106,7 +106,6 @@ export function CreateJobModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Check balance on the funding screen then auto-proceed ─────────────────
   const handleCheckBalance = useCallback(async () => {
     setIsRefreshing(true);
     await refetchBalance();
@@ -114,18 +113,15 @@ export function CreateJobModal({
     setIsRefreshing(false);
   }, [refetchBalance, refetchAllowance]);
 
-  // Watch balance while on funding screen — proceed when sufficient
   useEffect(() => {
     if (step !== "funding") return;
     if (!parsedAmount || parsedAmount === BigInt(0)) return;
     if (BigInt(balanceData || 0) >= parsedAmount) {
-      // Balance is now sufficient — proceed automatically
       executeJobCreation();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [balanceData, step]);
 
-  // ── Core job-creation logic ───────────────────────────────────────────────
   const executeJobCreation = useCallback(async () => {
     if (!account || !title || !amount) return;
     setErrorMessage("");
@@ -178,8 +174,7 @@ export function CreateJobModal({
       setErrorMessage(msg.length > 150 ? msg.slice(0, 150) + "…" : msg);
       setStep("input");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account, title, amount, parsedAmount, targetAddress, allowanceData, sendTransaction, refetchAllowance, onSuccess]);
+  }, [account, title, amount, parsedAmount, targetAddress, sendTransaction, refetchAllowance, onSuccess]);
 
   const handleHire = () => {
     if (!account || !title || !amount) return;
@@ -202,8 +197,8 @@ export function CreateJobModal({
 
   const modalTitle =
     step === "funding" ? "Get Testnet USDC"
-    : freelancerName ? `Hire ${freelancerName}`
-    : "Post an Open Job";
+    : freelancerName ? `Fund Escrow: ${freelancerName}`
+    : "Create Escrow Job";
 
   const neededAmount = parseFloat(amount) || 0;
   const shortfall = Math.max(0, neededAmount - usdcBalance).toFixed(2);
@@ -217,16 +212,17 @@ export function CreateJobModal({
       {/* ── SUCCESS ──────────────────────────────────────────────────────── */}
       {step === "success" && (
         <div className="flex flex-col items-center justify-center py-6 text-center">
-          <CheckCircle2 className="w-16 h-16 text-emerald-600 mb-4" />
-          <h3 className="text-xl font-bold text-on-surface mb-2">
-            Job Created Successfully!
+          <div className="w-16 h-16 rounded-full bg-success/15 border border-success/30 flex items-center justify-center text-success-light mb-4 shadow-glow-success">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+          <h3 className="font-display text-xl font-bold text-on-surface mb-2">
+            Escrow Funded Successfully!
           </h3>
-          <p className="text-on-surface-variant mb-6">
-            The USDC has been locked in escrow and{" "}
+          <p className="text-body-sm text-on-surface-variant max-w-sm mb-6 leading-relaxed">
+            Your {amount} USDC is securely held in the smart contract escrow.{" "}
             {freelancerName
-              ? `${freelancerName} has been notified`
-              : "the job is now open for freelancers to claim"}
-            .
+              ? `${freelancerName} can now begin work safely.`
+              : "The gig is now open on the marketplace for freelancers."}
           </p>
           <Button onClick={resetAndClose} className="w-full">
             Back to Dashboard
@@ -234,113 +230,103 @@ export function CreateJobModal({
         </div>
       )}
 
-      {/* ── FUNDING SCREEN — Guide user to Circle Faucet ─────────────────── */}
+      {/* ── FUNDING SCREEN ───────────────────────────────────────────────── */}
       {step === "funding" && (
         <div className="flex flex-col gap-4">
-
-          {/* Status: current vs needed */}
+          {/* Status cards */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-container border border-outline-variant rounded-xl p-3 text-center">
-              <p className="text-xs text-on-surface-variant mb-1">Your balance</p>
-              <p className="text-lg font-bold text-on-surface">{usdcBalance.toFixed(2)}</p>
-              <p className="text-xs text-on-surface-variant">USDC</p>
+            <div className="bg-glass-light border border-glass-border rounded-xl p-3.5 text-center">
+              <p className="text-xs text-on-surface-variant/70 mb-1">Your Balance</p>
+              <p className="text-xl font-bold font-mono text-on-surface">{usdcBalance.toFixed(2)}</p>
+              <p className="text-[11px] text-on-surface-variant font-mono">USDC</p>
             </div>
-            <div className="bg-error-container border border-error/20 rounded-xl p-3 text-center">
-              <p className="text-xs text-error mb-1">Still need</p>
-              <p className="text-lg font-bold text-error">{shortfall}</p>
-              <p className="text-xs text-error/80">USDC</p>
+            <div className="bg-warning/10 border border-warning/20 rounded-xl p-3.5 text-center">
+              <p className="text-xs text-warning mb-1">Shortfall</p>
+              <p className="text-xl font-bold font-mono text-warning">{shortfall}</p>
+              <p className="text-[11px] text-warning/80 font-mono">USDC</p>
             </div>
           </div>
 
-          {/* Step 1 — Circle faucet */}
-          <div className="rounded-xl border border-outline-variant overflow-hidden">
-            <div className="bg-surface-container px-4 py-2.5 border-b border-outline-variant">
-              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
-                Step 1 — Get Testnet USDC
+          {/* Step 1 — Circle Faucet */}
+          <div className="rounded-xl border border-glass-border bg-glass-subtle overflow-hidden">
+            <div className="bg-glass-light px-4 py-2.5 border-b border-glass-border flex items-center justify-between">
+              <p className="text-xs font-semibold text-accent-light uppercase tracking-wider">
+                Step 1 — Official Circle Faucet
               </p>
+              <span className="text-[10px] text-on-surface-variant font-mono">Ethereum Sepolia</span>
             </div>
-            <div className="p-4 space-y-3 bg-surface-container-lowest">
-              <p className="text-sm text-on-surface">
-                Visit the <strong>Circle Testnet Faucet</strong> to claim up to{" "}
-                <strong>10 USDC</strong> per day for free. Make sure your{" "}
-                <strong>Ethereum Sepolia</strong> wallet is connected.
+            <div className="p-4 space-y-3">
+              <p className="text-body-sm text-on-surface-variant leading-relaxed">
+                Claim up to <strong>10 USDC</strong> per day from the official Circle faucet for Ethereum Sepolia testnet.
               </p>
               <a
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 id="circle-faucet-link"
-                className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#0066CC] hover:bg-[#0055AA] active:scale-[0.98] transition-all text-white font-semibold py-3 text-sm"
+                className="btn-gradient-primary w-full py-3 text-sm font-semibold flex items-center justify-center gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
-                Open Circle Faucet
+                Open Circle USDC Faucet
               </a>
             </div>
           </div>
 
-          {/* Step 2 — Check balance */}
-          <div className="rounded-xl border border-outline-variant overflow-hidden">
-            <div className="bg-surface-container px-4 py-2.5 border-b border-outline-variant">
-              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
-                Step 2 — Refresh & Proceed
+          {/* Step 2 — Check Balance */}
+          <div className="rounded-xl border border-glass-border bg-glass-subtle overflow-hidden">
+            <div className="bg-glass-light px-4 py-2.5 border-b border-glass-border">
+              <p className="text-xs font-semibold text-accent-light uppercase tracking-wider">
+                Step 2 — Verify & Continue
               </p>
             </div>
-            <div className="p-4 space-y-3 bg-surface-container-lowest">
-              <p className="text-sm text-on-surface">
-                After claiming, click below to check your updated balance. Job
-                creation will start automatically once you have enough USDC.
+            <div className="p-4 space-y-3">
+              <p className="text-body-sm text-on-surface-variant">
+                Once claimed in your wallet, refresh below. Job creation will proceed automatically once your balance covers the escrow.
               </p>
               <button
                 id="check-balance-btn"
                 onClick={handleCheckBalance}
                 disabled={isRefreshing}
-                className="flex items-center justify-center gap-2 w-full rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-lowest active:scale-[0.98] transition-all py-3 text-sm font-semibold text-on-surface disabled:opacity-60 disabled:pointer-events-none"
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-glass-border bg-glass-light hover:bg-glass-medium transition-all py-3 text-sm font-medium text-on-surface disabled:opacity-50"
               >
-                {isRefreshing
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Checking…</>
-                  : <><RefreshCw className="w-4 h-4" />Check Balance & Proceed</>
-                }
+                {isRefreshing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin text-accent" />Checking balance…</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 text-accent" />Check Balance & Proceed</>
+                )}
               </button>
             </div>
           </div>
 
-          {/* ── Wallet address — copy to fund it ──────────────────────── */}
+          {/* Wallet address copy */}
           {account && (
-            <div className="rounded-xl border border-primary/30 bg-primary/10 overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-primary/20 flex items-center gap-2 bg-primary/5">
-                <Wallet className="w-3.5 h-3.5 text-primary" />
-                <p className="text-xs font-semibold text-primary uppercase tracking-wide">
-                  Your Wallet Address
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-accent-light" />
+                <p className="text-xs font-semibold text-accent-light uppercase tracking-wider">
+                  Target Deposit Address
                 </p>
               </div>
-              <div className="p-4 space-y-2">
-                <p className="text-xs text-on-surface-variant">
-                  Send Circle Testnet USDC to <strong>this address</strong> on{" "}
-                  <strong>Ethereum Sepolia</strong>.
-                </p>
-                <button
-                  onClick={handleCopyAddress}
-                  className="flex items-center gap-2 w-full text-left bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 hover:border-primary/40 active:scale-[0.99] transition-all group"
-                >
-                  <span className="flex-1 text-xs font-mono text-on-surface truncate">
-                    {account.address}
-                  </span>
-                  {copied
-                    ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    : <Copy className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-primary shrink-0 transition-colors" />
-                  }
-                </button>
-                {copied && (
-                  <p className="text-xs text-emerald-600 font-medium">✓ Copied to clipboard</p>
+              <button
+                onClick={handleCopyAddress}
+                className="flex items-center gap-2 w-full text-left bg-glass-light border border-glass-border rounded-lg px-3 py-2 hover:border-accent/40 active:scale-[0.99] transition-all group"
+              >
+                <span className="flex-1 text-xs font-mono text-on-surface truncate">
+                  {account.address}
+                </span>
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-success-light shrink-0" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-on-surface-variant group-hover:text-accent-light shrink-0 transition-colors" />
                 )}
-              </div>
+              </button>
             </div>
           )}
 
           <Button
             variant="ghost"
             onClick={() => setStep("input")}
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 text-xs"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Job Details
@@ -352,38 +338,38 @@ export function CreateJobModal({
       {(step === "input" || step === "approving" || step === "creating") && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1">
-              Task Title
+            <label className="block text-sm font-medium text-on-surface mb-1.5">
+              Task Deliverable Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Design Landing Page"
-              className="w-full border border-outline-variant bg-surface-container-lowest rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+              placeholder="e.g. Build Web3 Staking Contract & Frontend"
+              className="glass-input text-sm"
               disabled={step !== "input"}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-on-surface mb-1">
-              Amount (USDC)
+            <label className="block text-sm font-medium text-on-surface mb-1.5">
+              Escrow Amount (USDC)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-on-surface-variant">$</span>
+              <span className="absolute left-3.5 top-3 text-on-surface-variant font-mono">$</span>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full border border-outline-variant bg-surface-container-lowest rounded-lg pl-7 pr-3 py-2 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
+                className="glass-input pl-8 text-sm font-mono"
                 disabled={step !== "input"}
               />
             </div>
-            <p className="text-xs text-on-surface-variant mt-1 flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant mt-2 px-1">
               <span>
                 Available:{" "}
-                <span className={usdcBalance === 0 ? "text-amber-600 font-medium" : "font-medium"}>
+                <span className={usdcBalance === 0 ? "text-warning font-mono" : "font-mono text-on-surface"}>
                   {usdcBalance.toFixed(2)} USDC
                 </span>
               </span>
@@ -391,40 +377,61 @@ export function CreateJobModal({
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                className="text-accent-light hover:underline inline-flex items-center gap-1"
               >
-                Get USDC <ExternalLink className="w-2.5 h-2.5" />
+                Circle Faucet <ExternalLink className="w-2.5 h-2.5" />
               </a>
-            </p>
+            </div>
           </div>
 
-          {/* Insufficient balance */}
+          {/* Insufficient balance notification */}
           {hasInsufficientBalance && (
-            <div className="flex items-start gap-2 bg-amber-100 text-amber-700 p-3 rounded-lg border border-amber-200">
+            <div className="flex items-start gap-2.5 bg-warning/10 text-warning p-3.5 rounded-xl border border-warning/20 text-xs leading-relaxed">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <p className="text-sm">
+              <p>
                 You need <strong>{shortfall} more USDC</strong>.{" "}
                 <button
                   onClick={() => setStep("funding")}
-                  className="underline font-medium hover:text-amber-700/80 transition-colors"
+                  className="underline font-semibold hover:text-white transition-colors"
                 >
-                  Get testnet USDC →
+                  Get free testnet USDC →
                 </button>
               </p>
             </div>
           )}
 
+          {/* Blockchain transaction active state indicators */}
+          {step === "approving" && (
+            <div className="flex items-center gap-3 bg-accent/10 border border-accent/25 p-4 rounded-xl text-accent-light text-xs">
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+              <div>
+                <p className="font-semibold text-white">Step 1 of 2: Approving USDC</p>
+                <p className="text-on-surface-variant mt-0.5">Authorizing the OptimisticEscrow contract to lock your funds...</p>
+              </div>
+            </div>
+          )}
+
+          {step === "creating" && (
+            <div className="flex items-center gap-3 bg-accent/10 border border-accent/25 p-4 rounded-xl text-accent-light text-xs">
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+              <div>
+                <p className="font-semibold text-white">Step 2 of 2: Creating Escrow Job</p>
+                <p className="text-on-surface-variant mt-0.5">Deploying job to Ethereum Sepolia and locking funds...</p>
+              </div>
+            </div>
+          )}
+
           {errorMessage && (
-            <div className="flex items-start gap-2 bg-error-container text-error p-3 rounded-lg border border-error/20">
+            <div className="flex items-start gap-2 bg-error/10 text-error p-3.5 rounded-xl border border-error/20 text-xs">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <div className="text-sm">
-                <strong>Transaction Failed</strong>
+              <div className="flex-1">
+                <strong>Transaction Failed:</strong>
                 <p className="mt-1 opacity-90 break-all">{errorMessage}</p>
               </div>
             </div>
           )}
 
-          <div className="pt-4 flex justify-end gap-2 border-t border-outline-variant mt-6">
+          <div className="pt-4 flex justify-end gap-2.5 border-t border-glass-border mt-6">
             <Button variant="ghost" onClick={resetAndClose} disabled={step !== "input"}>
               Cancel
             </Button>
@@ -432,11 +439,12 @@ export function CreateJobModal({
               onClick={handleHire}
               disabled={!title || !amount || step !== "input"}
               variant="primary"
+              className="px-6"
             >
               {step === "approving" ? "Approving USDC…"
-                : step === "creating" ? "Creating Job…"
-                : hasInsufficientBalance ? "Get USDC & Create Job"
-                : "Create Job"}
+                : step === "creating" ? "Locking Escrow…"
+                : hasInsufficientBalance ? "Get USDC & Create"
+                : "Lock Funds in Escrow"}
             </Button>
           </div>
         </div>

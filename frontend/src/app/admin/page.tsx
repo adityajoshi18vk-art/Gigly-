@@ -7,7 +7,7 @@ import { inAppWallet } from "thirdweb/wallets";
 import { escrowContract, client as thirdwebClient, client, CHAIN, accountAbstraction } from "@/lib/config";
 import { formatUnits, parseUnits } from "viem";
 import { useDisputeReasons } from "@/lib/useDisputeReasons";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, ShieldAlert, ShieldCheck, Scale, ArrowUpRight, CheckCircle2, Lock } from "lucide-react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -45,7 +45,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Read arbiter address
   const { data: arbiterAddress, isLoading: arbiterLoading } = useReadContract({
     contract: escrowContract,
     method: "function arbiter() view returns (address)",
@@ -55,23 +54,35 @@ export default function AdminDashboard() {
   const isArbiter = account && arbiterAddress && account.address.toLowerCase() === arbiterAddress.toLowerCase();
 
   if (arbiterLoading) {
-    return <div className="p-8 font-sans">Loading admin data...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-8">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-on-surface-variant text-sm font-mono">Authenticating with Arbiter contract...</p>
+      </div>
+    );
   }
 
   if (!account) {
     return (
-      <div className="p-8 font-sans max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-slate-900">Admin Dashboard</h1>
-        <p className="mb-4 text-slate-600">Please connect your wallet.</p>
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <CustomConnectButton />
-          <span className="text-slate-400">or</span>
-          <button 
-            onClick={handleAdminEmailLogin}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 py-2.5 rounded-lg transition-colors"
-          >
-            Sign in as gigilytest3@yopmail.com
-          </button>
+      <div className="min-h-screen py-16 px-6 max-w-4xl mx-auto flex flex-col justify-center">
+        <div className="surface-card rounded-3xl p-8 sm:p-12 shadow-level-2 max-w-xl mx-auto w-full text-center">
+          <div className="w-14 h-14 rounded-2xl bg-glass-light border border-glass-border flex items-center justify-center mx-auto mb-6 text-accent-light shadow-glow-accent">
+            <Scale className="w-7 h-7" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-on-surface mb-2">Decentralized Arbiter Portal</h1>
+          <p className="text-body-sm text-on-surface-variant mb-8 max-w-sm mx-auto">
+            Connect your designated Arbiter smart account to arbitrate disputed contracts and distribute escrow allocations.
+          </p>
+          <div className="flex flex-col gap-4 items-center justify-center">
+            <CustomConnectButton />
+            <span className="text-xs text-on-surface-variant/50 font-mono uppercase tracking-wider">or direct smart wallet</span>
+            <button 
+              onClick={handleAdminEmailLogin}
+              className="text-xs font-semibold py-2.5 px-5 rounded-xl border border-glass-border bg-glass-light hover:bg-glass-medium text-on-surface transition-all"
+            >
+              Sign in as Demo Arbiter (gigilytest3@yopmail.com)
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -79,23 +90,35 @@ export default function AdminDashboard() {
 
   if (!isArbiter) {
     return (
-      <div className="p-8 font-sans max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-slate-900">Admin Dashboard</h1>
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md mb-4">
-          Access Denied. Your connected wallet ({account.address}) is not the authorized arbiter.
-        </div>
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-md text-sm">
-          <p className="font-bold mb-2">How to become Arbiter:</p>
-          <p className="mb-2">The deployer of the contract must run the following command in the <code>contracts</code> directory:</p>
-          <code className="bg-blue-100 px-2 py-1 rounded block whitespace-pre overflow-x-auto">
-            $env:NEW_ARBITER=&quot;{account.address}&quot;; npx hardhat run scripts/set_arbiter.ts --network sepolia
-          </code>
+      <div className="min-h-screen py-16 px-6 max-w-3xl mx-auto">
+        <div className="surface-card rounded-3xl p-8 sm:p-10 shadow-level-2 space-y-6">
+          <div className="flex items-center gap-3 border-b border-glass-border pb-5">
+            <div className="w-10 h-10 rounded-xl bg-error/15 border border-error/30 flex items-center justify-center text-error">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="font-display text-xl font-bold text-on-surface">Arbiter Access Required</h1>
+              <p className="text-xs text-on-surface-variant font-mono">Restricted Smart Contract Function</p>
+            </div>
+          </div>
+
+          <div className="bg-error/10 border border-error/20 text-error p-4 rounded-xl text-xs leading-relaxed">
+            <strong>Access Denied:</strong> Connected wallet <code className="font-mono">{account.address}</code> is not registered as the authorized arbiter on contract <code className="font-mono">{escrowContract.address}</code>.
+          </div>
+
+          <div className="bg-glass-subtle border border-glass-border text-on-surface p-5 rounded-2xl text-xs space-y-3">
+            <p className="font-semibold text-accent-light uppercase tracking-wider">How to assign this wallet as Arbiter:</p>
+            <p className="text-on-surface-variant">Run the following command from the <code className="font-mono">contracts/</code> directory with deployer credentials:</p>
+            <code className="bg-surface-container-lowest border border-glass-border p-3 rounded-xl block font-mono text-accent-light text-[11px] overflow-x-auto select-all">
+              $env:NEW_ARBITER=&quot;{account.address}&quot;; npx hardhat run scripts/set_arbiter.ts --network sepolia
+            </code>
+          </div>
         </div>
       </div>
     );
   }
 
-  return <AdminDisputes />
+  return <AdminDisputes />;
 }
 
 function AdminDisputes() {
@@ -147,7 +170,6 @@ function AdminDisputes() {
           })
         );
 
-        // Filter for Disputed jobs (status === 3)
         const disputedJobs = allJobs.filter((job) => job.status === 3);
         setJobs(disputedJobs.sort((a, b) => b.id - a.id));
       } catch (error) {
@@ -161,17 +183,34 @@ function AdminDisputes() {
   }, [jobCountData, refreshCounter]);
 
   return (
-    <div className="p-8 font-sans max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Disputed Jobs Resolution</h1>
+    <div className="py-8 px-6 max-w-5xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 surface-card p-6 rounded-3xl shadow-level-1">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-error to-error/80 flex items-center justify-center text-white shadow-glow-accent">
+            <Scale className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="font-display text-xl font-bold text-on-surface">Arbiter Dispute Panel</h1>
+            <p className="text-xs text-on-surface-variant">Cryptographic split &amp; settlement resolution</p>
+          </div>
+        </div>
         <CustomConnectButton />
       </div>
       
       {loading ? (
-        <div className="text-slate-500">Loading disputed jobs...</div>
+        <div className="text-center py-20">
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-on-surface-variant text-sm font-mono">Fetching disputed contracts from Ethereum Sepolia...</p>
+        </div>
       ) : jobs.length === 0 ? (
-        <div className="bg-slate-50 border border-slate-200 rounded p-6 text-center text-slate-500">
-          No disputed jobs at this time. All clear!
+        <div className="surface-card p-12 rounded-3xl border-dashed border-glass-border text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-glass-light border border-glass-border flex items-center justify-center mx-auto text-success-light">
+            <CheckCircle2 className="w-7 h-7" />
+          </div>
+          <h2 className="font-display text-lg font-bold text-on-surface">Zero Pending Disputes</h2>
+          <p className="text-on-surface-variant text-xs max-w-sm mx-auto">
+            All escrow jobs are executing normally without conflict. Any job with a raised dispute will appear here for adjudication.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -200,7 +239,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
   const handleResolve = async () => {
     const val = Number(amountInput);
     if (isNaN(val) || val < 0 || val > maxAmount) {
-      alert("Invalid amount.");
+      alert("Invalid allocation amount.");
       return;
     }
 
@@ -223,90 +262,127 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
       onResolved();
     } catch (err) {
       console.error("Failed to resolve dispute:", err);
-      alert("Failed to resolve dispute. See console.");
+      alert("Failed to resolve dispute.");
     } finally {
       setProcessing(false);
     }
   };
 
+  const freelancerShare = Number(amountInput) || 0;
+  const clientRefund = Math.max(0, maxAmount - freelancerShare);
+
   return (
-    <div className="border border-slate-200 p-5 rounded-lg bg-white flex flex-col gap-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-4">
+    <div className="surface-card-interactive rounded-2xl p-6 relative overflow-hidden transition-all duration-300 group">
+      {/* Top red accent highlight */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-error/40 to-transparent" />
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-glass-border pb-4 gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className="font-bold text-slate-800 text-lg">Job #{job.id}: {job.taskTitle || "Untitled"}</h3>
-            <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
-              {STATUS_MAP[job.status] || "Unknown"}
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <span className="text-[11px] text-on-surface-variant font-mono tracking-widest uppercase bg-glass-light px-2.5 py-0.5 rounded-full border border-glass-border">
+              Job #{job.id}
+            </span>
+            <Badge variant="danger">
+              Disputed
             </Badge>
           </div>
-          <div className="text-sm text-slate-600 mt-1 font-mono">Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}</div>
-          <div className="text-sm text-slate-600 font-mono">Freelancer: {job.freelancer.slice(0, 6)}...{job.freelancer.slice(-4)}</div>
+          <h3 className="font-display font-semibold text-on-surface text-xl">
+            {job.taskTitle || `Job #${job.id}`}
+          </h3>
+          <div className="flex flex-wrap gap-4 mt-2 text-xs font-mono text-on-surface-variant">
+            <span>Client: <span className="text-on-surface">{job.client.slice(0, 6)}...{job.client.slice(-4)}</span></span>
+            <span>Freelancer: <span className="text-on-surface">{job.freelancer.slice(0, 6)}...{job.freelancer.slice(-4)}</span></span>
+          </div>
         </div>
+
         <div className="text-left sm:text-right">
-          <div className="font-bold text-slate-900 text-xl">{maxAmount} USDC</div>
-          <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Locked Amount</div>
+          <p className="text-[11px] text-on-surface-variant/60 uppercase font-mono tracking-wider">Locked in Escrow</p>
+          <div className="font-display font-bold text-on-surface text-2xl font-mono text-gradient-warm">
+            {maxAmount.toFixed(2)} USDC
+          </div>
         </div>
       </div>
 
-      <div className="bg-slate-50 border border-slate-100 p-4 rounded-md flex flex-col sm:flex-row gap-4 sm:gap-8 mt-2 mb-2 text-sm">
-        <div className="flex-1">
-          <p className="font-semibold text-slate-700 mb-1">Freelancer&apos;s Submission:</p>
+      {/* Evidence & Submission Panels */}
+      <div className="grid sm:grid-cols-2 gap-4 my-4">
+        <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl space-y-1.5">
+          <p className="text-xs font-semibold text-accent-light uppercase tracking-wider">Freelancer Deliverable:</p>
           {submissionLink ? (
             <a 
               href={submissionLink.startsWith('http') ? submissionLink : `https://${submissionLink}`}
               target="_blank" 
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs text-accent-light hover:text-white underline font-mono break-all"
             >
-              <LinkIcon className="w-3.5 h-3.5" />
-              View Work
+              <LinkIcon className="w-3.5 h-3.5 shrink-0" />
+              {submissionLink}
+              <ArrowUpRight className="w-3 h-3 shrink-0" />
             </a>
           ) : (
-            <span className="text-slate-400 italic">No link available</span>
+            <span className="text-xs text-on-surface-variant/50 italic font-mono">No link attached</span>
           )}
         </div>
-        <div className="flex-1">
-          <p className="font-semibold text-slate-700 mb-1">Client&apos;s Dispute Reason:</p>
+
+        <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl space-y-1.5">
+          <p className="text-xs font-semibold text-error uppercase tracking-wider">Client Dispute Claim:</p>
           {disputeReason ? (
-            <p className="text-slate-600 whitespace-pre-wrap">{disputeReason}</p>
+            <p className="text-xs text-on-surface-variant leading-relaxed">{disputeReason}</p>
           ) : (
-            <span className="text-slate-400 italic">No reason provided</span>
+            <span className="text-xs text-on-surface-variant/50 italic font-mono">No statement provided</span>
           )}
         </div>
       </div>
-      
-      <div className="flex flex-col md:flex-row items-end gap-4 mt-2">
-        <div className="flex-1 w-full">
-          <label className="block text-sm font-semibold mb-1.5 text-slate-700">
-            Amount to Freelancer (USDC)
-            <span className="text-slate-500 ml-2 font-normal">(Max: {maxAmount} USDC)</span>
-          </label>
-          <input 
-            type="number" 
-            max={maxAmount}
-            min={0}
-            step="0.01"
-            className="border border-slate-300 p-2.5 rounded w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            value={amountInput}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              // Client-side validation: cap at maxAmount
-              if (val > maxAmount) {
-                setAmountInput(maxAmount.toString());
-              } else {
-                setAmountInput(e.target.value);
-              }
-            }}
-            placeholder="0.00"
-          />
+
+      {/* Split & Adjudication Controls */}
+      <div className="bg-surface-container-lowest border border-glass-border p-4 rounded-xl space-y-4">
+        <div className="flex flex-col sm:flex-row items-end gap-4">
+          <div className="flex-1 w-full">
+            <div className="flex justify-between items-center mb-1.5 text-xs">
+              <label className="font-semibold text-on-surface uppercase tracking-wider">
+                Allocation to Freelancer (USDC)
+              </label>
+              <span className="text-on-surface-variant font-mono">Max: {maxAmount} USDC</span>
+            </div>
+            <div className="relative">
+              <span className="absolute left-3.5 top-3 text-on-surface-variant font-mono text-sm">$</span>
+              <input 
+                type="number" 
+                max={maxAmount}
+                min={0}
+                step="0.01"
+                className="glass-input pl-8 text-sm font-mono"
+                value={amountInput}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val > maxAmount) {
+                    setAmountInput(maxAmount.toString());
+                  } else {
+                    setAmountInput(e.target.value);
+                  }
+                }}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleResolve}
+            disabled={processing || amountInput === ""}
+            variant="primary"
+            className="w-full sm:w-auto px-6 py-3 text-xs font-semibold uppercase tracking-wider shadow-glow-accent"
+          >
+            {processing ? "Executing on-chain..." : "Resolve & Execute Settlement"}
+          </Button>
         </div>
-        <Button 
-          onClick={handleResolve}
-          disabled={processing || amountInput === ""}
-          className="w-full md:w-auto"
-        >
-          {processing ? "Resolving..." : "Resolve"}
-        </Button>
+
+        {/* Settlement Summary preview */}
+        {amountInput !== "" && (
+          <div className="flex flex-wrap items-center justify-between text-xs pt-2 border-t border-glass-border text-on-surface-variant font-mono">
+            <span>Freelancer Receives: <strong className="text-success-light">${freelancerShare.toFixed(2)} USDC</strong></span>
+            <span>Client Refund: <strong className="text-accent-light">${clientRefund.toFixed(2)} USDC</strong></span>
+          </div>
+        )}
       </div>
     </div>
   );

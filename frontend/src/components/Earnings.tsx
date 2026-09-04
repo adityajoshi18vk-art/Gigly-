@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { getContract } from "thirdweb";
 import { client, CHAIN, mockUsdcContract, CHAINLINK_FEEDS } from "@/lib/config";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import {
@@ -36,15 +35,13 @@ const inrUsdFeedContract = getContract({
   address: CHAINLINK_FEEDS.INR_USD,
 });
 
-// ─── Main Earnings component ──────────────────────────────────────────────────
-
 export function Earnings() {
   const account = useActiveAccount();
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isKYCVerified, setIsKYCVerified] = useState(false);
 
-  // ── Sync KYC state from localStorage whenever wallet changes ────────
+  // Sync KYC state from localStorage
   useEffect(() => {
     if (account?.address) {
       const stored = localStorage.getItem(`finguard_kyc_${account.address}`);
@@ -54,7 +51,6 @@ export function Earnings() {
     }
   }, [account?.address]);
 
-  // ── Withdraw click handler — guards with KYC gate ───────────────────
   const handleWithdrawClick = useCallback(() => {
     if (!isKYCVerified) {
       setIsKYCModalOpen(true);
@@ -63,24 +59,15 @@ export function Earnings() {
     }
   }, [isKYCVerified]);
 
-  // ── KYC verification success callback ───────────────────────────────
   const handleKYCVerified = useCallback(() => {
     setIsKYCVerified(true);
     setIsKYCModalOpen(false);
   }, []);
 
-  // ── Reset KYC (Demo Mode) ───────────────────────────────────────────
   const handleResetKYC = useCallback(() => {
-    // 1. Clear your app's custom KYC state
     localStorage.removeItem(`finguard_kyc_${account?.address}`);
-
-    // 2. Clear the Anon Aadhaar SDK's persistent storage
     localStorage.removeItem("anonAadhaar");
-
-    // 3. Clear session storage just in case
     sessionStorage.clear();
-
-    // 4. Force a hard reload to flush the React Context memory
     window.location.reload();
   }, [account?.address]);
 
@@ -122,18 +109,16 @@ export function Earnings() {
   if (!account) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
-        <p className="text-slate-500">Please connect your wallet to view earnings.</p>
+        <p className="text-on-surface-variant">Please connect your wallet to view earnings.</p>
       </div>
     );
   }
-
-  // --- Calculations ---
 
   // Base USDC
   const usdcFormatted =
     usdcBalance !== undefined ? Number(formatUnits(usdcBalance, 6)) : null;
 
-  // EUR via Chainlink (Chainlink EUR/USD usually has 8 decimals)
+  // EUR via Chainlink
   let eurEquivalent: number | null = null;
   let isEurDelayed = false;
   let eurUpdatedAtDate: Date | null = null;
@@ -152,7 +137,7 @@ export function Earnings() {
     }
   }
 
-  // INR via on-chain MockINRFeed (8 decimals, same as Chainlink)
+  // INR via MockINRFeed
   let inrEquivalent: number | null = null;
   let isInrDelayed = false;
   let inrUpdatedAtDate: Date | null = null;
@@ -174,25 +159,26 @@ export function Earnings() {
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* ── Header row ──────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-white">Your Earnings</h2>
-            {/* ── KYC Status Badge ────────────────────────────────────── */}
+        {/* Header row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="font-display text-xl font-bold text-on-surface">Your Earnings</h2>
+            
+            {/* KYC Status Badge */}
             {isKYCVerified ? (
               <div className="flex items-center gap-2">
                 <Badge
                   id="kyc-status-badge"
                   variant="success"
-                  className="flex items-center gap-1.5 px-3 py-1"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs"
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  🛡️ ZK-KYC Verified (RBI &amp; GDPR Compliant)
+                  ZK-KYC Verified (RBI &amp; GDPR Compliant)
                 </Badge>
                 <button
                   id="kyc-reset-btn"
                   onClick={handleResetKYC}
-                  className="flex items-center gap-1 text-xs text-white/50 hover:text-red-400 border border-white/10 hover:border-red-400/50 rounded px-2 py-1 transition-colors"
+                  className="flex items-center gap-1 text-[11px] text-on-surface-variant hover:text-error border border-glass-border hover:border-error/30 rounded-lg px-2.5 py-1 transition-colors"
                   title="Reset KYC verification for demo purposes"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -204,182 +190,170 @@ export function Earnings() {
                 <Badge
                   id="kyc-status-badge"
                   variant="pending"
-                  className="flex items-center gap-1.5 px-3 py-1"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  ⚠️ KYC Required (Withdrawals Locked)
+                  KYC Required for Payouts
                 </Badge>
                 <Button
                   id="verify-identity-btn"
                   variant="outline"
                   onClick={() => setIsKYCModalOpen(true)}
-                  className="text-xs px-3 py-1 h-auto"
+                  className="text-xs px-3 py-1 h-auto font-semibold border-warning/30 text-warning hover:bg-warning/10"
                 >
                   Verify Identity
                 </Button>
               </div>
             )}
           </div>
+
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-white/50">
-              <RefreshCw className="w-4 h-4 animate-spin-slow" />
-              <span>Auto-updating every 30s</span>
+            <div className="flex items-center gap-2 text-xs text-on-surface-variant font-mono">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin-slow text-accent" />
+              <span>30s Oracles</span>
             </div>
-            {/* ── Withdraw CTA (guarded by KYC) ───────────────────────── */}
+            
             <Button
               id="withdraw-to-bank-btn"
               onClick={handleWithdrawClick}
-              className="flex items-center gap-2"
+              className="btn-gradient-primary text-xs font-semibold py-2 px-4 shadow-glow-accent flex items-center gap-2"
             >
               <Building2 className="w-4 h-4" />
-              Withdraw to Bank Account
+              Withdraw to Bank
             </Button>
           </div>
         </div>
 
-        {/* ── Testnet simulation notice ────────────────────────────────── */}
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-          <FlaskConical className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-200/80 leading-relaxed">
-            <strong>Testnet Environment.</strong> Balances shown are on{" "}
-            {CHAIN.name ?? "a testnet"}. The &quot;Withdraw to Bank Account&quot; button
-            opens a <strong>simulated off-ramp</strong> — no real money is
-            transferred.
+        {/* Testnet simulation notice */}
+        <div className="flex items-start gap-3 rounded-2xl border border-glass-border bg-glass-subtle px-4 py-3 text-xs leading-relaxed text-on-surface-variant">
+          <FlaskConical className="w-4 h-4 text-accent-light shrink-0 mt-0.5" />
+          <p>
+            <strong>Testnet Sandbox:</strong> Balances shown are Circle Testnet USDC on{" "}
+            <strong>{CHAIN.name ?? "Ethereum Sepolia"}</strong>. &quot;Withdraw to Bank Account&quot; triggers a{" "}
+            <strong>zero-slippage simulated off-ramp</strong>.
           </p>
         </div>
 
-        {/* ── Earnings cards ───────────────────────────────────────────── */}
+        {/* Multi-Currency Oracle Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Base USDC Card */}
-          <Card className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] border-t-4 border-t-primary shadow-xl">
-            <CardContent className="p-6 flex flex-col justify-between h-full">
-              <div>
-                <p className="text-sm font-medium text-white/50 mb-1">
-                  Total Balance
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-white">
-                    {isUsdcLoading
-                      ? "..."
-                      : usdcFormatted !== null
-                      ? usdcFormatted.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })
-                      : "0.00"}
-                  </span>
-                  <span className="text-lg font-semibold text-white/50">USDC</span>
-                </div>
+          <div className="surface-card-interactive rounded-2xl p-6 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent to-accent-light" />
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-on-surface-variant mb-1 font-mono">
+                Total Balance
+              </p>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="font-display text-3xl font-bold text-on-surface">
+                  {isUsdcLoading
+                    ? "..."
+                    : usdcFormatted !== null
+                    ? usdcFormatted.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : "0.00"}
+                </span>
+                <span className="text-sm font-semibold text-accent-light font-mono">USDC</span>
               </div>
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <span className="text-xs text-white/40">Native Wallet Balance</span>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="mt-6 pt-4 border-t border-glass-border">
+              <span className="text-[11px] text-on-surface-variant/60 font-mono">Native Smart Wallet Balance</span>
+            </div>
+          </div>
 
           {/* EUR (Chainlink Oracle) Card */}
-          <Card className="relative overflow-hidden bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] shadow-xl">
-            <CardContent className="p-6 flex flex-col justify-between h-full">
-              <div>
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-sm font-medium text-white/50">
-                    EUR Equivalent
-                  </p>
-                  <Badge
-                    variant="default"
-                    className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 gap-1.5 px-2 py-0.5 shadow-sm"
-                  >
-                    <LinkIcon className="w-3 h-3" />
-                    <span className="text-[10px] uppercase tracking-wider font-bold">
-                      On-Chain Rate
-                    </span>
-                  </Badge>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-3xl font-bold text-white">
-                    €
-                    {isUsdcLoading || isEurLoading
-                      ? "..."
-                      : eurEquivalent !== null
-                      ? eurEquivalent.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })
-                      : "0.00"}
-                  </span>
-                </div>
+          <div className="surface-card-interactive rounded-2xl p-6 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-indigo-400" />
+            <div>
+              <div className="flex justify-between items-start mb-1">
+                <p className="text-xs font-medium uppercase tracking-wider text-indigo-300 font-mono">
+                  EUR Equivalent
+                </p>
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                  <LinkIcon className="w-2.5 h-2.5" />
+                  Chainlink
+                </span>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                {isEurDelayed ? (
-                  <div className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    Rate may be delayed
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 text-xs text-indigo-300">
-                    <Clock className="w-3.5 h-3.5" />
-                    {eurUpdatedAtDate
-                      ? `Oracle updated: ${eurUpdatedAtDate.toLocaleTimeString()}`
-                      : "Chainlink Oracle"}
-                  </div>
-                )}
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="font-display text-3xl font-bold text-on-surface">
+                  €
+                  {isUsdcLoading || isEurLoading
+                    ? "..."
+                    : eurEquivalent !== null
+                    ? eurEquivalent.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : "0.00"}
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* INR (On-Chain) Card */}
-          <Card className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-[1.5rem] shadow-xl">
-            <CardContent className="p-6 flex flex-col justify-between h-full">
-              <div>
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-sm font-medium text-white/50">
-                    INR Equivalent
-                  </p>
-                  <Badge
-                    variant="default"
-                    className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 gap-1.5 px-2 py-0.5"
-                  >
-                    <LinkIcon className="w-3 h-3" />
-                    <span className="text-[10px] uppercase tracking-wider font-bold">
-                      On-Chain Rate
-                    </span>
-                  </Badge>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-3xl font-bold text-white">
-                    ₹
-                    {isUsdcLoading || isInrLoading
-                      ? "..."
-                      : inrEquivalent !== null
-                      ? inrEquivalent.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })
-                      : "0.00"}
-                  </span>
-                </div>
-              </div>
-
-              {isInrDelayed ? (
-                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-xs text-amber-400 font-medium">
+            <div className="mt-6 pt-4 border-t border-glass-border flex items-center justify-between text-[11px]">
+              {isEurDelayed ? (
+                <div className="flex items-center gap-1.5 text-warning font-medium">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Rate may be delayed
+                  Rate delayed
                 </div>
               ) : (
-                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-1.5 text-xs text-indigo-300">
-                  <Clock className="w-3.5 h-3.5" />
-                  {inrUpdatedAtDate
-                    ? `Oracle updated: ${inrUpdatedAtDate.toLocaleTimeString()}`
-                    : "Reading oracle..."}
+                <div className="flex items-center gap-1.5 text-on-surface-variant/60 font-mono">
+                  <Clock className="w-3 h-3" />
+                  {eurUpdatedAtDate
+                    ? `Updated ${eurUpdatedAtDate.toLocaleTimeString()}`
+                    : "Chainlink Feed"}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          {/* INR (On-Chain) Card */}
+          <div className="surface-card-interactive rounded-2xl p-6 flex flex-col justify-between h-full relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-tertiary to-tertiary-warm" />
+            <div>
+              <div className="flex justify-between items-start mb-1">
+                <p className="text-xs font-medium uppercase tracking-wider text-tertiary-warm font-mono">
+                  INR Equivalent
+                </p>
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary-warm border border-tertiary/30">
+                  <LinkIcon className="w-2.5 h-2.5" />
+                  On-Chain
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="font-display text-3xl font-bold text-on-surface">
+                  ₹
+                  {isUsdcLoading || isInrLoading
+                    ? "..."
+                    : inrEquivalent !== null
+                    ? inrEquivalent.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : "0.00"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-glass-border flex items-center justify-between text-[11px]">
+              {isInrDelayed ? (
+                <div className="flex items-center gap-1.5 text-warning font-medium">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Rate delayed
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-on-surface-variant/60 font-mono">
+                  <Clock className="w-3 h-3" />
+                  {inrUpdatedAtDate
+                    ? `Updated ${inrUpdatedAtDate.toLocaleTimeString()}`
+                    : "MockINRFeed"}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Withdraw Modal ────────────────────────────────────────────────── */}
       <WithdrawModal
         isOpen={isWithdrawOpen}
         onClose={() => setIsWithdrawOpen(false)}
@@ -388,14 +362,12 @@ export function Earnings() {
         onWithdrawSuccess={() => refetchBalance()}
       />
 
-      {/* ── KYC Verification Modal ─────────────────────────────────────────── */}
       <KYCModal
         isOpen={isKYCModalOpen}
         onClose={() => setIsKYCModalOpen(false)}
         onVerified={handleKYCVerified}
         walletAddress={account.address}
       />
-
     </>
   );
 }

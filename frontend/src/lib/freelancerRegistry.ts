@@ -44,14 +44,17 @@ export async function getRegisteredFreelancers(): Promise<FreelancerProfile[]> {
   try {
     const res = await fetch("/api/freelancers", { cache: "no-store" });
     if (!res.ok) throw new Error("API error");
-    return (await res.json()) as FreelancerProfile[];
+    const data = await res.json();
+    // Guard: API must return an array; if not, treat as empty
+    return Array.isArray(data) ? (data as FreelancerProfile[]) : [];
   } catch {
     // Fallback to localStorage for offline dev
     if (typeof window === "undefined") return [];
     try {
       const raw = localStorage.getItem("gigly_freelancer_registry");
       if (!raw) return [];
-      return JSON.parse(raw) as FreelancerProfile[];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as FreelancerProfile[]) : [];
     } catch {
       return [];
     }

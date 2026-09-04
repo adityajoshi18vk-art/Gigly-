@@ -34,9 +34,12 @@ export function InteractiveProcess() {
     <section 
       id="security"
       ref={containerRef} 
-      className="relative py-40 px-6 overflow-hidden bg-background border-t border-white/5"
+      className="relative py-40 px-6 overflow-hidden"
     >
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.5fr] gap-16 lg:gap-24 relative z-10">
+      {/* Top divider */}
+      <div className="section-divider mb-0" />
+
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.5fr] gap-16 lg:gap-24 relative z-10 pt-20">
         
         {/* Left Side: Sticky Editorial Typography */}
         <div className="relative">
@@ -47,13 +50,13 @@ export function InteractiveProcess() {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="text-[11px] font-medium tracking-[0.2em] text-accent uppercase mb-8">
-                The Process
+              <div className="pill-badge mb-8" id="process">
+                <span className="text-xs font-semibold text-primary tracking-wider uppercase font-mono">[ PROTOCOL WORKFLOW ]</span>
               </div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-medium text-white leading-[1.1] tracking-tight mb-8">
+              <h2 className="font-display text-display-sm md:text-display-md text-[#071014] font-black tracking-tight leading-[1.08] mb-8">
                 How it works.
               </h2>
-              <p className="text-lg text-white/50 leading-relaxed max-w-sm font-normal">
+              <p className="text-body-lg text-[#1e293b] leading-relaxed max-w-sm font-semibold">
                 An optimistic engine that protects every transaction from start to finish, built invisibly into the workflow.
               </p>
             </motion.div>
@@ -63,10 +66,10 @@ export function InteractiveProcess() {
         {/* Right Side: Scrolling Timeline */}
         <div className="relative pt-10 lg:pt-0">
           
-          {/* Stark Track Line */}
-          <div className="absolute left-0 top-4 bottom-4 w-[1px] bg-white/10 hidden md:block">
+          {/* Track Line with scroll progress */}
+          <div className="absolute left-0 top-4 bottom-4 w-px bg-glass-border hidden md:block">
             <motion.div 
-              className="absolute top-0 left-0 w-full bg-accent origin-top shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+              className="absolute top-0 left-0 w-full bg-accent origin-top shadow-[0_0_10px_rgba(13,165,240,0.4)]"
               style={{ scaleY: scrollYProgress }}
             />
           </div>
@@ -85,20 +88,20 @@ export function InteractiveProcess() {
                 }}
                 className="flex gap-8 md:gap-12 group pl-0 md:pl-12 relative"
               >
-                {/* Minimal Node Point */}
+                {/* Node Point with glow */}
                 <div className="hidden md:block absolute left-[-5px] top-2 z-10">
-                  <div className="w-2.5 h-2.5 bg-background border-2 border-white/30 rounded-full group-hover:border-accent group-hover:scale-150 transition-all duration-500" />
+                  <div className="connector-dot group-hover:scale-150 group-hover:shadow-[0_0_12px_3px_rgba(13,165,240,0.5)] transition-all duration-500" />
                 </div>
 
-                {/* Flat Typography Card */}
-                <div className="flex-1 transition-all duration-500 relative">
-                  <div className="text-white/30 font-mono text-[10px] font-medium mb-4 tracking-widest uppercase">
+                {/* Content */}
+                <div className="flex-1 transition-all duration-500 relative surface-card-interactive rounded-xl p-6 md:p-8">
+                  <div className="text-primary font-mono text-[11px] font-bold mb-3 tracking-widest uppercase">
                     STEP 0{index + 1}
                   </div>
-                  <h3 className="text-2xl font-medium text-white mb-4 tracking-tight group-hover:text-accent transition-colors duration-300">
+                  <h3 className="font-display text-headline-md text-[#071014] font-extrabold mb-3 group-hover:text-primary transition-colors duration-300">
                     {step.title}
                   </h3>
-                  <p className="text-lg text-white/50 leading-relaxed max-w-lg font-normal">
+                  <p className="text-body-md text-[#1e293b] leading-relaxed max-w-lg font-semibold">
                     {step.description}
                   </p>
                 </div>

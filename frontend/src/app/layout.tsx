@@ -1,17 +1,37 @@
 import type { Metadata } from "next";
 import { SpatialWrapper } from "@/components/SpatialWrapper";
-import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 import { AnonAadhaarWrapper } from "@/components/AnonAadhaarWrapper";
-import { StarryBackground } from "@/components/StarryBackground";
+import { AtmosphericBackground } from "@/components/AtmosphericBackground";
 
-const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken-grotesk" });
-const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
-  title: "Gigly | On-Chain Escrow",
-  description: "Secure, decentralized freelance escrow built on Polygon.",
+  title: "Gigly | Decentralized Freelance Escrow",
+  description:
+    "Secure, trustless freelance payments powered by on-chain escrow. Fund jobs, verify work, release payments — all protected by smart contracts.",
+  keywords: ["freelance", "escrow", "blockchain", "USDC", "smart contracts", "decentralized", "Web3"],
 };
 
 export default function RootLayout({
@@ -21,8 +41,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${hanken.variable} ${jetbrains.variable} font-sans bg-background text-on-background antialiased min-h-screen relative`}>
-        <StarryBackground />
+      <body
+        className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${jetbrains.variable} font-sans bg-white text-[#071014] antialiased min-h-screen relative`}
+      >
+        <AtmosphericBackground />
         <ThirdwebProvider>
           <AnonAadhaarWrapper>
             <div className="relative z-10 flex min-h-screen flex-col">

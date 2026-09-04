@@ -1,5 +1,7 @@
+"use client";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export interface TabsProps {
   tabs: string[];
@@ -10,7 +12,7 @@ export interface TabsProps {
 
 export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   return (
-    <div className={cn("flex items-center space-x-6 border-b border-white/20 overflow-x-auto whitespace-nowrap hide-scrollbar", className)}>
+    <div className={cn("relative flex items-center gap-1 p-1 rounded-xl bg-glass-light border border-glass-border overflow-x-auto whitespace-nowrap hide-scrollbar", className)}>
       {tabs.map((tab) => {
         const isActive = tab === activeTab;
         return (
@@ -18,14 +20,21 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
             key={tab}
             onClick={() => onChange(tab)}
             className={cn(
-              "relative pb-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-              isActive ? "text-primary" : "text-slate-400 hover:text-white"
+              "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+              isActive
+                ? "text-on-surface"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-glass-subtle"
             )}
           >
-            {tab}
+            {/* Active tab indicator — animated pill background */}
             {isActive && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-primary" />
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 rounded-lg bg-glass-medium border border-glass-border-light shadow-inner-glow"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
             )}
+            <span className="relative z-10">{tab}</span>
           </button>
         );
       })}

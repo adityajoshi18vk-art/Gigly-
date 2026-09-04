@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Home } from "lucide-react";
+import { Home, Plus } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
@@ -50,14 +50,6 @@ export default function ClientDashboard() {
     fetchFreelancers();
   };
 
-  useEffect(() => {
-    if (account) {
-      console.log("=== GIGLY ACTIVE ACCOUNT ===");
-      console.log("ADDRESS:", account.address);
-      console.log("============================");
-    }
-  }, [account]);
-
   // Route protection
   useEffect(() => {
     if (!account) {
@@ -75,33 +67,31 @@ export default function ClientDashboard() {
     : freelancers;
 
   return (
-    <div className="min-h-screen p-8 bg-background relative overflow-hidden text-on-background">
-      {/* Background Glows */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/10 blur-[150px] pointer-events-none" />
+    <div className="min-h-screen py-4 sm:py-6 relative text-on-background">
       
-      {/* Top Navbar / Header */}
-      <header className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between bg-[#0f172a]/50 backdrop-blur-xl border border-white/10 p-4 rounded-[2rem] mb-8 shadow-xl">
-        <div className="flex items-center gap-4 px-4">
+      {/* Top Header */}
+      <header className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between surface-card p-4 sm:p-5 rounded-3xl mb-8 shadow-level-1">
+        <div className="flex items-center gap-4 px-2">
           <Link href="/">
-            <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
-              <Home className="w-5 h-5 text-white/70" />
+            <button className="w-10 h-10 rounded-xl bg-glass-light border border-glass-border flex items-center justify-center hover:bg-glass-medium transition-colors text-on-surface-variant hover:text-on-surface">
+              <Home className="w-4 h-4" />
             </button>
           </Link>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-glow-accent text-white">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Client Hub</h1>
-            <p className="text-white/50 text-xs font-medium">Manage your hires and escrow.</p>
+            <h1 className="font-display text-xl font-bold text-on-surface tracking-tight">Client Hub</h1>
+            <p className="text-on-surface-variant text-xs font-normal">Escrow-backed freelance management</p>
           </div>
         </div>
         <div className="flex items-center gap-4 mt-4 sm:mt-0 px-2">
           <button 
             onClick={() => setIsPostJobModalOpen(true)}
-            className="bg-white text-black px-6 py-2.5 rounded-full text-sm font-bold tracking-wide hover:bg-white/90 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+            className="btn-gradient-primary text-xs font-semibold py-2.5 px-5 flex items-center gap-1.5 shadow-glow-accent"
           >
-            Post a Job
+            <Plus className="w-4 h-4" />
+            Post Open Job
           </button>
           <CustomConnectButton />
         </div>
@@ -122,28 +112,28 @@ export default function ClientDashboard() {
         <>
           {/* Verified Talent Toggle */}
           <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-white/50">
-              {displayedFreelancers.length} freelancer{displayedFreelancers.length !== 1 ? "s" : ""} found
+            <p className="text-xs text-on-surface-variant/80 font-mono uppercase tracking-wider">
+              {displayedFreelancers.length} Verified Profile{displayedFreelancers.length !== 1 ? "s" : ""}
             </p>
             <button
               onClick={() => setShowVerifiedOnly((v) => !v)}
-              className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full border transition-all ${
+              className={`flex items-center gap-2.5 text-xs font-medium px-3.5 py-1.5 rounded-full border transition-all ${
                 showVerifiedOnly
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                  : "bg-white/5 border-white/10 text-white/70 hover:border-white/20"
+                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                  : "bg-glass-light border-glass-border text-on-surface-variant hover:text-on-surface"
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
-              Only verified developers
-              {/* Toggle indicator */}
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Only verified talent
+              {/* Custom micro-switch */}
               <span
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  showVerifiedOnly ? "bg-emerald-500" : "bg-white/20"
+                className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                  showVerifiedOnly ? "bg-emerald-500" : "bg-glass-medium border border-glass-border"
                 }`}
               >
                 <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    showVerifiedOnly ? "translate-x-4" : "translate-x-1"
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    showVerifiedOnly ? "translate-x-3.5" : "translate-x-0.5"
                   }`}
                 />
               </span>
@@ -152,23 +142,23 @@ export default function ClientDashboard() {
 
           {!isLoaded ? (
             <div className="text-center py-20">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-white/50">Loading freelancers...</p>
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-on-surface-variant text-sm">Discovering top freelancers...</p>
             </div>
           ) : displayedFreelancers.length === 0 ? (
-            <div className="max-w-md mx-auto text-center py-20">
-              <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-white/50" />
+            <div className="max-w-md mx-auto text-center py-20 surface-card p-12 rounded-2xl border-dashed border-glass-border">
+              <div className="w-14 h-14 rounded-2xl bg-glass-light border border-glass-border flex items-center justify-center mx-auto mb-4 text-on-surface-variant">
+                <Users className="w-7 h-7" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">
+              <h3 className="font-display text-lg font-bold text-on-surface mb-2">
                 {showVerifiedOnly
-                  ? "No verified freelancers yet"
+                  ? "No verified talent found"
                   : "No freelancers registered yet"}
               </h3>
-              <p className="text-white/50 text-sm">
+              <p className="text-on-surface-variant text-sm max-w-xs mx-auto">
                 {showVerifiedOnly
-                  ? "Try turning off the verified filter, or check back later."
-                  : "Connect as a freelancer to create a profile and appear here!"}
+                  ? "Try toggling the verification filter to see all active providers."
+                  : "Connect with a freelancer wallet to publish your profile to the network."}
               </p>
             </div>
           ) : (
@@ -176,7 +166,7 @@ export default function ClientDashboard() {
               {displayedFreelancers.map((profile) => (
                 <div 
                   key={profile.address} 
-                  className="cursor-pointer hover:-translate-y-1 transition-transform"
+                  className="cursor-pointer"
                   onClick={() =>
                     setSelectedFreelancer({
                       name: profile.name,

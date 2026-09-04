@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { readContract, prepareContractCall, waitForReceipt } from "thirdweb";
 import { useReadContract, useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { escrowContract, client as thirdwebClient } from "@/lib/config";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { JobData } from "./ActiveJobs";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
@@ -111,12 +111,8 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20 flex flex-col items-center">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full mb-6"
-        />
-        <p className="text-on-surface-variant font-medium tracking-wide text-sm">Scanning for open gigs...</p>
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-on-surface-variant font-medium tracking-wide text-sm">Scanning Ethereum Sepolia for open escrow bounties...</p>
       </div>
     );
   }
@@ -127,13 +123,15 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="max-w-4xl mx-auto text-center py-20 surface-card p-12 border-dashed border-outline-variant"
+        className="max-w-4xl mx-auto text-center py-20 surface-card p-12 border-dashed border-glass-border rounded-2xl"
       >
-        <div className="w-16 h-16 bg-surface-container border border-outline-variant rounded-xl flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        <div className="w-14 h-14 bg-glass-light border border-glass-border rounded-2xl flex items-center justify-center mx-auto mb-4 text-on-surface-variant">
+          <Sparkles className="w-6 h-6 text-accent-light" />
         </div>
-        <h2 className="text-xl font-semibold text-on-surface mb-2">No open gigs right now</h2>
-        <p className="text-on-surface-variant">Check back later. New opportunities arise constantly.</p>
+        <h2 className="font-display text-xl font-semibold text-on-surface mb-2">No open gigs available right now</h2>
+        <p className="text-body-md text-on-surface-variant max-w-sm mx-auto">
+          Clients post open escrow jobs regularly. Check back soon or share your profile link to get hired directly.
+        </p>
       </motion.div>
     );
   }
@@ -149,44 +147,55 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
           >
-            <Card className="hover:border-primary/50 group transition-colors">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-surface-container border border-outline-variant text-on-surface-variant">Open Gig</span>
-                      <span className="text-xs text-on-surface-variant font-mono">#{job.id}</span>
-                    </div>
-                    <h3 className="font-semibold text-on-surface text-xl mb-2 group-hover:text-primary transition-colors">{job.taskTitle || `Job #${job.id}`}</h3>
-                    <p className="text-sm text-on-surface-variant flex items-center gap-2">
-                      <svg className="w-4 h-4 text-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                      Client: <span className="font-mono text-on-surface">{job.client.slice(0, 6)}...{job.client.slice(-4)}</span>
+            <div className="surface-card-interactive rounded-2xl p-6 relative overflow-hidden transition-all duration-300 group">
+              {/* Top accent highlight */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
+
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-accent/15 border border-accent/30 text-accent-light tracking-wide uppercase">
+                      Open Escrow Gig
+                    </span>
+                    <span className="text-xs text-on-surface-variant font-mono">#{job.id}</span>
+                  </div>
+                  <h3 className="font-display font-semibold text-on-surface text-xl mb-2 group-hover:text-accent-light transition-colors">
+                    {job.taskTitle || `Job #${job.id}`}
+                  </h3>
+                  <p className="text-xs text-on-surface-variant flex items-center gap-1.5 font-mono">
+                    Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
+                  </p>
+                </div>
+                
+                <div className="flex flex-col md:items-end gap-3.5 min-w-[200px]">
+                  <div className="text-left md:text-right">
+                    <p className="text-[11px] text-on-surface-variant/60 uppercase tracking-wider font-mono">Funded Bounty</p>
+                    <p className="font-bold text-on-surface text-2xl font-mono">
+                      ${formatUnits(job.amount, 6)} <span className="text-xs text-on-surface-variant font-sans">USDC</span>
                     </p>
                   </div>
                   
-                  <div className="flex flex-col md:items-end gap-4">
-                    <div className="text-left md:text-right">
-                      <p className="text-xs text-on-surface-variant uppercase tracking-wider font-medium mb-1">Bounty</p>
-                      <p className="font-bold text-on-surface text-2xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-on-surface-variant font-sans">USDC</span></p>
-                    </div>
-                    
-                    <Button 
-                      variant="primary"
-                      onClick={() => handleAcceptJob(job.id, job.client)}
-                      disabled={processingJobId === job.id}
-                      className="w-full md:w-auto"
-                    >
-                      {processingJobId === job.id ? (
-                        <span className="flex items-center gap-2">
-                          <span className="w-3.5 h-3.5 rounded-full border-2 border-background border-t-transparent animate-spin" />
-                          Accepting...
-                        </span>
-                      ) : "Accept Job"}
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="primary"
+                    onClick={() => handleAcceptJob(job.id, job.client)}
+                    disabled={processingJobId === job.id}
+                    className="w-full md:w-auto text-xs py-2 px-5 shadow-glow-accent group/btn flex items-center gap-1.5"
+                  >
+                    {processingJobId === job.id ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        Locking assignment...
+                      </span>
+                    ) : (
+                      <>
+                        Accept Gig
+                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         ))}
       </AnimatePresence>

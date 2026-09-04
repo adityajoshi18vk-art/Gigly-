@@ -10,7 +10,7 @@ import { Footer } from "./Footer";
 
 export function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-background overflow-x-hidden selection:bg-accent/30 selection:text-white">
+    <div className="relative min-h-screen overflow-x-hidden selection:bg-accent/30 selection:text-white">
       <LandingNavbar />
       
       <main>

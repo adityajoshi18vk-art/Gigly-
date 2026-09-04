@@ -12,7 +12,7 @@ import {
   type FreelancerDomain,
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
-import { CheckCircle2, X, Loader2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, X, Loader2, ShieldCheck, Code2 } from "lucide-react";
 
 const DOMAIN_OPTIONS: FreelancerDomain[] = [
   "Smart Contracts",
@@ -54,7 +54,6 @@ export function ProfileSettingsModal({
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState("");
 
-  // Pre-fill from existing profile
   useEffect(() => {
     if (!isOpen || !account?.address) return;
     (async () => {
@@ -96,7 +95,6 @@ export function ProfileSettingsModal({
     }
   };
 
-  // ── GitHub Skill Verification ─────────────────────────────────────────
   const handleVerifySkills = async () => {
     if (!githubUrl.trim() || !account?.address) return;
 
@@ -135,7 +133,7 @@ export function ProfileSettingsModal({
       const skillList = (data.verifiedSkills || []).join(", ");
       setToastMessage(
         skillList
-          ? `GitHub analyzed! Verified skills: ${skillList}`
+          ? `GitHub oracle verified: ${skillList}`
           : "GitHub analyzed! No recognized languages found."
       );
       setShowToast(true);
@@ -177,7 +175,7 @@ export function ProfileSettingsModal({
 
     try {
       await saveFreelancerProfile(profile);
-      setToastMessage("Profile published to marketplace!");
+      setToastMessage("Profile published to decentralized registry!");
       setShowToast(true);
       setTimeout(() => {
         setShowToast(false);
@@ -197,68 +195,65 @@ export function ProfileSettingsModal({
 
   if (!account?.address) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
+      <Modal isOpen={isOpen} onClose={onClose} title="Edit Freelancer Profile">
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <p className="text-white/50 mb-4">
-            Please connect your wallet first to publish a profile.
+          <p className="text-on-surface-variant text-sm mb-4">
+            Please connect your wallet first to publish your profile.
           </p>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose} variant="primary">Close</Button>
         </div>
       </Modal>
     );
   }
 
-  // Base input classes for dark mode
-  const inputClass = "w-full border border-white/10 bg-white/5 text-white placeholder-white/30 rounded-lg px-3 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm";
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
+    <Modal isOpen={isOpen} onClose={onClose} title="Freelancer Profile &amp; Verification">
       {/* Toast */}
       {showToast && (
-        <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 p-3 rounded-lg border border-emerald-500/20 mb-4">
+        <div className="flex items-center gap-2 bg-success/15 text-success-light p-3 rounded-xl border border-success/30 mb-4 text-xs font-medium">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <p className="text-sm font-medium">{toastMessage}</p>
+          <p>{toastMessage}</p>
         </div>
       )}
 
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Display Name <span className="text-rose-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Display Name <span className="text-error">*</span>
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Riya Sharma"
-            className={inputClass}
+            placeholder="e.g. Satoshi Nakamoto"
+            className="glass-input text-sm"
           />
         </div>
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Professional Title <span className="text-rose-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Professional Title <span className="text-error">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Senior Solidity Engineer"
-            className={inputClass}
+            placeholder="e.g. Senior Smart Contract &amp; DeFi Architect"
+            className="glass-input text-sm"
           />
         </div>
 
         {/* Domain */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Domain
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Primary Domain
           </label>
           <select
             value={domain}
             onChange={(e) => setDomain(e.target.value as FreelancerDomain)}
-            className={`${inputClass} [&>option]:bg-slate-900`}
+            className="glass-input text-sm [&>option]:bg-surface-container [&>option]:text-on-surface"
           >
             {DOMAIN_OPTIONS.map((d) => (
               <option key={d} value={d}>
@@ -270,26 +265,26 @@ export function ProfileSettingsModal({
 
         {/* Hourly Rate */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Hourly Rate (USD) <span className="text-rose-400">*</span>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Hourly Rate (USDC) <span className="text-error">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2 text-white/50 text-sm">$</span>
+            <span className="absolute left-3.5 top-3 text-on-surface-variant font-mono text-sm">$</span>
             <input
               type="number"
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
               placeholder="0"
               min="1"
-              className={`${inputClass} pl-7`}
+              className="glass-input pl-8 text-sm font-mono"
             />
           </div>
         </div>
 
         {/* Skills */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Skills (max 6)
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Skills (Max 6)
           </label>
           <div className="flex gap-2">
             <input
@@ -297,27 +292,27 @@ export function ProfileSettingsModal({
               value={skillsInput}
               onChange={(e) => setSkillsInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="e.g. Solidity, React, Figma"
-              className={`${inputClass} flex-1`}
+              placeholder="e.g. Solidity, Rust, TypeScript"
+              className="glass-input flex-1 text-sm"
               disabled={skills.length >= 6}
             />
             <Button
               variant="outline"
               onClick={handleAddSkills}
               disabled={skills.length >= 6 || !skillsInput.trim()}
-              className="text-xs h-9 px-3 bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+              className="text-xs px-3.5 shrink-0"
             >
               Add
             </Button>
           </div>
           {skills.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
               {skills.map((skill) => (
-                <Badge key={skill} variant="default" className="font-medium text-[11px] px-2 gap-1 bg-white/10 text-white hover:bg-white/20">
+                <Badge key={skill} variant="default" className="font-medium text-[11px] px-2.5 py-1 gap-1">
                   {skill}
                   <button
                     onClick={() => handleRemoveSkill(skill)}
-                    className="ml-0.5 hover:text-rose-400 transition-colors"
+                    className="ml-0.5 hover:text-error transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -327,84 +322,55 @@ export function ProfileSettingsModal({
           )}
         </div>
 
-        {/* Bio */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Bio
-          </label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value.slice(0, 280))}
-            placeholder="Tell clients about your experience..."
-            rows={3}
-            className={`${inputClass} resize-none`}
-          />
-          <p className="text-xs text-white/40 text-right mt-0.5">
-            {bio.length}/280
-          </p>
-        </div>
-
-        {/* Portfolio URL */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Portfolio URL
-          </label>
-          <input
-            type="url"
-            value={portfolioUrl}
-            onChange={(e) => setPortfolioUrl(e.target.value)}
-            placeholder="https://yourportfolio.com"
-            className={inputClass}
-          />
-        </div>
-
-        {/* GitHub URL + Verify Button */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            GitHub URL
-          </label>
+        {/* GitHub Verification */}
+        <div className="rounded-xl border border-glass-border bg-glass-subtle p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-accent-light" />
+            <label className="text-xs font-semibold uppercase tracking-wider text-accent-light">
+              GitHub Skill Verification Oracle
+            </label>
+          </div>
           <div className="flex gap-2">
             <input
               type="url"
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
-              placeholder="https://github.com/yourname"
-              className={`${inputClass} flex-1`}
+              placeholder="https://github.com/username"
+              className="glass-input flex-1 text-xs"
             />
             <Button
               variant="outline"
               onClick={handleVerifySkills}
               disabled={!githubUrl.trim() || isVerifying}
-              className="text-xs h-9 px-3 gap-1.5 shrink-0 bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+              className="text-xs px-3.5 gap-1.5 shrink-0"
             >
               {isVerifying ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Verifying...
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Scanning…
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="w-3 h-3" />
-                  Verify Skills
+                  <ShieldCheck className="w-3.5 h-3.5 text-success-light" />
+                  Verify Repos
                 </>
               )}
             </Button>
           </div>
           {verifyError && (
-            <p className="text-xs text-rose-400 mt-1">{verifyError}</p>
+            <p className="text-xs text-error mt-1">{verifyError}</p>
           )}
 
-          {/* Verified Skills Display */}
           {verifiedSkills.length > 0 && (
-            <div className="mt-2">
-              <p className="text-xs text-white/50 mb-1">
-                GitHub-verified skills:
+            <div className="pt-2">
+              <p className="text-[11px] text-on-surface-variant mb-1.5">
+                Oracle-Verified Languages:
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {verifiedSkills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-success-light bg-success/15 border border-success/30 rounded-full px-2.5 py-0.5"
                   >
                     <CheckCircle2 className="w-3 h-3" />
                     {skill}
@@ -414,21 +380,50 @@ export function ProfileSettingsModal({
             </div>
           )}
         </div>
+
+        {/* Bio */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Bio
+          </label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value.slice(0, 280))}
+            placeholder="Introduce your background, notable clients, and smart contract expertise..."
+            rows={3}
+            className="glass-input text-sm resize-none"
+          />
+          <p className="text-[10px] text-on-surface-variant/60 text-right mt-1 font-mono">
+            {bio.length}/280
+          </p>
+        </div>
+
+        {/* Portfolio */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+            Portfolio / Case Studies URL
+          </label>
+          <input
+            type="url"
+            value={portfolioUrl}
+            onChange={(e) => setPortfolioUrl(e.target.value)}
+            placeholder="https://portfolio.dev"
+            className="glass-input text-sm"
+          />
+        </div>
       </div>
 
-      {/* Error */}
       {saveError && (
-        <div className="flex items-start gap-2 bg-rose-500/10 text-rose-400 p-3 rounded-lg border border-rose-500/20 mt-4">
-          <p className="text-sm">{saveError}</p>
+        <div className="bg-error/10 text-error p-3 rounded-xl border border-error/20 text-xs mt-3">
+          {saveError}
         </div>
       )}
 
-      {/* Footer */}
-      <div className="pt-4 flex justify-end gap-3 border-t border-white/10 mt-4">
-        <Button variant="ghost" onClick={onClose} disabled={isSaving} className="text-white/70 hover:text-white hover:bg-white/10">
+      <div className="pt-4 flex justify-end gap-2.5 border-t border-glass-border mt-4">
+        <Button variant="ghost" onClick={onClose} disabled={isSaving}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!isValid || isSaving} className="bg-white text-black hover:bg-white/90">
+        <Button onClick={handleSubmit} disabled={!isValid || isSaving} variant="primary" className="px-6 shadow-glow-accent">
           {isSaving ? "Saving..." : "Save Profile"}
         </Button>
       </div>
