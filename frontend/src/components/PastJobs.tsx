@@ -9,11 +9,13 @@ import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, ExternalLink, RotateCcw } from "lucide-react";
 import { getRegisteredFreelancers, type FreelancerProfile } from "@/lib/freelancerRegistry";
+import { getRegisteredClients, type ClientProfile } from "@/lib/clientRegistry";
 
 export function PastJobs({ role, refreshCounter }: { role: "client" | "freelancer"; refreshCounter: number }) {
   const account = useActiveAccount();
   const { jobs: allJobs, loading } = useJobs(refreshCounter);
   const [freelancerNames, setFreelancerNames] = useState<Map<string, string>>(new Map());
+  const [clientNames, setClientNames] = useState<Map<string, string>>(new Map());
 
   const jobs = useMemo(() => {
     if (!account?.address) return [];
@@ -37,6 +39,22 @@ export function PastJobs({ role, refreshCounter }: { role: "client" | "freelance
       const map = new Map<string, string>();
       profiles.forEach((p) => map.set(p.address.toLowerCase(), p.name));
       setFreelancerNames(map);
+    });
+    return () => { cancelled = true; };
+  }, [jobs, role]);
+
+  // Resolve client names for freelancer view
+  useEffect(() => {
+    if (role !== "freelancer" || jobs.length === 0) return;
+    let cancelled = false;
+    getRegisteredClients().then((clients) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      clients.forEach((c) => {
+        const label = c.companyName ? `${c.name} (${c.companyName})` : c.name;
+        map.set(c.address.toLowerCase(), label);
+      });
+      setClientNames(map);
     });
     return () => { cancelled = true; };
   }, [jobs, role]);
@@ -85,7 +103,8 @@ export function PastJobs({ role, refreshCounter }: { role: "client" | "freelance
             role === "client"
               ? freelancerNames.get(job.freelancer.toLowerCase()) ||
                 `${job.freelancer.slice(0, 6)}...${job.freelancer.slice(-4)}`
-              : `${job.client.slice(0, 6)}...${job.client.slice(-4)}`;
+              : clientNames.get(job.client.toLowerCase()) ||
+                `${job.client.slice(0, 6)}...${job.client.slice(-4)}`;
 
           return (
             <motion.div

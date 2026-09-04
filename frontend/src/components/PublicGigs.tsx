@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useJobs } from "@/lib/useJobs";
 import { formatUnits } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ExternalLink, Clock } from "lucide-react";
+import { Sparkles, ExternalLink, Clock, User } from "lucide-react";
+import { getRegisteredClients } from "@/lib/clientRegistry";
 
 export function PublicGigs({ refreshCounter }: { refreshCounter: number }) {
   const { jobs: allJobs, loading } = useJobs(refreshCounter);
+  const [clientNames, setClientNames] = useState<Map<string, string>>(new Map());
 
   const jobs = useMemo(() => {
     return allJobs
@@ -18,6 +20,23 @@ export function PublicGigs({ refreshCounter }: { refreshCounter: number }) {
       )
       .sort((a, b) => b.id - a.id);
   }, [allJobs]);
+
+  // Fetch registered client names from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    getRegisteredClients().then((clients) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      clients.forEach((c) => {
+        const label = c.companyName ? `${c.name} (${c.companyName})` : c.name;
+        map.set(c.address.toLowerCase(), label);
+      });
+      setClientNames(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobs]);
 
   if (loading) {
     return (
@@ -72,17 +91,23 @@ export function PublicGigs({ refreshCounter }: { refreshCounter: number }) {
                   <h3 className="font-display font-semibold text-on-surface text-xl mb-2 group-hover:text-accent-light transition-colors">
                     {job.taskTitle || `Job #${job.id}`}
                   </h3>
-                  <p className="text-xs text-slate-700 flex items-center gap-1.5 font-mono font-medium">
-                    Client:{" "}
+                  <p className="text-xs text-on-surface-variant flex items-center gap-1.5 font-sans font-medium">
+                    <User className="w-3.5 h-3.5 text-accent-light shrink-0" />
+                    <span>Client:</span>{" "}
                     <a
                       href={`https://sepolia.etherscan.io/address/${job.client}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="hover:text-accent-light transition-colors inline-flex items-center gap-1"
+                      className="font-semibold text-on-surface hover:text-accent-light transition-colors inline-flex items-center gap-1"
                     >
-                      {job.client.slice(0, 6)}...{job.client.slice(-4)}
-                      <ExternalLink className="w-3 h-3 opacity-60" />
+                      {clientNames.get(job.client.toLowerCase()) || `${job.client.slice(0, 6)}...${job.client.slice(-4)}`}
+                      <ExternalLink className="w-3 h-3 opacity-60 ml-0.5" />
                     </a>
+                    {clientNames.has(job.client.toLowerCase()) && (
+                      <span className="text-[11px] font-mono text-on-surface-variant/70">
+                        ({job.client.slice(0, 6)}...{job.client.slice(-4)})
+                      </span>
+                    )}
                   </p>
                 </div>
 

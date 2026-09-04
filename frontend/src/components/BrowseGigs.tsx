@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { escrowContract, client as thirdwebClient } from "@/lib/config";
@@ -8,19 +8,38 @@ import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { JobData } from "./ActiveJobs";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, User } from "lucide-react";
 import { useJobs, clearJobsCache } from "@/lib/useJobs";
+import { getRegisteredClients } from "@/lib/clientRegistry";
 
 export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
   const { jobs: allJobs, loading } = useJobs(refreshCounter);
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
+  const [clientNames, setClientNames] = useState<Map<string, string>>(new Map());
 
   const jobs = useMemo(() => {
     return allJobs
       .filter((job) => job.freelancer === "0x0000000000000000000000000000000000000000" && job.status === 1)
       .sort((a, b) => b.id - a.id);
   }, [allJobs]);
+
+  // Fetch registered client names from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    getRegisteredClients().then((clients) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      clients.forEach((c) => {
+        const label = c.companyName ? `${c.name} (${c.companyName})` : c.name;
+        map.set(c.address.toLowerCase(), label);
+      });
+      setClientNames(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobs]);
 
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
@@ -112,8 +131,17 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
                   <h3 className="font-display font-semibold text-on-surface text-xl mb-2 group-hover:text-accent-light transition-colors">
                     {job.taskTitle || `Job #${job.id}`}
                   </h3>
-                  <p className="text-xs text-slate-700 flex items-center gap-1.5 font-mono font-medium">
-                    Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
+                  <p className="text-xs text-on-surface-variant flex items-center gap-1.5 font-sans font-medium">
+                    <User className="w-3.5 h-3.5 text-accent-light" />
+                    <span>Client:</span>{" "}
+                    <span className="font-semibold text-on-surface">
+                      {clientNames.get(job.client.toLowerCase()) || `${job.client.slice(0, 6)}...${job.client.slice(-4)}`}
+                    </span>
+                    {clientNames.has(job.client.toLowerCase()) && (
+                      <span className="text-[11px] font-mono text-on-surface-variant/70">
+                        ({job.client.slice(0, 6)}...{job.client.slice(-4)})
+                      </span>
+                    )}
                   </p>
                 </div>
                 

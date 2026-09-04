@@ -9,14 +9,16 @@ import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 import { JobData } from "./ActiveJobs";
-import { CheckCircle2, Clock, Link as LinkIcon, ArrowUpRight, Check, Send, ExternalLink } from "lucide-react";
+import { CheckCircle2, Clock, Link as LinkIcon, ArrowUpRight, Check, Send, ExternalLink, User } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { useJobs, clearJobsCache } from "@/lib/useJobs";
+import { getRegisteredClients } from "@/lib/clientRegistry";
 
 export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
   const { jobs: allJobs, loading } = useJobs(refreshCounter);
   const [reviewWindowSeconds, setReviewWindowSeconds] = useState(86400); // Default 24h
+  const [clientNames, setClientNames] = useState<Map<string, string>>(new Map());
 
   const jobs = useMemo(() => {
     if (!account?.address) return [];
@@ -29,6 +31,23 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       )
       .sort((a, b) => b.id - a.id);
   }, [allJobs, account?.address]);
+
+  // Fetch registered client names from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    getRegisteredClients().then((clients) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      clients.forEach((c) => {
+        const label = c.companyName ? `${c.name} (${c.companyName})` : c.name;
+        map.set(c.address.toLowerCase(), label);
+      });
+      setClientNames(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobs]);
 
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
@@ -191,17 +210,23 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               <h3 className="font-display font-semibold text-on-surface text-xl mb-1 group-hover:text-accent-light transition-colors">
                 {job.taskTitle || `Job #${job.id}`}
               </h3>
-              <p className="text-xs text-on-surface-variant mb-3 flex items-center gap-1.5 font-mono">
-                Client:{" "}
+              <p className="text-xs text-on-surface-variant mb-3 flex items-center gap-1.5 font-sans">
+                <User className="w-3.5 h-3.5 text-accent-light shrink-0" />
+                <span>Client:</span>{" "}
                 <a
                   href={`https://sepolia.etherscan.io/address/${job.client}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-accent-light hover:text-white hover:underline transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold text-on-surface hover:text-accent-light transition-colors"
                 >
-                  {job.client.slice(0, 6)}...{job.client.slice(-4)}
-                  <ExternalLink className="w-3 h-3 opacity-70" />
+                  {clientNames.get(job.client.toLowerCase()) || `${job.client.slice(0, 6)}...${job.client.slice(-4)}`}
+                  <ExternalLink className="w-3 h-3 opacity-60 ml-0.5" />
                 </a>
+                {clientNames.has(job.client.toLowerCase()) && (
+                  <span className="text-[11px] font-mono text-on-surface-variant/70">
+                    ({job.client.slice(0, 6)}...{job.client.slice(-4)})
+                  </span>
+                )}
               </p>
 
               {job.submissionLink && job.status >= 2 && (

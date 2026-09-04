@@ -20,6 +20,20 @@ export const getClientInitials = (name: string): string => {
 };
 
 /**
+ * Fetch all registered client profiles.
+ */
+export async function getRegisteredClients(): Promise<ClientProfile[]> {
+  try {
+    const res = await fetch("/api/clients", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? (data as ClientProfile[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetch a client profile by wallet address.
  */
 export async function getClientProfile(address: string): Promise<ClientProfile | undefined> {
