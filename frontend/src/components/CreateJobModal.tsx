@@ -236,14 +236,14 @@ export function CreateJobModal({
           {/* Status cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-glass-light border border-glass-border rounded-xl p-3.5 text-center">
-              <p className="text-xs text-on-surface-variant/70 mb-1">Your Balance</p>
+              <p className="text-xs text-slate-700 font-semibold mb-1">Your Balance</p>
               <p className="text-xl font-bold font-mono text-on-surface">{usdcBalance.toFixed(2)}</p>
-              <p className="text-[11px] text-on-surface-variant font-mono">USDC</p>
+              <p className="text-[11px] text-slate-700 font-mono font-bold">USDC</p>
             </div>
             <div className="bg-warning/10 border border-warning/20 rounded-xl p-3.5 text-center">
-              <p className="text-xs text-warning mb-1">Shortfall</p>
+              <p className="text-xs text-amber-800 font-semibold mb-1">Shortfall</p>
               <p className="text-xl font-bold font-mono text-warning">{shortfall}</p>
-              <p className="text-[11px] text-warning/80 font-mono">USDC</p>
+              <p className="text-[11px] text-amber-800 font-mono font-bold">USDC</p>
             </div>
           </div>
 
@@ -253,10 +253,10 @@ export function CreateJobModal({
               <p className="text-xs font-semibold text-accent-light uppercase tracking-wider">
                 Step 1 — Official Circle Faucet
               </p>
-              <span className="text-[10px] text-on-surface-variant font-mono">Ethereum Sepolia</span>
+              <span className="text-[10px] text-slate-700 font-mono font-semibold">Ethereum Sepolia</span>
             </div>
             <div className="p-4 space-y-3">
-              <p className="text-body-sm text-on-surface-variant leading-relaxed">
+              <p className="text-body-sm text-slate-700 font-medium leading-relaxed">
                 Claim up to <strong>10 USDC</strong> per day from the official Circle faucet for Ethereum Sepolia testnet.
               </p>
               <a

@@ -34,16 +34,16 @@ export function InteractiveProcess() {
     <section 
       id="security"
       ref={containerRef} 
-      className="relative py-40 px-6 overflow-hidden"
+      className="relative py-20 sm:py-24 px-6 overflow-hidden"
     >
       {/* Top divider */}
       <div className="section-divider mb-0" />
 
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.5fr] gap-16 lg:gap-24 relative z-10 pt-20">
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-16 relative z-10 pt-12">
         
         {/* Left Side: Sticky Editorial Typography */}
         <div className="relative">
-          <div className="lg:sticky lg:top-48">
+          <div className="lg:sticky lg:top-36">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}

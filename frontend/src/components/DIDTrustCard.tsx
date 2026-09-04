@@ -240,7 +240,7 @@ export function DIDTrustCard() {
             <div className="w-2 h-2 rounded-full bg-warning/70" />
             <div className="w-2 h-2 rounded-full bg-success/70" />
           </div>
-          <span className="text-[10px] font-mono uppercase tracking-wider">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-700 font-bold">
             Latest FundsReleased On-Chain Event Proof
           </span>
         </div>
@@ -249,21 +249,21 @@ export function DIDTrustCard() {
           <Hash className="w-4 h-4 text-accent-light shrink-0" />
           <code className="text-xs font-mono text-accent-light tracking-wide break-all">
             {isLoading ? (
-              <span className="flex items-center gap-2 text-on-surface-variant">
+              <span className="flex items-center gap-2 text-slate-700 font-medium">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Querying deployment logs…
               </span>
             ) : latestProofHash ? (
               latestProofHash
             ) : (
-              <span className="text-on-surface-variant/50 italic">
+              <span className="text-slate-600 font-semibold italic">
                 No Escrow Releases Completed Yet
               </span>
             )}
           </code>
         </div>
 
-        <p className="text-[10px] text-on-surface-variant/60 italic leading-relaxed mt-1">
+        <p className="text-[11px] text-slate-700 font-medium italic leading-relaxed mt-1">
           Fraud Prevention: Reputation is mathematically derived from on-chain escrow settlements and cannot be forged.
         </p>
       </div>

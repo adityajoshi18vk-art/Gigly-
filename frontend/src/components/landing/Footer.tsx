@@ -23,27 +23,27 @@ export function Footer() {
         <div>
           <h4 className="text-[#071014] font-semibold mb-6 text-sm uppercase font-mono tracking-wider">Products</h4>
           <ul className="space-y-4">
-            <li><Link href="/login" className="text-[#64748B] hover:text-[#0DA5F0] transition-colors text-sm">For Clients</Link></li>
-            <li><Link href="/login" className="text-[#64748B] hover:text-[#0DA5F0] transition-colors text-sm">For Freelancers</Link></li>
-            <li><Link href="#" className="text-[#64748B] hover:text-[#0DA5F0] transition-colors text-sm">Escrow Contracts</Link></li>
+            <li><Link href="/#for-clients" className="text-[#64748B] hover:text-[#0DA5F0] transition-colors text-sm">For Clients</Link></li>
+            <li><Link href="/#for-freelancers" className="text-[#64748B] hover:text-[#0DA5F0] transition-colors text-sm">For Freelancers</Link></li>
+            <li><Link href="/contracts" className="text-[#64748B] hover:text-[#0DA5F0] transition-colors text-sm">Escrow Contracts</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-[#071014] font-bold mb-6 text-sm uppercase font-mono tracking-wider">Developers</h4>
           <ul className="space-y-4">
-            <li><Link href="#" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Documentation</Link></li>
-            <li><Link href="#" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Smart Contracts</Link></li>
-            <li><Link href="#" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">GitHub</Link></li>
+            <li><Link href="/docs" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Documentation</Link></li>
+            <li><Link href="/contracts" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Smart Contracts</Link></li>
+            <li><a href="https://github.com/adityajoshi18vk-art/Gigly-" target="_blank" rel="noopener noreferrer" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">GitHub</a></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-[#071014] font-bold mb-6 text-sm uppercase font-mono tracking-wider">Company</h4>
           <ul className="space-y-4">
-            <li><Link href="#" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">About Us</Link></li>
-            <li><Link href="#" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Terms of Service</Link></li>
-            <li><Link href="#" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Privacy Policy</Link></li>
+            <li><Link href="/about" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">About Us</Link></li>
+            <li><Link href="/terms" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Terms of Service</Link></li>
+            <li><Link href="/privacy" className="text-[#334155] font-medium hover:text-[#0DA5F0] transition-colors text-sm">Privacy Policy</Link></li>
           </ul>
         </div>
 
@@ -51,15 +51,8 @@ export function Footer() {
       
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="section-divider mb-8" />
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="text-[#475569] font-medium text-sm mb-4 md:mb-0">
-            © 2026 Gigly Escrow. All rights reserved.
-          </div>
-          <div className="flex items-center gap-6">
-            <Link href="#" className="text-[#334155] font-semibold hover:text-[#0DA5F0] text-sm transition-colors">Twitter</Link>
-            <Link href="#" className="text-[#334155] font-semibold hover:text-[#0DA5F0] text-sm transition-colors">Discord</Link>
-            <Link href="#" className="text-[#334155] font-semibold hover:text-[#0DA5F0] text-sm transition-colors">Telegram</Link>
-          </div>
+        <div className="text-center text-[#475569] font-medium text-sm">
+          © 2026 Gigly Escrow. All rights reserved.
         </div>
       </div>
     </footer>

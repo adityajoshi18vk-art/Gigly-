@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * AtmosphericBackground — High-Performance Interactive Blue Dot Matrix
@@ -11,6 +12,7 @@ import { useEffect, useRef } from "react";
  * 3. Butter-smooth 60 FPS easing (eliminates any jitter / flickering).
  * 4. High-performance rendering (zero expensive shadowBlur lag).
  * 5. Deep, vibrant Hackshastra blue palette (#0052FF, #0DA5F0, #0066EE, #0284C7, #38BDF8).
+ * 6. Automatically disabled in portal routes (/client, /freelancer, /admin, /jury) to avoid distraction.
  */
 
 interface Dot {
@@ -34,9 +36,20 @@ const PALETTE = [
 ];
 
 export function AtmosphericBackground() {
+  const pathname = usePathname();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Disable atmospheric dot matrix in client, freelancer, admin, and jury portals
+  const isPortal = Boolean(
+    pathname?.startsWith("/client") ||
+    pathname?.startsWith("/freelancer") ||
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/jury")
+  );
+
   useEffect(() => {
+    if (isPortal) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -201,7 +214,11 @@ export function AtmosphericBackground() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [isPortal]);
+
+  if (isPortal) {
+    return null;
+  }
 
   return (
     <canvas

@@ -408,7 +408,7 @@ export function ProfileSettingsModal({
             rows={3}
             className="glass-input text-sm resize-none"
           />
-          <p className="text-[10px] text-on-surface-variant/60 text-right mt-1 font-mono">
+          <p className="text-[11px] text-slate-700 text-right mt-1 font-mono font-bold">
             {bio.length}/280
           </p>
         </div>

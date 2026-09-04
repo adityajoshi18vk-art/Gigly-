@@ -270,7 +270,7 @@ export function Earnings() {
               </div>
             </div>
             <div className="mt-6 pt-4 border-t border-glass-border">
-              <span className="text-[11px] text-on-surface-variant/60 font-mono">Native Smart Wallet Balance</span>
+              <span className="text-[11px] text-slate-700 font-mono font-semibold">Native Smart Wallet Balance</span>
             </div>
           </div>
 
@@ -279,10 +279,10 @@ export function Earnings() {
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-indigo-400" />
             <div>
               <div className="flex justify-between items-start mb-1">
-                <p className="text-xs font-medium uppercase tracking-wider text-indigo-300 font-mono">
+                <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 font-mono">
                   EUR Equivalent
                 </p>
-                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
                   <LinkIcon className="w-2.5 h-2.5" />
                   Chainlink
                 </span>
@@ -304,13 +304,13 @@ export function Earnings() {
 
             <div className="mt-6 pt-4 border-t border-glass-border flex items-center justify-between text-[11px]">
               {isEurDelayed ? (
-                <div className="flex items-center gap-1.5 text-warning font-medium">
+                <div className="flex items-center gap-1.5 text-warning font-semibold">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Rate delayed
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-on-surface-variant/60 font-mono">
-                  <Clock className="w-3 h-3" />
+                <div className="flex items-center gap-1.5 text-slate-700 font-mono font-medium">
+                  <Clock className="w-3.5 h-3.5 text-slate-600" />
                   {eurUpdatedAtDate
                     ? `Updated ${eurUpdatedAtDate.toLocaleTimeString()}`
                     : "Chainlink Feed"}
@@ -324,10 +324,10 @@ export function Earnings() {
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-tertiary to-tertiary-warm" />
             <div>
               <div className="flex justify-between items-start mb-1">
-                <p className="text-xs font-medium uppercase tracking-wider text-tertiary-warm font-mono">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-800 font-mono">
                   INR Equivalent
                 </p>
-                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary-warm border border-tertiary/30">
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
                   <LinkIcon className="w-2.5 h-2.5" />
                   On-Chain
                 </span>
@@ -349,13 +349,13 @@ export function Earnings() {
 
             <div className="mt-6 pt-4 border-t border-glass-border flex items-center justify-between text-[11px]">
               {isInrDelayed ? (
-                <div className="flex items-center gap-1.5 text-warning font-medium">
+                <div className="flex items-center gap-1.5 text-warning font-semibold">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Rate delayed
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-on-surface-variant/60 font-mono">
-                  <Clock className="w-3 h-3" />
+                <div className="flex items-center gap-1.5 text-slate-700 font-mono font-medium">
+                  <Clock className="w-3.5 h-3.5 text-slate-600" />
                   {inrUpdatedAtDate
                     ? `Updated ${inrUpdatedAtDate.toLocaleTimeString()}`
                     : "MockINRFeed"}

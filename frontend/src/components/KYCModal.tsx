@@ -210,14 +210,16 @@ export function KYCModal({
             disabled={isVerifying}
             className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
               jurisdiction === "india"
-                ? "border-accent/50 bg-accent/15 text-white shadow-glow-accent"
-                : "border-glass-border bg-glass-light text-on-surface-variant hover:border-glass-border-light hover:text-on-surface"
+                ? "border-accent bg-blue-50/90 text-slate-900 shadow-sm ring-2 ring-accent/30"
+                : "border-slate-200 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:text-slate-900 hover:bg-slate-100/70"
             } disabled:opacity-50`}
           >
-            <Fingerprint className="w-4 h-4 shrink-0 text-accent-light" />
+            <Fingerprint className={`w-4 h-4 shrink-0 ${jurisdiction === "india" ? "text-accent" : "text-slate-500"}`} />
             <div>
-              <div className="text-xs font-semibold leading-tight">India (RBI)</div>
-              <div className="text-[10px] text-on-surface-variant/70 leading-tight mt-0.5">
+              <div className={`text-xs font-bold leading-tight ${jurisdiction === "india" ? "text-slate-950" : "text-slate-800"}`}>
+                India (RBI)
+              </div>
+              <div className={`text-[10px] leading-tight mt-0.5 ${jurisdiction === "india" ? "text-accent-dark font-bold" : "text-slate-600 font-medium"}`}>
                 Aadhaar ZK-SNARK
               </div>
             </div>
@@ -229,14 +231,16 @@ export function KYCModal({
             disabled={isVerifying}
             className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
               jurisdiction === "global"
-                ? "border-accent/50 bg-accent/15 text-white shadow-glow-accent"
-                : "border-glass-border bg-glass-light text-on-surface-variant hover:border-glass-border-light hover:text-on-surface"
+                ? "border-accent bg-blue-50/90 text-slate-900 shadow-sm ring-2 ring-accent/30"
+                : "border-slate-200 bg-slate-50/70 text-slate-700 font-semibold hover:border-slate-300 hover:text-slate-900 hover:bg-slate-100/70"
             } disabled:opacity-50`}
           >
-            <Globe className="w-4 h-4 shrink-0 text-accent-light" />
+            <Globe className={`w-4 h-4 shrink-0 ${jurisdiction === "global" ? "text-accent" : "text-slate-500"}`} />
             <div>
-              <div className="text-xs font-semibold leading-tight">Global / EU (GDPR)</div>
-              <div className="text-[10px] text-on-surface-variant/70 leading-tight mt-0.5">
+              <div className={`text-xs font-bold leading-tight ${jurisdiction === "global" ? "text-slate-950" : "text-slate-800"}`}>
+                Global / EU (GDPR)
+              </div>
+              <div className={`text-[10px] leading-tight mt-0.5 ${jurisdiction === "global" ? "text-accent-dark font-bold" : "text-slate-600 font-medium"}`}>
                 ZK National ID Proof
               </div>
             </div>
@@ -247,39 +251,41 @@ export function KYCModal({
         {jurisdiction === "india" && !isVerifying && (
           <div className="space-y-4">
             {anonAadhaar.status === "logged-in" ? (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-success/15 border border-success/30 text-success-light text-xs">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-medium">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                 <span>ZK Proof verified — identity confirmed on-device</span>
               </div>
             ) : anonAadhaar.status === "logging-in" ? (
               <div className="space-y-3">
-                <div className="rounded-xl bg-surface-container-lowest border border-glass-border p-4 space-y-3">
-                  <div className="flex items-center justify-between text-on-surface-variant mb-1 font-mono text-[10px]">
-                    <span>ZK-SNARK PROOF ENGINE</span>
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+                  <div className="flex items-center justify-between text-slate-600 mb-1 font-mono text-[10px]">
+                    <span className="font-semibold text-slate-800">ZK-SNARK PROOF ENGINE</span>
                     <ProofTimer />
                   </div>
                   <ProofProgressSteps />
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/20 text-warning text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0 text-amber-600" />
                   <p>Generating cryptographic proof locally in browser (30–90s)...</p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-glass-light border border-glass-border text-on-surface-variant text-xs">
-                <Shield className="w-4 h-4 text-accent-light shrink-0" />
+              <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium">
+                <Shield className="w-4 h-4 text-accent shrink-0" />
                 <span>Upload your Aadhaar QR to generate zero-knowledge proof</span>
               </div>
             )}
 
             <div className="flex justify-center py-2">
-              <LogInWithAnonAadhaar nullifierSeed={1234} />
+              <div className="p-1 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm">
+                <LogInWithAnonAadhaar nullifierSeed={1234} />
+              </div>
             </div>
 
-            <div className="flex items-start gap-2.5 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
-              <Fingerprint className="w-4 h-4 text-accent-light shrink-0 mt-0.5" />
-              <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                <strong>Privacy &amp; Scaling Explorations (PSE):</strong> Verified entirely on-device via Groth16 ZK-SNARKs. No Aadhaar numbers or personal identifiers ever touch our servers.
+            <div className="flex items-start gap-2.5 rounded-xl border border-accent/25 bg-blue-50/60 px-4 py-3">
+              <Fingerprint className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+              <p className="text-[11px] text-slate-700 leading-relaxed">
+                <strong className="text-slate-950 font-semibold">Privacy &amp; Scaling Explorations (PSE):</strong> Verified entirely on-device via Groth16 ZK-SNARKs. No Aadhaar numbers or personal identifiers ever touch our servers.
               </p>
             </div>
           </div>
@@ -337,7 +343,7 @@ export function KYCModal({
         {/* Verification terminal */}
         {isVerifying && (
           <div className="rounded-xl bg-surface-container-lowest border border-glass-border p-4 space-y-2.5 font-mono text-xs">
-            <div className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">
+            <div className="text-[10px] text-slate-700 font-bold uppercase tracking-wider mb-2">
               ZK-SNARK Verification Terminal
             </div>
 
@@ -363,10 +369,10 @@ export function KYCModal({
           </div>
         )}
 
-        <div className="flex items-start gap-2.5 rounded-xl border border-glass-border bg-glass-subtle px-4 py-3">
-          <Lock className="w-4 h-4 text-on-surface-variant shrink-0 mt-0.5" />
-          <p className="text-[11px] text-on-surface-variant/80 leading-relaxed">
-            <strong>Zero-Knowledge Guarantee:</strong> Identity credentials are authenticated without disclosing raw identity parameters (GDPR Art. 25 &amp; FATF aligned).
+        <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+          <Lock className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
+            <strong className="text-slate-950 font-semibold">Zero-Knowledge Guarantee:</strong> Identity credentials are authenticated without disclosing raw identity parameters (GDPR Art. 25 &amp; FATF aligned).
           </p>
         </div>
       </div>

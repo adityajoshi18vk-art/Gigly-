@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { readContract, prepareContractCall, waitForReceipt } from "thirdweb";
+import { useEffect, useState, useMemo } from "react";
+import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useReadContract, useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { escrowContract, client as thirdwebClient } from "@/lib/config";
 import { Badge } from "@/components/ui/Badge";
@@ -11,13 +11,20 @@ import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 import { JobData } from "./ActiveJobs";
 import { CheckCircle2, Clock, Link as LinkIcon, ArrowUpRight, Check, Send } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { useJobs } from "@/lib/useJobs";
 
 export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
-  const [jobs, setJobs] = useState<JobData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { jobs: allJobs, loading } = useJobs(refreshCounter);
   const [reviewWindowSeconds, setReviewWindowSeconds] = useState(86400); // Default 24h
-  
+
+  const jobs = useMemo(() => {
+    if (!account?.address) return [];
+    return allJobs
+      .filter((job) => job.freelancer.toLowerCase() === account.address.toLowerCase())
+      .sort((a, b) => b.id - a.id);
+  }, [allJobs, account?.address]);
+
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
   // Submit modal state
@@ -31,12 +38,6 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
 
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
-  const { data: jobCountData } = useReadContract({
-    contract: escrowContract,
-    method: "function jobCount() view returns (uint256)",
-    params: []
-  });
-
   const { data: reviewWindowData } = useReadContract({
     contract: escrowContract,
     method: "function REVIEW_WINDOW() view returns (uint256)",
@@ -49,61 +50,10 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
     }
   }, [reviewWindowData]);
 
-  useEffect(() => {
-    async function fetchJobs() {
-      if (!account || jobCountData === undefined) return;
-      
-      const count = Number(jobCountData);
-      if (count === 0) {
-        setJobs([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const jobIds = Array.from({ length: count }, (_, i) => BigInt(i + 1));
-        
-        const allJobs = await Promise.all(
-          jobIds.map(async (id) => {
-            const data = await readContract({
-              contract: escrowContract,
-              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle, string submissionLink)",
-              params: [id],
-            });
-            return {
-              id: Number(id),
-              client: data[0],
-              freelancer: data[1],
-              amount: data[2],
-              releasedAmount: data[3],
-              submittedAt: data[4],
-              status: data[5],
-              taskTitle: data[6],
-              submissionLink: data[7],
-            } as JobData;
-          })
-        );
-
-        const freelancerJobs = allJobs.filter(
-          (job) => job.freelancer.toLowerCase() === account.address.toLowerCase()
-        );
-        
-        setJobs(freelancerJobs.sort((a, b) => b.id - a.id));
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchJobs();
-  }, [account, jobCountData, refreshCounter]);
-
   const handleSubmitWork = async () => {
     if (submitModalJobId === null) return;
     const jobId = submitModalJobId;
-    
+
     try {
       setProcessingJobId(jobId);
 
@@ -113,10 +63,10 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         params: [BigInt(jobId), workLinkInput.trim()],
       });
       const result = await sendTransaction(tx);
-      
+
       setSubmitModalJobId(null);
       setWorkLinkInput("");
-      
+
       await waitForReceipt({
         client: thirdwebClient,
         chain: escrowContract.chain,
@@ -134,7 +84,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   const handleUpdateProgress = async () => {
     if (progressModalJobId === null) return;
     const jobId = progressModalJobId;
-    
+
     try {
       setProcessingJobId(jobId);
 
@@ -144,11 +94,11 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         params: [BigInt(jobId), progressPercent, progressNote.trim()],
       });
       const result = await sendTransaction(tx);
-      
+
       setProgressModalJobId(null);
       setProgressPercent(0);
       setProgressNote("");
-      
+
       await waitForReceipt({
         client: thirdwebClient,
         chain: escrowContract.chain,
@@ -228,11 +178,11 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               <p className="text-xs text-on-surface-variant mb-3 flex items-center gap-1.5 font-mono">
                 Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
               </p>
-              
+
               {job.submissionLink && job.status >= 2 && (
-                <a 
+                <a
                   href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
-                  target="_blank" 
+                  target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-accent-light hover:text-white bg-accent/10 px-3 py-1.5 rounded-lg border border-accent/20 transition-colors"
                 >
@@ -242,19 +192,19 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                 </a>
               )}
             </div>
-            
+
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 min-w-[220px]">
               <div className="text-left md:text-right">
                 <p className="font-bold text-on-surface text-2xl font-mono">
-                  ${formatUnits(job.amount, 6)} <span className="text-xs text-on-surface-variant font-sans">USDC</span>
+                  ${formatUnits(job.amount, 6)} <span className="text-xs text-slate-700 font-sans font-bold">USDC</span>
                 </p>
-                <p className="text-[11px] text-on-surface-variant/60 mt-0.5">Held in Escrow</p>
+                <p className="text-[11px] text-slate-700 font-semibold mt-0.5">Held in Escrow</p>
               </div>
-              
+
               {/* Status Actions */}
               {job.status === 1 && ( // Funded
                 <div className="flex items-center gap-2">
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
                       setProgressModalJobId(job.id);
@@ -266,7 +216,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                   >
                     Log Progress
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => {
                       setSubmitModalJobId(job.id);
                       setWorkLinkInput("");
@@ -279,16 +229,16 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
                   </Button>
                 </div>
               )}
-              
+
               {job.status === 2 && ( // Submitted
-                <CountdownAction 
+                <CountdownAction
                   job={job}
                   reviewWindowSeconds={reviewWindowSeconds}
                   onClaim={() => handleClaimPayment(job.id)}
                   isProcessing={processingJobId === job.id}
                 />
               )}
-              
+
               {job.status === 4 && ( // Released
                 <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-success-light bg-success/10 border border-success/25 px-3 py-1.5 rounded-xl">
                   <CheckCircle2 className="w-4 h-4" />
@@ -301,21 +251,21 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       ))}
 
       {/* Submit Work Modal */}
-      <Modal 
-        isOpen={submitModalJobId !== null} 
+      <Modal
+        isOpen={submitModalJobId !== null}
         onClose={() => {
           if (!processingJobId) {
             setSubmitModalJobId(null);
           }
-        }} 
+        }}
         title="Submit Cryptographic Deliverable"
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-on-surface mb-1.5">Deliverable Link / Repository</label>
-            <input 
-              type="text" 
-              placeholder="https://github.com/organization/repo or PR link" 
+            <input
+              type="text"
+              placeholder="https://github.com/organization/repo or PR link"
               value={workLinkInput}
               onChange={(e) => setWorkLinkInput(e.target.value)}
               className="glass-input text-sm"
@@ -324,16 +274,16 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               Upon submission, an immutable 24-hour review window timer begins. If client approves or remains unresponsive, funds are released to you.
             </p>
           </div>
-          
+
           <div className="flex justify-end gap-2.5 pt-4 border-t border-glass-border">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setSubmitModalJobId(null)}
               disabled={processingJobId === submitModalJobId}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmitWork}
               disabled={processingJobId === submitModalJobId}
               variant="primary"
@@ -346,13 +296,13 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       </Modal>
 
       {/* Update Progress Modal */}
-      <Modal 
-        isOpen={progressModalJobId !== null} 
+      <Modal
+        isOpen={progressModalJobId !== null}
         onClose={() => {
           if (!processingJobId) {
             setProgressModalJobId(null);
           }
-        }} 
+        }}
         title="Log On-Chain Progress"
       >
         <div className="space-y-4">
@@ -361,7 +311,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               <label className="text-sm font-medium text-on-surface">Milestone Progress</label>
               <span className="text-sm font-mono font-bold text-accent-light">{progressPercent}%</span>
             </div>
-            <input 
+            <input
               type="range"
               min="0"
               max="100"
@@ -372,8 +322,8 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
           </div>
           <div>
             <label className="block text-sm font-medium text-on-surface mb-1.5">Update Note (Stored on contract event)</label>
-            <textarea 
-              placeholder="What milestone did you complete today?" 
+            <textarea
+              placeholder="What milestone did you complete today?"
               value={progressNote}
               onChange={(e) => setProgressNote(e.target.value)}
               maxLength={200}
@@ -381,16 +331,16 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               rows={3}
             />
           </div>
-          
+
           <div className="flex justify-end gap-2.5 pt-4 border-t border-glass-border">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setProgressModalJobId(null)}
               disabled={processingJobId === progressModalJobId}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleUpdateProgress}
               disabled={processingJobId === progressModalJobId}
               variant="primary"
@@ -405,13 +355,13 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   );
 }
 
-function CountdownAction({ 
-  job, 
-  reviewWindowSeconds, 
-  onClaim, 
-  isProcessing 
-}: { 
-  job: JobData, 
+function CountdownAction({
+  job,
+  reviewWindowSeconds,
+  onClaim,
+  isProcessing
+}: {
+  job: JobData,
   reviewWindowSeconds: number,
   onClaim: () => void,
   isProcessing: boolean
@@ -420,7 +370,7 @@ function CountdownAction({
 
   useEffect(() => {
     const unlockTime = Number(job.submittedAt) + reviewWindowSeconds;
-    
+
     const updateCountdown = () => {
       const now = Math.floor(Date.now() / 1000);
       const remaining = unlockTime - now;
@@ -436,7 +386,7 @@ function CountdownAction({
 
   if (canClaim) {
     return (
-      <Button 
+      <Button
         onClick={onClaim}
         disabled={isProcessing}
         variant="primary"
@@ -450,9 +400,9 @@ function CountdownAction({
   const hours = Math.floor(timeLeft / 3600);
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
-  
-  const timeString = hours > 0 
-    ? `${hours}h ${minutes}m` 
+
+  const timeString = hours > 0
+    ? `${hours}h ${minutes}m`
     : `${minutes}m ${seconds}s`;
 
   return (

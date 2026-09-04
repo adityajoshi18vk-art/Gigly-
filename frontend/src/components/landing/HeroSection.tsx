@@ -98,7 +98,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center pt-28 pb-20 overflow-hidden px-4 sm:px-6 lg:px-8">
+    <section className="relative flex items-center pt-28 pb-16 sm:pb-20 overflow-hidden px-4 sm:px-6 lg:px-8">
       
       <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-center relative z-10">
         
