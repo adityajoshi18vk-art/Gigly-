@@ -8,7 +8,7 @@ import { upload } from "thirdweb/storage";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
-import { Link as LinkIcon, ChevronDown, ChevronUp, Eye } from "lucide-react";
+import { Link as LinkIcon, ChevronDown, ChevronUp, Eye, Clock } from "lucide-react";
 import { DeliverableViewer, toDeliverableStatus } from "@/components/DeliverableViewer";
 import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
@@ -131,6 +131,14 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     params: []
   });
 
+  const { data: reviewWindowData } = useReadContract({
+    contract: escrowContract,
+    method: "function REVIEW_WINDOW() view returns (uint256)",
+    params: []
+  });
+
+  const reviewWindowSeconds = reviewWindowData ? Number(reviewWindowData) : 86400;
+
   useEffect(() => {
     async function fetchJobs() {
       if (!account || jobCountData === undefined) return;
@@ -239,6 +247,12 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                     <Badge variant={STATUS_COLORS[job.status] || "neutral"}>
                       {STATUS_MAP[job.status] || "Unknown"}
                     </Badge>
+                    {job.status === 2 && (
+                      <ReviewCountdown 
+                        submittedAt={Number(job.submittedAt)} 
+                        reviewWindowSeconds={reviewWindowSeconds} 
+                      />
+                    )}
                   </div>
                   <p className="font-bold text-white text-2xl font-mono">${formatUnits(job.amount, 6)} <span className="text-sm text-white/40 font-medium font-sans">USDC</span></p>
                 </div>
@@ -364,5 +378,54 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         </div>
       </Modal>
     </div>
+  );
+}
+
+function ReviewCountdown({ 
+  submittedAt, 
+  reviewWindowSeconds, 
+}: { 
+  submittedAt: number, 
+  reviewWindowSeconds: number,
+}) {
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    // Calculate unlock time: submittedAt + REVIEW_WINDOW
+    const unlockTime = submittedAt + reviewWindowSeconds;
+    
+    const updateCountdown = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = unlockTime - now;
+      setTimeLeft(remaining > 0 ? remaining : 0);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [submittedAt, reviewWindowSeconds]);
+
+  if (timeLeft === 0) {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-red-400 font-medium bg-red-400/10 border border-red-400/20 px-2 py-1 rounded-md">
+        <Clock className="w-3.5 h-3.5" />
+        Time expired
+      </span>
+    );
+  }
+
+  const hours = Math.floor(timeLeft / 3600);
+  const minutes = Math.floor((timeLeft % 3600) / 60);
+  const seconds = timeLeft % 60;
+  
+  const timeString = hours > 0 
+    ? `${hours}h ${minutes}m` 
+    : `${minutes}m ${seconds}s`;
+
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-amber-400 font-medium bg-amber-400/10 border border-amber-400/20 px-2 py-1 rounded-md">
+      <Clock className="w-3.5 h-3.5" />
+      {timeString} left to review
+    </span>
   );
 }
