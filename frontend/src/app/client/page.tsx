@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { Home, Plus } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
@@ -16,10 +16,10 @@ import {
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
 import { Users, ShieldCheck } from "lucide-react";
+import { usePortalAuth } from "@/lib/usePortalAuth";
 
 export default function ClientDashboard() {
-  const account = useActiveAccount();
-  const router = useRouter();
+  const { account } = usePortalAuth("client");
   
   const [activeTab, setActiveTab] = useState("Browse Freelancers");
   const [selectedFreelancer, setSelectedFreelancer] = useState<{
@@ -49,14 +49,6 @@ export default function ClientDashboard() {
     fetchFreelancers();
   };
 
-  // Route protection
-  useEffect(() => {
-    if (!account) {
-      router.push("/");
-    }
-  }, [account, router]);
-
-  if (!account) return null;
 
   // Filter freelancers based on verified toggle
   const displayedFreelancers = showVerifiedOnly
@@ -113,15 +105,15 @@ export default function ClientDashboard() {
         <>
           {/* Verified Talent Toggle */}
           <div className="flex items-center justify-between mb-6">
-            <p className="text-xs text-on-surface-variant/80 font-mono uppercase tracking-wider">
+            <p className="text-xs text-slate-700 font-mono font-bold uppercase tracking-wider">
               {displayedFreelancers.length} Verified Profile{displayedFreelancers.length !== 1 ? "s" : ""}
             </p>
             <button
               onClick={() => setShowVerifiedOnly((v) => !v)}
-              className={`flex items-center gap-2.5 text-xs font-medium px-3.5 py-1.5 rounded-full border transition-all ${
+              className={`flex items-center gap-2.5 text-xs font-semibold px-3.5 py-1.5 rounded-full border transition-all ${
                 showVerifiedOnly
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
-                  : "bg-glass-light border-glass-border text-on-surface-variant hover:text-on-surface"
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-bold"
+                  : "bg-white border-slate-200 text-slate-700 hover:text-slate-950"
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />

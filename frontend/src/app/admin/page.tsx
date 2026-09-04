@@ -83,7 +83,7 @@ export default function AdminDashboard() {
           </p>
           <div className="flex flex-col gap-4 items-center justify-center">
             <CustomConnectButton />
-            <span className="text-xs text-on-surface-variant/50 font-mono uppercase tracking-wider">or direct smart wallet</span>
+            <span className="text-xs text-slate-600 font-mono uppercase tracking-wider font-semibold">or direct smart wallet</span>
             <button 
               onClick={handleAdminEmailLogin}
               className="text-xs font-semibold py-2.5 px-5 rounded-xl border border-glass-border bg-glass-light hover:bg-glass-medium text-on-surface transition-all"
@@ -686,7 +686,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
         </div>
 
         <div className="text-left sm:text-right">
-          <p className="text-[11px] text-on-surface-variant/60 uppercase font-mono tracking-wider">Locked in Escrow</p>
+          <p className="text-[11px] text-slate-700 uppercase font-mono tracking-wider font-bold">Locked in Escrow</p>
           <div className="font-display font-bold text-on-surface text-2xl font-mono text-gradient-warm">
             {maxAmount.toFixed(2)} USDC
           </div>
@@ -709,7 +709,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
               <ArrowUpRight className="w-3 h-3 shrink-0" />
             </a>
           ) : (
-            <span className="text-xs text-on-surface-variant/50 italic font-mono">No link attached</span>
+            <span className="text-xs text-slate-600 italic font-mono font-medium">No link attached</span>
           )}
         </div>
 
@@ -718,7 +718,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
           {disputeReason ? (
             <p className="text-xs text-on-surface-variant leading-relaxed">{disputeReason}</p>
           ) : (
-            <span className="text-xs text-on-surface-variant/50 italic font-mono">No statement provided</span>
+            <span className="text-xs text-slate-600 italic font-mono font-medium">No statement provided</span>
           )}
         </div>
       </div>

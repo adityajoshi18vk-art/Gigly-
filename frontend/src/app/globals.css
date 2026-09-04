@@ -26,9 +26,9 @@
 
   /* ─── Text Scale ─── */
   --text-primary: #071014;
-  --text-secondary: #334155;
-  --text-tertiary: #64748B;
-  --text-muted: #94A3B8;
+  --text-secondary: #0f172a;
+  --text-tertiary: #334155;
+  --text-muted: #475569;
 
   /* ─── Glass / Surface System (Crisp Light Mode) ─── */
   --glass-bg: rgba(255, 255, 255, 0.9);

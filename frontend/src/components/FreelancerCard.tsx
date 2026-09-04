@@ -19,12 +19,12 @@ export interface FreelancerCardProps {
 }
 
 const DOMAIN_COLORS: Record<string, string> = {
-  "Smart Contracts": "bg-accent/15 text-accent-light border-accent/30",
-  "Frontend": "bg-sky-500/15 text-sky-300 border-sky-500/30",
-  "Backend": "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  "Auditing": "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  "UI/UX": "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  "Other": "bg-glass-light text-on-surface-variant border-glass-border",
+  "Smart Contracts": "bg-primary/10 text-primary border-primary/20 font-bold",
+  "Frontend": "bg-sky-50 text-sky-800 border-sky-200 font-bold",
+  "Backend": "bg-emerald-50 text-emerald-800 border-emerald-200 font-bold",
+  "Auditing": "bg-rose-50 text-rose-800 border-rose-200 font-bold",
+  "UI/UX": "bg-amber-50 text-amber-900 border-amber-200 font-bold",
+  "Other": "bg-slate-100 text-slate-700 border-slate-200 font-bold",
 };
 
 export function FreelancerCard({
@@ -64,22 +64,22 @@ export function FreelancerCard({
             <div className="flex items-center gap-2">
               <h3 className="font-display font-semibold text-on-surface text-base truncate">{name}</h3>
               {isVerified && (
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-2 py-0.5 shrink-0">
-                  <ShieldCheck className="w-3 h-3" />
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 shrink-0">
+                  <ShieldCheck className="w-3.5 h-3.5" />
                   ZK-Verified
                 </span>
               )}
             </div>
-            <p className="text-body-sm text-on-surface-variant truncate">{title}</p>
+            <p className="text-body-sm text-slate-700 font-medium truncate">{title}</p>
             <div className="flex items-center gap-1 mt-1 text-xs">
               {reviews > 0 ? (
                 <>
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span className="font-semibold text-on-surface">{rating}</span>
-                  <span className="text-on-surface-variant/60 font-medium">({reviews})</span>
+                  <span className="font-bold text-on-surface">{rating}</span>
+                  <span className="text-slate-600 font-bold">({reviews})</span>
                 </>
               ) : (
-                <span className="text-on-surface-variant/60 text-[11px] font-medium">Available for hire</span>
+                <span className="text-slate-700 text-[11px] font-semibold">Available for hire</span>
               )}
             </div>
           </div>
@@ -105,19 +105,19 @@ export function FreelancerCard({
             return isSkillVerified ? (
               <span
                 key={skill}
-                className="inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-medium text-[11px] px-2.5 py-1 rounded-full backdrop-blur-sm"
+                className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[11px] px-2.5 py-1 rounded-full backdrop-blur-sm"
               >
                 <CheckCircle2 className="w-3 h-3" />
                 {skill}
               </span>
             ) : (
-              <div key={skill} className="bg-glass-light border border-glass-border text-on-surface-variant font-medium text-[11px] px-2.5 py-1 rounded-full group-hover:border-glass-border-light transition-colors">
+              <div key={skill} className="bg-glass-light border border-glass-border text-slate-700 font-semibold text-[11px] px-2.5 py-1 rounded-full group-hover:border-glass-border-light transition-colors">
                 {skill}
               </div>
             );
           })}
           {allSkills.length > 4 && (
-            <div className="bg-glass-subtle border border-glass-border text-on-surface-variant/60 font-medium text-[11px] px-2.5 py-1 rounded-full">
+            <div className="bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[11px] px-2.5 py-1 rounded-full">
               +{allSkills.length - 4}
             </div>
           )}

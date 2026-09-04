@@ -1,79 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { readContract, prepareContractCall, waitForReceipt } from "thirdweb";
-import { useReadContract, useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useState, useMemo } from "react";
+import { prepareContractCall, waitForReceipt } from "thirdweb";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { escrowContract, client as thirdwebClient } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { formatUnits } from "viem";
 import { JobData } from "./ActiveJobs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
+import { useJobs } from "@/lib/useJobs";
 
 export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess: () => void }) {
   const account = useActiveAccount();
-  const [jobs, setJobs] = useState<JobData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { jobs: allJobs, loading } = useJobs(refreshCounter);
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
+  const jobs = useMemo(() => {
+    return allJobs
+      .filter((job) => job.freelancer === "0x0000000000000000000000000000000000000000" && job.status === 1)
+      .sort((a, b) => b.id - a.id);
+  }, [allJobs]);
+
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
-
-  const { data: jobCountData } = useReadContract({
-    contract: escrowContract,
-    method: "function jobCount() view returns (uint256)",
-    params: []
-  });
-
-  useEffect(() => {
-    async function fetchJobs() {
-      if (!account || jobCountData === undefined) return;
-      
-      const count = Number(jobCountData);
-      if (count === 0) {
-        setJobs([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const jobIds = Array.from({ length: count }, (_, i) => BigInt(i + 1));
-        
-        const allJobs = await Promise.all(
-          jobIds.map(async (id) => {
-            const data = await readContract({
-              contract: escrowContract,
-              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle)",
-              params: [id],
-            });
-            return {
-              id: Number(id),
-              client: data[0],
-              freelancer: data[1],
-              amount: data[2],
-              releasedAmount: data[3],
-              submittedAt: data[4],
-              status: data[5],
-              taskTitle: data[6]
-            } as JobData;
-          })
-        );
-
-        // Filter for open jobs (zero address) and status Funded (1)
-        const openJobs = allJobs.filter(
-          (job) => job.freelancer === "0x0000000000000000000000000000000000000000" && job.status === 1
-        );
-        
-        setJobs(openJobs.sort((a, b) => b.id - a.id));
-      } catch (error) {
-        console.error("Failed to fetch open jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchJobs();
-  }, [account, jobCountData, refreshCounter]);
 
   const handleAcceptJob = async (jobId: number, jobClient: string) => {
     if (!account) return;
@@ -157,21 +106,21 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
                     <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-accent/15 border border-accent/30 text-accent-light tracking-wide uppercase">
                       Open Escrow Gig
                     </span>
-                    <span className="text-xs text-on-surface-variant font-mono">#{job.id}</span>
+                    <span className="text-xs text-slate-700 font-mono font-bold">#{job.id}</span>
                   </div>
                   <h3 className="font-display font-semibold text-on-surface text-xl mb-2 group-hover:text-accent-light transition-colors">
                     {job.taskTitle || `Job #${job.id}`}
                   </h3>
-                  <p className="text-xs text-on-surface-variant flex items-center gap-1.5 font-mono">
+                  <p className="text-xs text-slate-700 flex items-center gap-1.5 font-mono font-medium">
                     Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}
                   </p>
                 </div>
                 
                 <div className="flex flex-col md:items-end gap-3.5 min-w-[200px]">
                   <div className="text-left md:text-right">
-                    <p className="text-[11px] text-on-surface-variant/60 uppercase tracking-wider font-mono">Funded Bounty</p>
+                    <p className="text-[11px] text-slate-700 uppercase tracking-wider font-mono font-bold">Funded Bounty</p>
                     <p className="font-bold text-on-surface text-2xl font-mono">
-                      ${formatUnits(job.amount, 6)} <span className="text-xs text-on-surface-variant font-sans">USDC</span>
+                      ${formatUnits(job.amount, 6)} <span className="text-xs text-slate-700 font-sans font-bold">USDC</span>
                     </p>
                   </div>
                   

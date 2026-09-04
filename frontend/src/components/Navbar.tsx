@@ -15,6 +15,7 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
   const handleRoleSwitch = (newRole: "client" | "freelancer") => {
     if (account) {
       localStorage.setItem(`gigly_role_${account.address}`, newRole);
+      localStorage.setItem("gigly_last_portal", newRole);
     }
     router.push(`/${newRole}`);
   };
@@ -43,8 +44,8 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
               </Link>
 
               {/* Network pill */}
-              <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-glass-light border border-glass-border text-xs font-medium text-on-surface-variant">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse"></span>
+              <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] animate-pulse"></span>
                 <span>Ethereum Sepolia</span>
               </div>
             </div>
@@ -56,20 +57,20 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
                   {/* Retract back to Workspace Selection Page button */}
                   <button
                     onClick={handleRetractToChooseRole}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 hover:border-accent/40 bg-glass-light hover:bg-glass-medium text-xs font-medium text-on-surface-variant hover:text-white transition-all shadow-sm group"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-primary/40 bg-white hover:bg-slate-50 text-xs font-bold text-slate-800 hover:text-primary transition-all shadow-sm group"
                     title="Retract to Choose Workspace screen"
                   >
-                    <ArrowLeftRight className="w-3.5 h-3.5 text-accent-light group-hover:rotate-180 transition-transform duration-300" />
+                    <ArrowLeftRight className="w-3.5 h-3.5 text-primary group-hover:rotate-180 transition-transform duration-300" />
                     <span>Switch Role</span>
                   </button>
 
-                  <div className="flex items-center bg-glass-light p-1 rounded-xl border border-glass-border text-xs font-medium text-on-surface-variant">
+                  <div className="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
                     <button
                       onClick={() => handleRoleSwitch("client")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${
                         activeRole === "client" || pathname === "/client"
-                          ? "bg-glass-medium text-on-surface shadow-inner-glow border border-glass-border-light"
-                          : "hover:text-on-surface hover:bg-glass-subtle border border-transparent"
+                          ? "bg-white text-slate-950 shadow-sm border border-slate-200 font-bold"
+                          : "hover:text-slate-950 hover:bg-white/60 border border-transparent"
                       }`}
                     >
                       <Briefcase className="w-3.5 h-3.5" />
@@ -79,8 +80,8 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
                       onClick={() => handleRoleSwitch("freelancer")}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${
                         activeRole === "freelancer" || pathname === "/freelancer"
-                          ? "bg-glass-medium text-on-surface shadow-inner-glow border border-glass-border-light"
-                          : "hover:text-on-surface hover:bg-glass-subtle border border-transparent"
+                          ? "bg-white text-slate-950 shadow-sm border border-slate-200 font-bold"
+                          : "hover:text-slate-950 hover:bg-white/60 border border-transparent"
                       }`}
                     >
                       <UserCheck className="w-3.5 h-3.5" />
@@ -92,13 +93,13 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
 
               <Link
                 href="/jury"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors border ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
                   pathname === "/jury"
-                    ? "bg-glass-medium text-on-surface border-glass-border-light shadow-inner-glow"
-                    : "border-transparent text-on-surface-variant hover:bg-glass-light hover:text-on-surface"
+                    ? "bg-white text-slate-950 border-slate-200 shadow-sm"
+                    : "border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                 }`}
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Jury
@@ -106,13 +107,13 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
 
               <Link
                 href="/admin"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors border ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors border ${
                   pathname === "/admin"
-                    ? "bg-glass-medium text-on-surface border-glass-border-light shadow-inner-glow"
-                    : "border-transparent text-on-surface-variant hover:bg-glass-light hover:text-on-surface"
+                    ? "bg-white text-slate-950 border-slate-200 shadow-sm"
+                    : "border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                 }`}
               >
-                <ShieldAlert className="w-3.5 h-3.5" />
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
                 Arbiter
               </Link>
             </div>

@@ -315,7 +315,7 @@ export function WithdrawModal({
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-on-surface-variant/70 mt-1.5 font-mono">
+                <p className="text-[11px] text-slate-700 mt-1.5 font-mono font-medium">
                   {currencyConfig.rail} • {currencyConfig.payoutHint}
                 </p>
               </div>
@@ -328,7 +328,7 @@ export function WithdrawModal({
                     <>1 USDC = {currencyConfig.symbol}{liveRate.toFixed(2)} {currency}</>
                   )}
                 </span>
-                <span className="text-[10px] text-on-surface-variant/70 ml-auto font-mono">
+                <span className="text-[10px] text-slate-700 ml-auto font-mono font-bold">
                   {rateSource === "onchain"
                     ? "🔗 On-Chain Feed"
                     : rateSource === "api"
@@ -361,7 +361,7 @@ export function WithdrawModal({
                     Max
                   </button>
                 </div>
-                <p className="text-[11px] text-on-surface-variant/70 mt-1 font-mono">
+                <p className="text-[11px] text-slate-700 mt-1 font-mono font-medium">
                   Available in Smart Wallet: {usdcBalance.toFixed(2)} USDC
                 </p>
               </div>
@@ -370,7 +370,7 @@ export function WithdrawModal({
               {numAmount > 0 && (
                 <div className="rounded-xl bg-accent/10 border border-accent/20 p-4 space-y-1.5">
                   <div className="flex justify-between text-sm">
-                    <span className="text-on-surface-variant">Estimated Payout</span>
+                    <span className="text-on-surface-variant font-medium">Estimated Payout</span>
                     <span className="font-bold text-accent-light text-lg font-mono">
                       {currencyConfig.symbol}
                       {netFiat.toLocaleString(undefined, {
@@ -380,7 +380,7 @@ export function WithdrawModal({
                       {currency}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[11px] text-on-surface-variant/70 font-mono">
+                  <div className="flex justify-between text-[11px] text-slate-700 font-mono font-medium">
                     <span>Protocol off-ramp fee (0.4%)</span>
                     <span>
                       -{currencyConfig.symbol}{fiatFee.toFixed(2)}
@@ -452,7 +452,7 @@ export function WithdrawModal({
                           ? "bg-success/10 border-success/30 text-success-light"
                           : isCurrent
                           ? "bg-accent/10 border-accent/30 text-accent-light shadow-glow-accent"
-                          : "bg-glass-light border-glass-border text-on-surface-variant/40"
+                          : "bg-glass-light border-glass-border text-slate-600"
                       }`}
                     >
                       {isDone ? (

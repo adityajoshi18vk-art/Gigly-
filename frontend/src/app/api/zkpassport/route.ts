@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { ZKPassport } from "@zkpassport/sdk";
 
+export const dynamic = "force-dynamic";
+
+
 export async function GET() {
   try {
     const zkPassport = new ZKPassport("localhost");

@@ -39,14 +39,17 @@ export function LandingNavbar() {
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-10">
-          <Link href="#features" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#071014] transition-colors duration-300">
+          <Link href="/#features" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#071014] transition-colors duration-300">
             Features
           </Link>
-          <Link href="#process" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#071014] transition-colors duration-300">
+          <Link href="/#process" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#071014] transition-colors duration-300">
             Process
           </Link>
-          <Link href="#security" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#071014] transition-colors duration-300">
+          <Link href="/#security" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#071014] transition-colors duration-300">
             Security
+          </Link>
+          <Link href="/docs" className="text-[13px] font-semibold tracking-[0.06em] uppercase text-[#334155] hover:text-[#0DA5F0] transition-colors duration-300">
+            Docs
           </Link>
         </div>
 

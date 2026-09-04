@@ -11,10 +11,10 @@ export function ApiKeyBanner() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    const envKey = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID;
+    const envKey = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "fe0bc6654c8336f5d5d7d0ed871a7eea";
     const localKey = typeof window !== "undefined" ? localStorage.getItem("gigly_thirdweb_client_id") : null;
     
-    const validEnv = envKey && envKey !== "your_thirdweb_client_id_here" && envKey !== "PLACEHOLDER_CLIENT_ID";
+    const validEnv = envKey && envKey !== "your_thirdweb_client_id_here" && envKey !== "PLACEHOLDER_CLIENT_ID" && envKey.trim().length > 5;
     const validLocal = localKey && localKey.trim().length > 5;
 
     if (!validEnv && !validLocal) {
