@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { readContract } from "thirdweb";
 import { useActiveAccount } from "thirdweb/react";
-import { credentialContract, CONTRACTS } from "@/lib/config";
+import { client, credentialContract, CONTRACTS } from "@/lib/config";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Lock, ExternalLink, RefreshCw } from "lucide-react";
 
@@ -21,13 +21,21 @@ interface CredentialData {
   metadataFailed: boolean;
 }
 
-/** Convert ipfs:// URIs to an HTTP gateway URL */
+import { resolveScheme } from "thirdweb/storage";
+
+
+/** Convert ipfs:// URIs to a high-performance HTTP gateway URL via Thirdweb */
 function resolveIpfs(uri: string): string {
   if (!uri) return "";
-  if (uri.startsWith("ipfs://")) {
-    return uri.replace("ipfs://", "https://ipfs.io/ipfs/");
+  try {
+    return resolveScheme({ client, uri });
+  } catch (e) {
+    // fallback if resolveScheme fails
+    if (uri.startsWith("ipfs://")) {
+      return uri.replace("ipfs://", "https://ipfs.thirdwebcdn.com/ipfs/");
+    }
+    return uri;
   }
-  return uri;
 }
 
 /** Check if credential contract is actually deployed (not zero-address placeholder) */
