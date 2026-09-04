@@ -27,7 +27,7 @@ interface IOptimisticEscrow {
         string memory submissionLink
     );
 
-    function raiseDispute(uint256 jobId, string calldata reason) external;
+    function raiseDisputeAsArbiter(uint256 jobId, string calldata reason) external;
     function resolveDispute(uint256 jobId, uint256 amountToFreelancer) external;
 }
 
@@ -73,16 +73,20 @@ contract VotingDispute is ReentrancyGuard, Ownable {
     // ─── State ───────────────────────────────────────────────────────────
 
     IOptimisticEscrow public escrow;
+    /// @notice Primary credential — used for minting +Contributor SBTs.
     IGiglyCredential  public credential;
-
-    /// @notice Auto-incrementing dispute counter (first dispute = 1).
-    uint256 public disputeCount;
+    /// @notice Legacy credential — used ONLY for juror eligibility check.
+    ///         Existing holders on the old contract can still register.
+    IGiglyCredential  public legacyCredential;
 
     /// @notice Ordered pool of addresses that opted in as jurors.
     address[] public jurorPool;
 
     /// @notice Whether an address is currently registered as a juror.
     mapping(address => bool) public isJuror;
+
+    /// @notice Auto-incrementing dispute counter (first dispute = 1).
+    uint256 public disputeCount;
 
     // ─── Enums ───────────────────────────────────────────────────────────
 
@@ -178,15 +182,34 @@ contract VotingDispute is ReentrancyGuard, Ownable {
         credential = IGiglyCredential(_credential);
     }
 
+    /// @notice Set the legacy credential contract for juror eligibility checks only.
+    function setLegacyCredential(address _legacy) external onlyOwner {
+        legacyCredential = IGiglyCredential(_legacy);
+    }
+
+    /// @notice Owner can directly register a juror (bypasses NFT check).
+    ///         Use to onboard existing NFT holders before they self-register.
+    function adminRegisterJuror(address juror) external onlyOwner {
+        if (juror == address(0)) revert InvalidAddress();
+        if (isJuror[juror]) revert AlreadyRegistered();
+        isJuror[juror] = true;
+        jurorPool.push(juror);
+        emit JurorRegistered(juror);
+    }
+
     // ─── Juror Registry ──────────────────────────────────────────────────
 
     /**
-     * @notice Any GiglyCredential NFT holder (>=1 token) may register as a
-     *         potential juror. Opt-in is explicit so we have an indexable pool.
+     * @notice Any GiglyCredential NFT holder (>=1 token on new OR legacy contract)
+     *         may register as a potential juror.
      */
     function registerAsJuror() external {
-        uint256[] memory tokens = credential.getTokensByFreelancer(msg.sender);
-        if (tokens.length == 0) revert NotNFTHolder();
+        // Check new credential first, then fall back to legacy
+        bool hasNFT = credential.getTokensByFreelancer(msg.sender).length > 0;
+        if (!hasNFT && address(legacyCredential) != address(0)) {
+            hasNFT = legacyCredential.getTokensByFreelancer(msg.sender).length > 0;
+        }
+        if (!hasNFT) revert NotNFTHolder();
         if (isJuror[msg.sender]) revert AlreadyRegistered();
 
         isJuror[msg.sender] = true;
@@ -255,8 +278,8 @@ contract VotingDispute is ReentrancyGuard, Ownable {
 
         address[3] memory selected = _pickJurors(jobId, client, freelancer, poolSize);
 
-        // Freeze job in escrow (sets it to Disputed status)
-        escrow.raiseDispute(jobId, reason);
+        // Freeze job in escrow (arbiter-callable, sets status → Disputed)
+        escrow.raiseDisputeAsArbiter(jobId, reason);
 
         disputeCount++;
         uint256 dId = disputeCount;
@@ -418,6 +441,7 @@ contract VotingDispute is ReentrancyGuard, Ownable {
         uint256 attempts  = 0;
         uint256 maxAttempts = poolSize * 4;
 
+        // Pass 1: Try to pick jurors who are neither client nor freelancer
         while (picked < JUROR_COUNT && attempts < maxAttempts) {
             uint256 idx = (seed >> (attempts * 8)) % poolSize;
             address candidate = jurorPool[idx];
@@ -434,6 +458,17 @@ contract VotingDispute is ReentrancyGuard, Ownable {
 
             if (attempts % 32 == 0) {
                 seed = uint256(keccak256(abi.encodePacked(seed, attempts)));
+            }
+        }
+
+        // Pass 2: Fallback for small pools (e.g. hackathon demo) - fill remaining slots with any unique juror
+        if (picked < JUROR_COUNT) {
+            for (uint256 i = 0; i < poolSize && picked < JUROR_COUNT; i++) {
+                address candidate = jurorPool[i];
+                if (!_isDuplicate(selected, picked, candidate)) {
+                    selected[picked] = candidate;
+                    picked++;
+                }
             }
         }
 

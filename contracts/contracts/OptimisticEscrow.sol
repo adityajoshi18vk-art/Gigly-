@@ -329,6 +329,24 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     }
 
     /**
+     * @notice Arbiter (VotingDispute contract) freezes a job into Disputed state
+     *         so community jury voting can proceed.
+     */
+    function raiseDisputeAsArbiter(uint256 jobId, string calldata reason)
+        external
+        onlyArbiter
+        inStatus(jobId, Status.Submitted)
+    {
+        Job storage job = jobs[jobId];
+        if (block.timestamp >= job.submittedAt + REVIEW_WINDOW)
+            revert ReviewWindowExpired();
+
+        job.status = Status.Disputed;
+
+        emit DisputeRaised(jobId, job.client, reason);
+    }
+
+    /**
      * @notice Arbiter resolves a dispute by specifying how much goes to the freelancer.
      *         The remainder (minus platform fee on the freelancer portion) goes back to the client.
      * @dev Only the arbiter can call this. The platform fee is only taken from the

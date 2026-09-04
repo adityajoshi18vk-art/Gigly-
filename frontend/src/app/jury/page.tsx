@@ -6,6 +6,7 @@ import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import {
   votingDisputeContract,
   credentialContract,
+  legacyCredentialContract,
   escrowContract,
   client as thirdwebClient,
   CONTRACTS,
@@ -139,12 +140,17 @@ function JuryDashboard({ address }: { address: string }) {
   useEffect(() => {
     async function fetchStatus() {
       try {
-        const [tokens, jurorStatus, poolSize] = await Promise.all([
+        const [tokensNew, tokensLegacy, jurorStatus, poolSize] = await Promise.all([
           readContract({
             contract: credentialContract,
             method: "function getTokensByFreelancer(address) view returns (uint256[])",
             params: [address],
-          }),
+          }).catch(() => []),
+          readContract({
+            contract: legacyCredentialContract,
+            method: "function getTokensByFreelancer(address) view returns (uint256[])",
+            params: [address],
+          }).catch(() => []),
           readContract({
             contract: votingDisputeContract,
             method: "function isJuror(address) view returns (bool)",
@@ -156,7 +162,7 @@ function JuryDashboard({ address }: { address: string }) {
             params: [],
           }),
         ]);
-        setHasNFT(tokens.length > 0);
+        setHasNFT((tokensNew?.length ?? 0) > 0 || (tokensLegacy?.length ?? 0) > 0);
         setIsJuror(jurorStatus);
         setJurorPoolSize(Number(poolSize));
       } catch (err) {

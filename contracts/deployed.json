@@ -1,8 +1,8 @@
 {
   "USDC": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   "GiglyCredential": "0x7CbC2961526453E48154Bc5A045bc254Eb61B46C",
-  "OptimisticEscrow": "0x5143b56d2ac0757Ad206176c30f08fc850b9bb6b",
+  "OptimisticEscrow": "0x80C53026081b2710b0e2705332790322DC7e7300",
   "Network": "sepolia",
-  "VotingDispute": "0xbaE78ef2777959fE419De8a28Ed1D974216279D2",
+  "VotingDispute": "0xbd808E4992Acf83d1Fd0454B6962c1f937a5dB1F",
   "FreelancerRegistry": "0xd78CF42205dE581c06bFBc28928F20898B244eDA"
 }
