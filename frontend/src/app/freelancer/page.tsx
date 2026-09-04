@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 import Link from "next/link";
-import { Home, Sparkles, UserCog } from "lucide-react";
+import { Home, Sparkles, UserCog, RefreshCw } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
@@ -24,7 +24,14 @@ export default function FreelancerDashboard() {
   const [activeTab, setActiveTab] = useState("Active Jobs");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    clearJobsCache();
+    setRefreshCounter(c => c + 1);
+    setTimeout(() => setIsRefreshing(false), 1500);
+  }, []);
 
   return (
     <div className="min-h-screen py-4 sm:py-6 relative text-on-background">
@@ -45,6 +52,14 @@ export default function FreelancerDashboard() {
           </div>
         </div>
         <div className="mt-4 sm:mt-0 px-2 flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Refresh on-chain data"
+            className="w-10 h-10 rounded-xl bg-glass-light border border-glass-border flex items-center justify-center hover:bg-glass-medium transition-colors text-on-surface-variant hover:text-accent-light disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-accent-light" : ""}`} />
+          </button>
           <Button
             variant="outline"
             onClick={() => setIsProfileModalOpen(true)}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import Link from "next/link";
-import { Home, Plus } from "lucide-react";
+import { Home, Plus, RefreshCw } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
@@ -33,6 +33,14 @@ export default function ClientDashboard() {
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    clearJobsCache();
+    setRefreshCounter(c => c + 1);
+    setTimeout(() => setIsRefreshing(false), 1500);
+  }, []);
 
   // ── Dynamic freelancer registry (SSR-safe, API-backed) ────────────────
   const [freelancers, setFreelancers] = useState<FreelancerProfile[]>([]);
@@ -82,6 +90,14 @@ export default function ClientDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-4 mt-4 sm:mt-0 px-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Refresh on-chain data"
+            className="w-10 h-10 rounded-xl bg-glass-light border border-glass-border flex items-center justify-center hover:bg-glass-medium transition-colors text-on-surface-variant hover:text-accent-light disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-accent-light" : ""}`} />
+          </button>
           <button 
             onClick={() => setIsPostJobModalOpen(true)}
             className="btn-gradient-primary text-xs font-semibold py-2.5 px-5 flex items-center gap-1.5 shadow-glow-accent"

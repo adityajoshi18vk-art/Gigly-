@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { readContract } from "thirdweb";
+import { useEffect, useState, useMemo } from "react";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { escrowContract, votingDisputeContract as votingContract, CONTRACTS, POW_NFT_METADATA_URI } from "@/lib/config";
 import { Badge } from "@/components/ui/Badge";
@@ -16,7 +15,7 @@ import { Modal } from "@/components/ui/Modal";
 import { motion, AnimatePresence } from "framer-motion";
 import { DisputeConsentModal } from './DisputeConsentModal';
 import { getRegisteredFreelancers } from "@/lib/freelancerRegistry";
-import { clearJobsCache } from "@/lib/useJobs";
+import { useJobs, clearJobsCache } from "@/lib/useJobs";
 
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 
@@ -40,8 +39,7 @@ function isVotingContractDeployed(): boolean {
 
 export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCounter: number, onInteractionSuccess?: () => void }) {
   const account = useActiveAccount();
-  const [jobs, setJobs] = useState<JobData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { jobs: allJobs, loading } = useJobs(refreshCounter);
   const [freelancerNames, setFreelancerNames] = useState<Map<string, string>>(new Map());
   const progressUpdates = useProgressUpdates(refreshCounter);
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
@@ -97,7 +95,6 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     }
   };
 
-  // ── Admin dispute (existing flow) ────────────────────────────────
   const submitAdminDispute = async () => {
     if (!disputeModalJobId || disputeReason.trim().length < 5) return;
     try {
@@ -125,7 +122,6 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     }
   };
 
-  // ── Voting dispute (community jury flow) ─────────────────────────
   const submitVotingDispute = async () => {
     if (!votingModalJobId || votingReason.trim().length < 5) return;
     try {
@@ -165,64 +161,18 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
     }
   };
 
-  const { data: jobCountData } = useReadContract({
-    contract: escrowContract,
-    method: "function jobCount() view returns (uint256)",
-    params: []
-  });
-
-  useEffect(() => {
-    async function fetchJobs() {
-      if (!account || jobCountData === undefined) return;
-      
-      const count = Number(jobCountData);
-      if (count === 0) {
-        setJobs([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const jobIds = Array.from({ length: count }, (_, i) => BigInt(i + 1));
-        
-        const allJobs = await Promise.all(
-          jobIds.map(async (id) => {
-            const data = await readContract({
-              contract: escrowContract,
-              method: "function jobs(uint256) view returns (address client, address freelancer, uint256 amount, uint256 releasedAmount, uint256 submittedAt, uint8 status, string taskTitle, string submissionLink)",
-              params: [id],
-            });
-            return {
-              id: Number(id),
-              client: data[0],
-              freelancer: data[1],
-              amount: data[2],
-              releasedAmount: data[3],
-              submittedAt: data[4],
-              status: data[5],
-              taskTitle: data[6],
-              submissionLink: data[7],
-            } as JobData;
-          })
-        );
-
-        const activeJobs = allJobs.filter(
-          (job) =>
-            job.client.toLowerCase() === account.address.toLowerCase() &&
-            job.status >= 1 &&
-            job.status <= 3
-        );
-        setJobs(activeJobs.sort((a, b) => b.id - a.id));
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchJobs();
-  }, [account, jobCountData, refreshCounter]);
+  // Filter to only this client's active jobs (status 1-3)
+  const jobs = useMemo(() => {
+    if (!account?.address) return [];
+    return allJobs
+      .filter(
+        (job) =>
+          job.client.toLowerCase() === account.address.toLowerCase() &&
+          job.status >= 1 &&
+          job.status <= 3
+      )
+      .sort((a, b) => b.id - a.id);
+  }, [allJobs, account?.address]);
 
   // Resolve freelancer addresses → names from registry
   useEffect(() => {
