@@ -16,6 +16,8 @@ export interface FreelancerCardProps {
   portfolioUrl?: string;
   githubUrl?: string;
   isVerified?: boolean;
+  onViewMore?: () => void;
+  onHire?: () => void;
 }
 
 const DOMAIN_COLORS: Record<string, string> = {
@@ -41,6 +43,8 @@ export function FreelancerCard({
   portfolioUrl,
   githubUrl,
   isVerified,
+  onViewMore,
+  onHire,
 }: FreelancerCardProps) {
   // Merge skills: show all unique skills, marking verified ones
   const verifiedSet = new Set(verifiedSkills.map((s) => s.toLowerCase()));
@@ -157,9 +161,28 @@ export function FreelancerCard({
               )}
             </div>
           </div>
-          <button className="text-xs h-8 px-4 font-semibold rounded-xl bg-glass-light text-on-surface border border-glass-border group-hover:bg-gradient-to-r group-hover:from-accent group-hover:to-accent-light group-hover:text-white group-hover:border-transparent group-hover:shadow-glow-accent transition-all duration-300">
-            Hire Me
-          </button>
+          <div className="flex items-center gap-2">
+            {onViewMore && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewMore();
+                }}
+                className="text-xs h-8 px-3 font-medium rounded-xl border border-glass-border bg-glass-light hover:bg-glass-medium text-on-surface transition-all"
+              >
+                View More
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onHire) onHire();
+              }}
+              className="text-xs h-8 px-4 font-semibold rounded-xl bg-glass-light text-on-surface border border-glass-border group-hover:bg-gradient-to-r group-hover:from-accent group-hover:to-accent-light group-hover:text-white group-hover:border-transparent group-hover:shadow-glow-accent transition-all duration-300"
+            >
+              Hire Me
+            </button>
+          </div>
         </div>
       </div>
     </div>

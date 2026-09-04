@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -42,6 +42,24 @@ export function SandboxDeliverableModal({
   if (!isOpen) return null;
 
   const sanitizedUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+
+  // Major websites like GitHub, Google, Twitter send X-Frame-Options: DENY / CSP frame-ancestors: 'none'
+  const isKnownAntiFramingDomain = useMemo(() => {
+    try {
+      const hostname = new URL(sanitizedUrl).hostname.toLowerCase();
+      return (
+        hostname.includes("github.com") ||
+        hostname.includes("gitlab.com") ||
+        hostname.includes("bitbucket.org") ||
+        hostname.includes("google.com") ||
+        hostname.includes("twitter.com") ||
+        hostname.includes("x.com") ||
+        hostname.includes("notion.so")
+      );
+    } catch {
+      return false;
+    }
+  }, [sanitizedUrl]);
 
   // Masked display URL (e.g. https://github.com/••••••••••••)
   const getMaskedUrl = (url: string) => {
@@ -150,8 +168,8 @@ export function SandboxDeliverableModal({
             </>
           )}
 
-          {/* Embedded Sandbox iframe */}
-          {!iframeError ? (
+          {/* Embedded Sandbox iframe vs Protected Repository card */}
+          {!isKnownAntiFramingDomain && !iframeError ? (
             <iframe
               src={sanitizedUrl}
               title={`Deliverable for ${jobTitle}`}
@@ -164,25 +182,35 @@ export function SandboxDeliverableModal({
               onError={() => setIframeError(true)}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-slate-900 text-white">
-              <AlertTriangle className="w-10 h-10 text-amber-400 mb-3" />
-              <p className="font-semibold text-sm mb-1">Preview Blocked by Provider</p>
-              <p className="text-xs text-slate-400 max-w-sm">
-                This domain (e.g. GitHub or proprietary host) prevents direct iframe embedding via Content-Security-Policy.
+            <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-slate-900 text-white select-none">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center mb-3">
+                <Lock className="w-7 h-7 text-amber-400" />
+              </div>
+              <p className="font-semibold text-base mb-1">
+                Protected Host Submission ({new URL(sanitizedUrl).hostname})
+              </p>
+              <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+                This repository or service prevents iframe embedding via strict <code>frame-ancestors 'none'</code> headers.
               </p>
               {!isEscrowSettled ? (
-                <p className="text-[11px] text-amber-400/80 mt-3 font-mono">
-                  Full direct URL link will be displayed here immediately upon approving escrow release.
-                </p>
+                <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 max-w-md text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="text-xs font-semibold text-amber-300">Escrow Security Guarantee</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    The freelancer has cryptographically verified and submitted the deliverable URL to the smart contract. Once you click <strong>Approve &amp; Release</strong>, the complete direct URL will be revealed to your client portal immediately.
+                  </p>
+                </div>
               ) : (
                 <a
                   href={sanitizedUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn-gradient-primary mt-4 text-xs font-semibold py-2 px-4 inline-flex items-center gap-1.5"
+                  className="btn-gradient-primary mt-4 text-xs font-semibold py-2.5 px-5 inline-flex items-center gap-2 shadow-glow-accent"
                 >
-                  Launch Live Deliverable
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  Launch Live Repository / Deliverable
+                  <ExternalLink className="w-4 h-4" />
                 </a>
               )}
             </div>

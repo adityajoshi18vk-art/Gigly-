@@ -14,6 +14,7 @@ import { ActiveJobs } from "@/components/ActiveJobs";
 import { PastJobs } from "@/components/PastJobs";
 import { PublicGigs } from "@/components/PublicGigs";
 import { ClientProfileModal } from "@/components/ClientProfileModal";
+import { FreelancerDetailModal } from "@/components/FreelancerDetailModal";
 import { clearJobsCache } from "@/lib/useJobs";
 import {
   getRegisteredFreelancers,
@@ -32,6 +33,7 @@ export default function ClientDashboard() {
     address: string;
     hourlyRate?: number;
   } | null>(null);
+  const [viewingFreelancerProfile, setViewingFreelancerProfile] = useState<FreelancerProfile | null>(null);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
   const [isClientProfileModalOpen, setIsClientProfileModalOpen] = useState(false);
   const [isOnboarding, setIsOnboarding] = useState(false);
@@ -278,6 +280,14 @@ export default function ClientDashboard() {
                     portfolioUrl={profile.portfolioUrl}
                     githubUrl={profile.githubUrl}
                     isVerified={profile.kycVerified === true}
+                    onViewMore={() => setViewingFreelancerProfile(profile)}
+                    onHire={() =>
+                      setSelectedFreelancer({
+                        name: profile.name,
+                        address: profile.address,
+                        hourlyRate: profile.hourlyRate,
+                      })
+                    }
                   />
                 </div>
               ))}
@@ -312,6 +322,19 @@ export default function ClientDashboard() {
         onSaved={() => {
           setIsOnboarding(false);
           setIsClientProfileModalOpen(false);
+        }}
+      />
+
+      <FreelancerDetailModal
+        isOpen={viewingFreelancerProfile !== null}
+        onClose={() => setViewingFreelancerProfile(null)}
+        freelancer={viewingFreelancerProfile}
+        onHire={(profile) => {
+          setSelectedFreelancer({
+            name: profile.name,
+            address: profile.address,
+            hourlyRate: profile.hourlyRate,
+          });
         }}
       />
     </div>
