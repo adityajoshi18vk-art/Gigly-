@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import Link from "next/link";
-import { Home, Plus, RefreshCw } from "lucide-react";
+import { Home, Plus, RefreshCw, UserCog } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
@@ -13,11 +13,13 @@ import { CreateJobModal } from "@/components/CreateJobModal";
 import { ActiveJobs } from "@/components/ActiveJobs";
 import { PastJobs } from "@/components/PastJobs";
 import { PublicGigs } from "@/components/PublicGigs";
+import { ClientProfileModal } from "@/components/ClientProfileModal";
 import { clearJobsCache } from "@/lib/useJobs";
 import {
   getRegisteredFreelancers,
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
+import { getClientProfile } from "@/lib/clientRegistry";
 import { Users, ShieldCheck } from "lucide-react";
 import { usePortalAuth } from "@/lib/usePortalAuth";
 
@@ -31,9 +33,46 @@ export default function ClientDashboard() {
     hourlyRate?: number;
   } | null>(null);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
+  const [isClientProfileModalOpen, setIsClientProfileModalOpen] = useState(false);
+  const [isOnboarding, setIsOnboarding] = useState(false);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Check if connected client has an onboarding profile in Supabase
+  useEffect(() => {
+    let cancelled = false;
+    if (!account?.address) {
+      setIsCheckingProfile(false);
+      return;
+    }
+
+    async function checkClientProfile() {
+      setIsCheckingProfile(true);
+      try {
+        const profile = await getClientProfile(account!.address);
+        if (cancelled) return;
+        if (!profile || !profile.name?.trim()) {
+          setIsOnboarding(true);
+          setIsClientProfileModalOpen(true);
+        } else {
+          setIsOnboarding(false);
+        }
+      } catch (err) {
+        console.warn("Failed to check client profile:", err);
+      } finally {
+        if (!cancelled) {
+          setIsCheckingProfile(false);
+        }
+      }
+    }
+
+    checkClientProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [account?.address]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -72,7 +111,31 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen py-4 sm:py-6 relative text-on-background">
-      
+      {/* Onboarding Notice Banner */}
+      {isOnboarding && (
+        <div className="mb-6 p-4 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center text-accent-light">
+              <UserCog className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-on-surface">
+                Client Profile Setup Required
+              </p>
+              <p className="text-[11px] text-on-surface-variant">
+                Complete your hiring profile to post jobs and fund escrows with clear identity.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsClientProfileModalOpen(true)}
+            className="btn-gradient-primary text-xs font-semibold py-2 px-4 shrink-0 shadow-glow-accent"
+          >
+            Resume Setup
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <header className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between surface-card p-4 sm:p-5 rounded-3xl mb-8 shadow-level-1">
         <div className="flex items-center gap-4 px-2">
@@ -89,7 +152,7 @@ export default function ClientDashboard() {
             <p className="text-on-surface-variant text-xs font-normal">Escrow-backed freelance management</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 mt-4 sm:mt-0 px-2">
+        <div className="flex items-center gap-3 mt-4 sm:mt-0 px-2">
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -97,6 +160,13 @@ export default function ClientDashboard() {
             className="w-10 h-10 rounded-xl bg-glass-light border border-glass-border flex items-center justify-center hover:bg-glass-medium transition-colors text-on-surface-variant hover:text-accent-light disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-accent-light" : ""}`} />
+          </button>
+          <button
+            onClick={() => setIsClientProfileModalOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-medium py-2.5 px-3.5 rounded-xl border border-glass-border bg-glass-light hover:bg-glass-medium text-on-surface transition-all"
+          >
+            <UserCog className="w-4 h-4 text-accent-light" />
+            Edit Profile
           </button>
           <button 
             onClick={() => setIsPostJobModalOpen(true)}
@@ -230,6 +300,19 @@ export default function ClientDashboard() {
         freelancerName={selectedFreelancer?.name || ""}
         freelancerAddress={selectedFreelancer?.address || ""}
         suggestedRate={selectedFreelancer?.hourlyRate}
+      />
+
+      <ClientProfileModal
+        isOpen={isClientProfileModalOpen}
+        isOnboarding={isOnboarding}
+        onClose={() => {
+          setIsClientProfileModalOpen(false);
+          setIsOnboarding(false);
+        }}
+        onSaved={() => {
+          setIsOnboarding(false);
+          setIsClientProfileModalOpen(false);
+        }}
       />
     </div>
   );
