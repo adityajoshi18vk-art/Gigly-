@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Download, Eye, ShieldAlert, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Lock, Download, Eye, ShieldAlert, ShieldCheck, AlertTriangle, ExternalLink } from "lucide-react";
 
 type DeliverableStatus = "InReview" | "Completed" | "Disputed";
 
@@ -21,6 +21,24 @@ function isImageUrl(url: string): boolean {
   } catch {
     return IMAGE_EXTENSIONS.some((ext) => url.toLowerCase().endsWith(ext));
   }
+}
+
+/** Known embed-safe URL patterns */
+const EMBEDDABLE_PATTERNS = [
+  /youtube\.com\/embed/i,
+  /youtube-nocookie\.com\/embed/i,
+  /player\.vimeo\.com/i,
+  /codepen\.io\/.*\/embed/i,
+  /codesandbox\.io\/embed/i,
+  /stackblitz\.com\/edit/i,
+  /figma\.com\/embed/i,
+  /canva\.com\/design\/.*\/.*embed/i,
+  /docs\.google\.com\/(presentation|document|spreadsheets)\/.*\/embed/i,
+  /loom\.com\/embed/i,
+];
+
+function isEmbeddableUrl(url: string): boolean {
+  return EMBEDDABLE_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 export function DeliverableViewer({
@@ -77,7 +95,7 @@ export function DeliverableViewer({
             className={`w-full max-h-[420px] object-contain bg-black/40 ${isLocked ? "select-none" : ""}`}
             draggable={!isLocked}
           />
-        ) : (
+        ) : isEmbeddableUrl(previewUrl) ? (
           <iframe
             src={previewUrl}
             title={`Preview: ${jobTitle}`}
@@ -85,6 +103,25 @@ export function DeliverableViewer({
             sandbox="allow-scripts allow-same-origin"
             loading="lazy"
           />
+        ) : (
+          <div className="w-full h-96 flex flex-col items-center justify-center bg-[#080d18] border-0 relative overflow-hidden">
+            <div className="flex flex-col items-center gap-4 relative z-20">
+              <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                <ExternalLink className="w-6 h-6 text-white/40" />
+              </div>
+              <p className="text-white/40 text-sm text-center px-4">
+                This deliverable is hosted externally and cannot be embedded.
+              </p>
+              <a
+                href={previewUrl.startsWith("http") ? previewUrl : `https://${previewUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/80 hover:text-white rounded-lg text-sm font-medium transition-all relative z-20"
+              >
+                Open Preview in New Tab
+              </a>
+            </div>
+          </div>
         )}
 
         {/* Watermark overlay (InReview only) */}
