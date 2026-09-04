@@ -86,6 +86,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
+      sessionStorage.removeItem("gigly_jobs_cache");
       if (onInteractionSuccess) onInteractionSuccess();
     } catch (err) {
       console.error("Failed to approve job:", err);
@@ -111,6 +112,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
+      sessionStorage.removeItem("gigly_jobs_cache");
       if (onInteractionSuccess) onInteractionSuccess();
       setDisputeModalJobId(null);
       setDisputeReason("");
@@ -138,6 +140,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
         chain: votingContract.chain,
         transactionHash: result.transactionHash,
       });
+      sessionStorage.removeItem("gigly_jobs_cache");
       if (onInteractionSuccess) onInteractionSuccess();
       setVotingModalJobId(null);
       setVotingReason("");
@@ -203,7 +206,12 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
           })
         );
 
-        const activeJobs = allJobs.filter((job) => job.status < 4); // hide Released/Refunded
+        const activeJobs = allJobs.filter(
+          (job) =>
+            job.client.toLowerCase() === account.address.toLowerCase() &&
+            job.status >= 1 &&
+            job.status <= 3
+        );
         setJobs(activeJobs.sort((a, b) => b.id - a.id));
       } catch (error) {
         console.error("Failed to fetch jobs:", error);

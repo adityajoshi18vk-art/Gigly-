@@ -21,7 +21,12 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   const jobs = useMemo(() => {
     if (!account?.address) return [];
     return allJobs
-      .filter((job) => job.freelancer.toLowerCase() === account.address.toLowerCase())
+      .filter(
+        (job) =>
+          job.freelancer.toLowerCase() === account.address.toLowerCase() &&
+          job.status >= 1 &&
+          job.status <= 3
+      )
       .sort((a, b) => b.id - a.id);
   }, [allJobs, account?.address]);
 
@@ -80,6 +85,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
+      sessionStorage.removeItem("gigly_jobs_cache");
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to submit work:", err);
@@ -112,6 +118,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
+      sessionStorage.removeItem("gigly_jobs_cache");
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to log progress:", err);
@@ -135,6 +142,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
         chain: escrowContract.chain,
         transactionHash: result.transactionHash,
       });
+      sessionStorage.removeItem("gigly_jobs_cache");
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to claim payment:", err);

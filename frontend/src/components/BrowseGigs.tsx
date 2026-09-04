@@ -48,6 +48,7 @@ export function BrowseGigs({ refreshCounter, onInteractionSuccess }: { refreshCo
         transactionHash: result.transactionHash,
       });
       
+      sessionStorage.removeItem("gigly_jobs_cache");
       onInteractionSuccess();
     } catch (err) {
       console.error("Failed to accept job:", err);

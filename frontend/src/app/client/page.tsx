@@ -11,6 +11,8 @@ import { FreelancerCard } from "@/components/FreelancerCard";
 
 import { CreateJobModal } from "@/components/CreateJobModal";
 import { ActiveJobs } from "@/components/ActiveJobs";
+import { PastJobs } from "@/components/PastJobs";
+import { PublicGigs } from "@/components/PublicGigs";
 import {
   getRegisteredFreelancers,
   type FreelancerProfile,
@@ -21,7 +23,7 @@ import { usePortalAuth } from "@/lib/usePortalAuth";
 export default function ClientDashboard() {
   const { account } = usePortalAuth("client");
   
-  const [activeTab, setActiveTab] = useState("Browse Freelancers");
+  const [activeTab, setActiveTab] = useState("Active Jobs");
   const [selectedFreelancer, setSelectedFreelancer] = useState<{
     name: string;
     address: string;
@@ -91,14 +93,22 @@ export default function ClientDashboard() {
       </header>
 
       <Tabs 
-        tabs={["Active Jobs", "Browse Freelancers"]} 
+        tabs={["Active Jobs", "Past Jobs", "Browse Freelancers", "Public Gigs"]} 
         activeTab={activeTab} 
         onChange={setActiveTab}
         className="mb-8"
       />
 
       {activeTab === "Active Jobs" && (
-        <ActiveJobs refreshCounter={refreshCounter} onInteractionSuccess={() => setRefreshCounter(c => c + 1)} />
+        <ActiveJobs refreshCounter={refreshCounter} onInteractionSuccess={() => { sessionStorage.removeItem("gigly_jobs_cache"); setRefreshCounter(c => c + 1); }} />
+      )}
+
+      {activeTab === "Past Jobs" && (
+        <PastJobs role="client" refreshCounter={refreshCounter} />
+      )}
+
+      {activeTab === "Public Gigs" && (
+        <PublicGigs refreshCounter={refreshCounter} />
       )}
 
       {activeTab === "Browse Freelancers" && (
@@ -196,6 +206,7 @@ export default function ClientDashboard() {
           setIsPostJobModalOpen(false);
         }}
         onSuccess={() => {
+          sessionStorage.removeItem("gigly_jobs_cache");
           setRefreshCounter(c => c + 1);
           handleProfileSaved();
         }}

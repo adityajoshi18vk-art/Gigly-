@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Link from "next/link";
 import { Home, Sparkles, UserCog } from "lucide-react";
@@ -9,6 +9,7 @@ import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { IncomingJobs } from "@/components/IncomingJobs";
 import { BrowseGigs } from "@/components/BrowseGigs";
+import { PastJobs } from "@/components/PastJobs";
 import { Earnings } from "@/components/Earnings";
 import { DIDTrustCard } from "@/components/DIDTrustCard";
 import { Credentials } from "@/components/Credentials";
@@ -19,7 +20,7 @@ import { usePortalAuth } from "@/lib/usePortalAuth";
 export default function FreelancerDashboard() {
   const { account } = usePortalAuth("freelancer");
   
-  const [activeTab, setActiveTab] = useState("Incoming Tasks");
+  const [activeTab, setActiveTab] = useState("Active Jobs");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
@@ -56,25 +57,30 @@ export default function FreelancerDashboard() {
       </header>
 
       <Tabs 
-        tabs={["Incoming Tasks", "Browse Gigs", "Earnings", "Credentials"]} 
+        tabs={["Active Jobs", "Past Jobs", "Browse Gigs", "Earnings", "Credentials"]} 
         activeTab={activeTab} 
         onChange={setActiveTab}
         className="mb-8"
       />
 
-      {activeTab === "Incoming Tasks" && (
+      {activeTab === "Active Jobs" && (
         <IncomingJobs 
           refreshCounter={refreshCounter} 
-          onInteractionSuccess={() => setRefreshCounter(c => c + 1)}
+          onInteractionSuccess={() => { sessionStorage.removeItem("gigly_jobs_cache"); setRefreshCounter(c => c + 1); }}
         />
+      )}
+
+      {activeTab === "Past Jobs" && (
+        <PastJobs role="freelancer" refreshCounter={refreshCounter} />
       )}
 
       {activeTab === "Browse Gigs" && (
         <BrowseGigs 
           refreshCounter={refreshCounter}
           onInteractionSuccess={() => {
+            sessionStorage.removeItem("gigly_jobs_cache");
             setRefreshCounter(c => c + 1);
-            setActiveTab("Incoming Tasks");
+            setActiveTab("Active Jobs");
           }}
         />
       )}
