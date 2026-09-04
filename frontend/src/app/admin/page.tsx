@@ -7,7 +7,7 @@ import { inAppWallet } from "thirdweb/wallets";
 import { escrowContract, client as thirdwebClient, client, CHAIN, accountAbstraction } from "@/lib/config";
 import { formatUnits, parseUnits } from "viem";
 import { useDisputeReasons } from "@/lib/useDisputeReasons";
-import { Link as LinkIcon, ShieldAlert, ShieldCheck, Scale, ArrowUpRight, CheckCircle2, Lock } from "lucide-react";
+import { Link as LinkIcon, ShieldAlert, ShieldCheck, Scale, ArrowUpRight, CheckCircle2, Lock, Settings, Gavel, Clock, Percent, Wallet } from "lucide-react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -51,9 +51,17 @@ export default function AdminDashboard() {
     params: []
   });
 
-  const isArbiter = account && arbiterAddress && account.address.toLowerCase() === arbiterAddress.toLowerCase();
+  const { data: ownerAddress, isLoading: ownerLoading } = useReadContract({
+    contract: escrowContract,
+    method: "function owner() view returns (address)",
+    params: []
+  });
 
-  if (arbiterLoading) {
+  const isArbiter = account && arbiterAddress && account.address.toLowerCase() === arbiterAddress.toLowerCase();
+  const isOwner = account && ownerAddress && account.address.toLowerCase() === ownerAddress.toLowerCase();
+  const hasAccess = isArbiter || isOwner;
+
+  if (arbiterLoading || ownerLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8">
         <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
@@ -88,7 +96,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isArbiter) {
+  if (!hasAccess) {
     return (
       <div className="min-h-screen py-16 px-6 max-w-3xl mx-auto">
         <div className="surface-card rounded-3xl p-8 sm:p-10 shadow-level-2 space-y-6">
@@ -118,8 +126,363 @@ export default function AdminDashboard() {
     );
   }
 
-  return <AdminDisputes />;
+  return <AdminPanel isOwner={!!isOwner} isArbiter={!!isArbiter} />;
 }
+
+// ─── Tabbed Admin Panel ──────────────────────────────────────────────
+
+function AdminPanel({ isOwner, isArbiter }: { isOwner: boolean; isArbiter: boolean }) {
+  const [activeTab, setActiveTab] = useState<"config" | "disputes">(isOwner ? "config" : "disputes");
+
+  const tabs = [
+    ...(isOwner ? [{ id: "config" as const, label: "Protocol Config", icon: Settings }] : []),
+    ...(isArbiter ? [{ id: "disputes" as const, label: "Disputes", icon: Gavel }] : []),
+  ];
+
+  return (
+    <div className="py-8 px-6 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 surface-card p-6 rounded-3xl shadow-level-1">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center text-white shadow-glow-accent">
+            <Scale className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="font-display text-xl font-bold text-on-surface">Admin Panel</h1>
+            <p className="text-xs text-on-surface-variant">Protocol configuration &amp; dispute resolution</p>
+          </div>
+        </div>
+        <CustomConnectButton />
+      </div>
+
+      {/* Tabs */}
+      {tabs.length > 1 && (
+        <div className="flex gap-2 surface-card p-1.5 rounded-2xl shadow-level-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all ${
+                activeTab === tab.id
+                  ? "bg-accent text-white shadow-glow-accent"
+                  : "text-on-surface-variant hover:bg-glass-light"
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "config" && isOwner && <ConfigDashboard />}
+      {activeTab === "disputes" && isArbiter && <AdminDisputes />}
+    </div>
+  );
+}
+
+// ─── Config Dashboard ────────────────────────────────────────────────
+
+function ConfigDashboard() {
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
+
+  // Read current values
+  const { data: currentReviewWindow, refetch: refetchWindow } = useReadContract({
+    contract: escrowContract,
+    method: "function reviewWindow() view returns (uint256)",
+    params: []
+  });
+
+  const { data: currentFeeBps, refetch: refetchFee } = useReadContract({
+    contract: escrowContract,
+    method: "function feeBps() view returns (uint256)",
+    params: []
+  });
+
+  const { data: currentTreasury, refetch: refetchTreasury } = useReadContract({
+    contract: escrowContract,
+    method: "function treasuryWallet() view returns (address)",
+    params: []
+  });
+
+  const { data: currentArbiter } = useReadContract({
+    contract: escrowContract,
+    method: "function arbiter() view returns (address)",
+    params: []
+  });
+
+  const { data: accumulatedFees, refetch: refetchFees } = useReadContract({
+    contract: escrowContract,
+    method: "function accumulatedFees() view returns (uint256)",
+    params: []
+  });
+
+  // Form state
+  const [windowValue, setWindowValue] = useState("");
+  const [windowUnit, setWindowUnit] = useState<"minutes" | "hours" | "days">("minutes");
+  const [feeInput, setFeeInput] = useState("");
+  const [treasuryInput, setTreasuryInput] = useState("");
+  const [saving, setSaving] = useState<string | null>(null);
+
+  // Convert current review window to human readable
+  const formatWindow = (seconds: bigint | undefined) => {
+    if (!seconds) return "—";
+    const s = Number(seconds);
+    if (s >= 86400) return `${s / 86400} day(s)`;
+    if (s >= 3600) return `${s / 3600} hour(s)`;
+    return `${s / 60} minute(s)`;
+  };
+
+  const handleSetReviewWindow = async () => {
+    const val = Number(windowValue);
+    if (isNaN(val) || val <= 0) return;
+    const multiplier = windowUnit === "days" ? 86400 : windowUnit === "hours" ? 3600 : 60;
+    const seconds = val * multiplier;
+
+    try {
+      setSaving("window");
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function setReviewWindow(uint256 newReviewWindow)",
+        params: [BigInt(seconds)],
+      });
+      const result = await sendTransaction(tx);
+      await waitForReceipt({ client: thirdwebClient, chain: escrowContract.chain, transactionHash: result.transactionHash });
+      refetchWindow();
+      setWindowValue("");
+    } catch (err) {
+      console.error("setReviewWindow failed:", err);
+      alert("Failed to update review window.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleSetFee = async () => {
+    const val = Number(feeInput);
+    if (isNaN(val) || val < 0 || val > 300) return;
+
+    try {
+      setSaving("fee");
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function setFeeBps(uint256 newFeeBps)",
+        params: [BigInt(val)],
+      });
+      const result = await sendTransaction(tx);
+      await waitForReceipt({ client: thirdwebClient, chain: escrowContract.chain, transactionHash: result.transactionHash });
+      refetchFee();
+      setFeeInput("");
+    } catch (err) {
+      console.error("setFeeBps failed:", err);
+      alert("Failed to update platform fee.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleSetTreasury = async () => {
+    if (!treasuryInput || !/^0x[a-fA-F0-9]{40}$/.test(treasuryInput)) {
+      alert("Invalid Ethereum address.");
+      return;
+    }
+
+    try {
+      setSaving("treasury");
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function setTreasuryWallet(address _treasury)",
+        params: [treasuryInput as `0x${string}`],
+      });
+      const result = await sendTransaction(tx);
+      await waitForReceipt({ client: thirdwebClient, chain: escrowContract.chain, transactionHash: result.transactionHash });
+      refetchTreasury();
+      setTreasuryInput("");
+    } catch (err) {
+      console.error("setTreasuryWallet failed:", err);
+      alert("Failed to update treasury wallet.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleWithdrawFees = async () => {
+    try {
+      setSaving("withdraw");
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function withdrawFees()",
+        params: [],
+      });
+      const result = await sendTransaction(tx);
+      await waitForReceipt({ client: thirdwebClient, chain: escrowContract.chain, transactionHash: result.transactionHash });
+      refetchFees();
+      alert("Fees successfully withdrawn to treasury!");
+    } catch (err) {
+      console.error("withdrawFees failed:", err);
+      alert("Failed to withdraw fees. Ensure treasury wallet is configured.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Current Protocol State */}
+      <div className="surface-card rounded-2xl p-6 shadow-level-1 space-y-4">
+        <h2 className="font-display font-bold text-on-surface text-lg flex items-center gap-2">
+          <Settings className="w-5 h-5 text-accent-light" />
+          Current Protocol State
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl">
+            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold mb-1">Review Window</p>
+            <p className="text-on-surface font-mono font-bold text-lg">{formatWindow(currentReviewWindow)}</p>
+            <p className="text-[10px] text-on-surface-variant/60 font-mono">{currentReviewWindow ? `${Number(currentReviewWindow)}s` : ""}</p>
+          </div>
+          <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl">
+            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold mb-1">Platform Fee</p>
+            <p className="text-on-surface font-mono font-bold text-lg">{currentFeeBps !== undefined ? `${Number(currentFeeBps) / 100}%` : "—"}</p>
+            <p className="text-[10px] text-on-surface-variant/60 font-mono">{currentFeeBps !== undefined ? `${Number(currentFeeBps)} bps` : ""}</p>
+          </div>
+          <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl">
+            <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold mb-1">Treasury Wallet</p>
+            <p className="text-on-surface font-mono font-bold text-sm break-all">
+              {currentTreasury && currentTreasury !== "0x0000000000000000000000000000000000000000"
+                ? `${currentTreasury.slice(0, 6)}...${currentTreasury.slice(-4)}`
+                : "Not Set"}
+            </p>
+          </div>
+          <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-on-surface-variant font-semibold mb-1">Accumulated Fees</p>
+              <p className="text-on-surface font-mono font-bold text-lg">{accumulatedFees !== undefined ? `${formatUnits(accumulatedFees, 6)} USDC` : "—"}</p>
+            </div>
+            {accumulatedFees !== undefined && accumulatedFees > BigInt(0) && (
+              <Button
+                onClick={handleWithdrawFees}
+                disabled={saving === "withdraw" || !currentTreasury || currentTreasury === "0x0000000000000000000000000000000000000000"}
+                variant="outline"
+                className="mt-3 text-[11px] py-1.5 px-3 uppercase tracking-wider font-semibold"
+              >
+                {saving === "withdraw" ? "Withdrawing..." : "Withdraw to Treasury"}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Review Window */}
+      <div className="surface-card rounded-2xl p-6 shadow-level-1 space-y-4">
+        <h3 className="font-display font-semibold text-on-surface flex items-center gap-2">
+          <Clock className="w-4 h-4 text-accent-light" />
+          Set Review Window
+        </h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <input
+              type="number"
+              min={1}
+              className="glass-input text-sm font-mono w-full"
+              placeholder="Duration"
+              value={windowValue}
+              onChange={(e) => setWindowValue(e.target.value)}
+            />
+          </div>
+          <select
+            className="glass-input text-sm font-mono w-full sm:w-40"
+            value={windowUnit}
+            onChange={(e) => setWindowUnit(e.target.value as "minutes" | "hours" | "days")}
+          >
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+          </select>
+          <Button
+            onClick={handleSetReviewWindow}
+            disabled={saving === "window" || !windowValue}
+            variant="primary"
+            className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider"
+          >
+            {saving === "window" ? "Saving..." : "Update"}
+          </Button>
+        </div>
+        {windowValue && Number(windowValue) > 0 && (
+          <p className="text-[11px] text-on-surface-variant font-mono">
+            Will send {Number(windowValue) * (windowUnit === "days" ? 86400 : windowUnit === "hours" ? 3600 : 60)} seconds to contract
+          </p>
+        )}
+      </div>
+
+      {/* Platform Fee */}
+      <div className="surface-card rounded-2xl p-6 shadow-level-1 space-y-4">
+        <h3 className="font-display font-semibold text-on-surface flex items-center gap-2">
+          <Percent className="w-4 h-4 text-accent-light" />
+          Set Platform Fee
+        </h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="number"
+              min={0}
+              max={300}
+              className="glass-input text-sm font-mono w-full"
+              placeholder="Basis points (e.g. 250 = 2.5%)"
+              value={feeInput}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (v > 300) setFeeInput("300");
+                else setFeeInput(e.target.value);
+              }}
+            />
+          </div>
+          <Button
+            onClick={handleSetFee}
+            disabled={saving === "fee" || !feeInput}
+            variant="primary"
+            className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider"
+          >
+            {saving === "fee" ? "Saving..." : "Update"}
+          </Button>
+        </div>
+        {feeInput && (
+          <p className="text-[11px] text-on-surface-variant font-mono">
+            {Number(feeInput)} basis points = {(Number(feeInput) / 100).toFixed(2)}% platform fee (max 300 bps / 3%)
+          </p>
+        )}
+      </div>
+
+      {/* Treasury Wallet */}
+      <div className="surface-card rounded-2xl p-6 shadow-level-1 space-y-4">
+        <h3 className="font-display font-semibold text-on-surface flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-accent-light" />
+          Set Treasury Wallet
+        </h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <input
+              type="text"
+              className="glass-input text-sm font-mono w-full"
+              placeholder="0x..."
+              value={treasuryInput}
+              onChange={(e) => setTreasuryInput(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={handleSetTreasury}
+            disabled={saving === "treasury" || !treasuryInput}
+            variant="primary"
+            className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider"
+          >
+            {saving === "treasury" ? "Saving..." : "Update"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Disputes Panel ──────────────────────────────────────────────────
 
 function AdminDisputes() {
   const [jobs, setJobs] = useState<JobData[]>([]);
@@ -183,20 +546,17 @@ function AdminDisputes() {
   }, [jobCountData, refreshCounter]);
 
   return (
-    <div className="py-8 px-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 surface-card p-6 rounded-3xl shadow-level-1">
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-error to-error/80 flex items-center justify-center text-white shadow-glow-accent">
-            <Scale className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-on-surface">Arbiter Dispute Panel</h1>
-            <p className="text-xs text-on-surface-variant">Cryptographic split &amp; settlement resolution</p>
-          </div>
+    <div className="space-y-4">
+      <div className="surface-card p-5 rounded-2xl shadow-level-1 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-error/15 flex items-center justify-center text-error">
+          <Gavel className="w-4 h-4" />
         </div>
-        <CustomConnectButton />
+        <div>
+          <h2 className="font-display font-bold text-on-surface">Dispute Queue</h2>
+          <p className="text-xs text-on-surface-variant">{jobs.length} pending dispute(s)</p>
+        </div>
       </div>
-      
+
       {loading ? (
         <div className="text-center py-20">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -251,6 +611,35 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
         contract: escrowContract,
         method: "function resolveDispute(uint256 jobId, uint256 amountToFreelancer)",
         params: [BigInt(job.id), amountToFreelancer],
+      });
+
+      const result = await sendTransaction(tx);
+      await waitForReceipt({
+        client: thirdwebClient,
+        chain: escrowContract.chain,
+        transactionHash: result.transactionHash,
+      });
+      onResolved();
+    } catch (err) {
+      console.error("Failed to resolve dispute:", err);
+      alert("Failed to resolve dispute.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleResolveSimple = async (refundClient: boolean) => {
+    const confirmMsg = refundClient
+      ? `Full refund of ${maxAmount.toFixed(2)} USDC to client?`
+      : `Full release of ${maxAmount.toFixed(2)} USDC (minus platform fee) to freelancer + mint SBT credential?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setProcessing(true);
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function resolveDispute(uint256 jobId, bool refundClient)",
+        params: [BigInt(job.id), refundClient],
       });
 
       const result = await sendTransaction(tx);
@@ -334,8 +723,32 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
         </div>
       </div>
 
+      {/* Quick Decisions (100% Client Refund or 100% Freelancer Release + SBT) */}
+      <div className="bg-glass-subtle border border-glass-border p-4 rounded-xl space-y-3">
+        <p className="text-xs font-semibold text-on-surface uppercase tracking-wider">Quick Resolution (Contract Owner):</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button
+            onClick={() => handleResolveSimple(true)}
+            disabled={processing}
+            variant="danger"
+            className="w-full py-2.5 text-xs font-semibold uppercase tracking-wider"
+          >
+            Full Refund to Client (${maxAmount.toFixed(2)})
+          </Button>
+          <Button
+            onClick={() => handleResolveSimple(false)}
+            disabled={processing}
+            variant="primary"
+            className="w-full py-2.5 text-xs font-semibold uppercase tracking-wider bg-success hover:bg-success/80 text-white"
+          >
+            Release to Freelancer + SBT
+          </Button>
+        </div>
+      </div>
+
       {/* Split & Adjudication Controls */}
       <div className="bg-surface-container-lowest border border-glass-border p-4 rounded-xl space-y-4">
+        <p className="text-xs font-semibold text-on-surface uppercase tracking-wider">Or Custom Settlement Split:</p>
         <div className="flex flex-col sm:flex-row items-end gap-4">
           <div className="flex-1 w-full">
             <div className="flex justify-between items-center mb-1.5 text-xs">

@@ -43,6 +43,21 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
   const [processingJobId, setProcessingJobId] = useState<number | null>(null);
 
+  const { data: reviewWindowData } = useReadContract({
+    contract: escrowContract,
+    method: "function reviewWindow() view returns (uint256)",
+    params: []
+  });
+  const reviewWindowSeconds = reviewWindowData ? Number(reviewWindowData) : 86400;
+
+  const formatWindow = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}-Hour`;
+    return `${minutes}-Minute`;
+  };
+  const windowText = formatWindow(reviewWindowSeconds);
+
   // Admin dispute modal state
   const [disputeModalJobId, setDisputeModalJobId] = useState<number | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
@@ -268,11 +283,11 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                     )
                   )}
 
-                  {/* 24-hour review window active notice */}
+                  {/* Dynamic review window active notice */}
                   {job.status === 2 && (
                     <div className="mt-3 inline-flex items-center gap-2 text-xs text-warning bg-warning/10 border border-warning/20 px-3 py-1.5 rounded-xl">
                       <Clock className="w-3.5 h-3.5" />
-                      <span>24-Hour Review Window Active — Auto-claimable if unresponsive</span>
+                      <span>{windowText} Review Window Active — Auto-claimable if unresponsive</span>
                     </div>
                   )}
 

@@ -39,9 +39,17 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
 
   const { data: reviewWindowData } = useReadContract({
     contract: escrowContract,
-    method: "function REVIEW_WINDOW() view returns (uint256)",
+    method: "function reviewWindow() view returns (uint256)",
     params: []
   });
+
+  const formatWindow = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}-hour`;
+    return `${minutes}-minute`;
+  };
+  const windowText = formatWindow(reviewWindowSeconds);
 
   useEffect(() => {
     if (reviewWindowData !== undefined) {
@@ -321,7 +329,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
               className="glass-input text-sm"
             />
             <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-              Upon submission, an immutable 24-hour review window timer begins. If client approves or remains unresponsive, funds are released to you.
+              Upon submission, an immutable {windowText} review window timer begins. If client approves or remains unresponsive, funds are released to you.
             </p>
           </div>
           

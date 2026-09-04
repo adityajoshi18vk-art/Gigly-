@@ -49,6 +49,9 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
     /// @notice Accumulated platform fees available for withdrawal.
     uint256 public accumulatedFees;
 
+    /// @notice Treasury wallet where platform fees are sent. If zero, fees stay in contract.
+    address public treasuryWallet;
+
     /// @notice Auto-incrementing job counter (first job = 1).
     uint256 public jobCount;
 
@@ -390,9 +393,17 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
      * @notice Updates the platform fee. Only callable by the contract owner.
      * @param newFeeBps The new fee in basis points (max 300 = 3%).
      */
-    function setFeeBps(uint256 newFeeBps) external onlyOwner {
+    function setFeeBps(uint256 newFeeBps) public onlyOwner {
         if (newFeeBps > MAX_FEE_BPS) revert FeeTooHigh();
         feeBps = newFeeBps;
+    }
+
+    /**
+     * @notice Updates the platform fee. Alias for setFeeBps. Only callable by the contract owner.
+     * @param _percentage The new fee in basis points (max 300 = 3%).
+     */
+    function setPlatformFee(uint256 _percentage) external onlyOwner {
+        setFeeBps(_percentage);
     }
 
     /**
@@ -419,6 +430,75 @@ contract OptimisticEscrow is ReentrancyGuard, Ownable {
      */
     function setReviewWindow(uint256 newReviewWindow) external onlyOwner {
         reviewWindow = newReviewWindow;
+    }
+
+    /**
+     * @notice Updates the treasury wallet address. Only callable by the contract owner.
+     * @param _treasury The new treasury wallet address (set to address(0) to keep fees in contract).
+     */
+    function setTreasuryWallet(address _treasury) external onlyOwner {
+        treasuryWallet = _treasury;
+    }
+
+    /**
+     * @notice Simplified dispute resolution: full refund to client or full release to freelancer.
+     * @dev Only callable by the contract owner. If freelancer wins, SBT is minted.
+     * @param jobId        The ID of the disputed job.
+     * @param refundClient If true, full refund to client. If false, full release to freelancer + SBT mint.
+     */
+    function resolveDispute(uint256 jobId, bool refundClient)
+        public
+        nonReentrant
+        onlyOwner
+        inStatus(jobId, Status.Disputed)
+    {
+        Job storage job = jobs[jobId];
+
+        if (refundClient) {
+            // Full refund to client
+            job.releasedAmount = 0;
+            job.status = Status.Refunded;
+            paymentToken.safeTransfer(job.client, job.amount);
+            emit DisputeResolved(jobId, 0, job.amount, 0);
+        } else {
+            // Full release to freelancer (with platform fee)
+            uint256 fee = (job.amount * feeBps) / 10_000;
+            uint256 netAmount = job.amount - fee;
+            job.releasedAmount = netAmount;
+            job.status = Status.Released;
+            accumulatedFees += fee;
+            paymentToken.safeTransfer(job.freelancer, netAmount);
+
+            // Mint SBT credential
+            if (address(giglyCredential) != address(0)) {
+                giglyCredential.mint(job.freelancer, DEFAULT_AUTOCLAIM_URI);
+            }
+
+            emit DisputeResolved(jobId, netAmount, 0, fee);
+        }
+    }
+
+    /**
+     * @notice Alias for resolveDispute(uint256, bool).
+     */
+    function resolveDisputeSimple(uint256 jobId, bool refundClient) external onlyOwner {
+        resolveDispute(jobId, refundClient);
+    }
+
+    /**
+     * @notice Withdraws accumulated platform fees to the configured treasury wallet.
+     * @dev Only callable by the contract owner. Reverts if treasuryWallet is not set.
+     */
+    function withdrawFees() external nonReentrant onlyOwner {
+        address to = treasuryWallet;
+        if (to == address(0)) revert InvalidAddress();
+        uint256 amount = accumulatedFees;
+        if (amount == 0) revert InvalidAmount();
+
+        accumulatedFees = 0;
+        paymentToken.safeTransfer(to, amount);
+
+        emit FeesWithdrawn(to, amount);
     }
 
     /**
