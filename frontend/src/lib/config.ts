@@ -48,6 +48,8 @@ export const CONTRACTS = {
   GiglyCredential: "0x7CbC2961526453E48154Bc5A045bc254Eb61B46C",
   // Community Voting Dispute — deployed 2026-09-04
   VotingDispute: "0xbaE78ef2777959fE419De8a28Ed1D974216279D2",
+  // On-chain freelancer profile registry — deployed 2026-09-04
+  FreelancerRegistry: "0xd78CF42205dE581c06bFBc28928F20898B244eDA",
 };
 
 export const DEPLOYMENT_BLOCK = BigInt(11631500);
@@ -86,3 +88,14 @@ export const votingDisputeContract = getContract({
   chain: CHAIN,
   address: CONTRACTS.VotingDispute,
 });
+
+export const freelancerRegistryContract = getContract({
+  client,
+  chain: CHAIN,
+  address: CONTRACTS.FreelancerRegistry,
+});
+
+// IPFS metadata URI for Proof-of-Work NFTs minted on job approval
+export const POW_NFT_METADATA_URI =
+  "ipfs://bafkreifjjcie6lypi6ny7amxnlciy4275dn2g3vnrubggauz7yrqmivuza";
+

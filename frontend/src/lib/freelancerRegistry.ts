@@ -1,5 +1,9 @@
-// ─── Freelancer Profile Registry ────────────────────────────────────────
-// API-backed profile store. Falls back to localStorage for offline dev.
+// ─── Freelancer Profile Registry (On-Chain) ─────────────────────────────────
+// Reads from FreelancerRegistry smart contract. Writes go through wallet tx.
+
+import { readContract, prepareContractCall } from "thirdweb";
+import { freelancerRegistryContract } from "@/lib/config";
+import type { PreparedTransaction } from "thirdweb";
 
 export type FreelancerDomain =
   | "Smart Contracts"
@@ -23,11 +27,8 @@ export interface FreelancerProfile {
   githubUrl?: string;
   avatarFallback: string;
   createdAt: number;
-  /** KYC/ZK proof verified — persisted in API so clients can see it */
   kycVerified?: boolean;
 }
-
-// ─── Initials Helper ────────────────────────────────────────────────────
 
 export const getInitials = (name: string): string => {
   const parts = name.trim().split(/\s+/);
@@ -36,92 +37,121 @@ export const getInitials = (name: string): string => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-// ─── API-backed CRUD ────────────────────────────────────────────────────
+// Convert on-chain Profile struct to FreelancerProfile
+function toProfile(
+  raw: readonly [string, string, string, string, bigint, string, string, string, string, boolean, bigint, boolean],
+  addr: string
+): FreelancerProfile {
+  return {
+    address: addr,
+    name: raw[1],
+    title: raw[2],
+    domain: raw[3] as FreelancerDomain,
+    hourlyRate: Number(raw[4]),
+    bio: raw[5],
+    portfolioUrl: raw[6] || undefined,
+    githubUrl: raw[7] || undefined,
+    skills: raw[8] ? raw[8].split(",").map((s) => s.trim()).filter(Boolean) : [],
+    kycVerified: raw[9],
+    createdAt: Number(raw[10]) * 1000, // convert seconds to ms
+    avatarFallback: getInitials(raw[1]),
+  };
+}
 
-/**
- * Fetch all registered freelancer profiles from the API.
- * Returns empty array if API unreachable or registry empty.
- */
 export async function getRegisteredFreelancers(): Promise<FreelancerProfile[]> {
   try {
-    const res = await fetch("/api/freelancers", { cache: "no-store" });
-    if (!res.ok) throw new Error("API error");
-    const data = await res.json();
-    // Guard: API must return an array; if not, treat as empty
-    return Array.isArray(data) ? (data as FreelancerProfile[]) : [];
-  } catch {
-    // Fallback to localStorage for offline dev
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = localStorage.getItem("gigly_freelancer_registry");
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? (parsed as FreelancerProfile[]) : [];
-    } catch {
-      return [];
-    }
-  }
-}
-
-/**
- * Save/upsert a profile via API. Falls back to localStorage.
- */
-export async function saveFreelancerProfile(
-  profile: FreelancerProfile
-): Promise<void> {
-  const normalized = {
-    ...profile,
-    address: profile.address.toLowerCase(),
-    avatarFallback: getInitials(profile.name),
-  };
-
-  try {
-    const res = await fetch("/api/freelancers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(normalized),
+    const addresses = await readContract({
+      contract: freelancerRegistryContract,
+      method: "function getAllFreelancers() view returns (address[])",
+      params: [],
     });
-    if (!res.ok) throw new Error("API error");
-  } catch {
-    // Fallback: save to localStorage
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("gigly_freelancer_registry");
-      const profiles: FreelancerProfile[] = raw ? JSON.parse(raw) : [];
-      const idx = profiles.findIndex(
-        (p) => p.address.toLowerCase() === normalized.address
-      );
-      if (idx >= 0) {
-        profiles[idx] = normalized;
-      } else {
-        profiles.push(normalized);
-      }
-      localStorage.setItem(
-        "gigly_freelancer_registry",
-        JSON.stringify(profiles)
-      );
-    } catch {
-      // silent fail
-    }
+    if (!addresses || addresses.length === 0) return [];
+
+    const profiles = await Promise.all(
+      addresses.map(async (addr) => {
+        try {
+          const raw = await readContract({
+            contract: freelancerRegistryContract,
+            method:
+              "function getProfile(address) view returns ((address,string,string,string,uint256,string,string,string,string,bool,uint256,bool))",
+            params: [addr],
+          });
+          if (!raw || !raw[11]) return null; // exists = false
+          return toProfile(raw, addr);
+        } catch {
+          return null;
+        }
+      })
+    );
+    return profiles.filter(Boolean) as FreelancerProfile[];
+  } catch (err) {
+    console.error("Failed to fetch freelancers from contract:", err);
+    return [];
   }
 }
 
-/**
- * Single profile lookup by address (case-insensitive).
- */
 export async function getFreelancerProfile(
   address: string
 ): Promise<FreelancerProfile | undefined> {
   if (!address) return undefined;
-  const profiles = await getRegisteredFreelancers();
-  return profiles.find(
-    (p) => p.address.toLowerCase() === address.toLowerCase()
-  );
+  try {
+    const raw = await readContract({
+      contract: freelancerRegistryContract,
+      method:
+        "function getProfile(address) view returns ((address,string,string,string,uint256,string,string,string,string,bool,uint256,bool))",
+      params: [address],
+    });
+    if (!raw || !raw[11]) return undefined;
+    return toProfile(raw, address);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
- * KYC verification check via localStorage key convention.
+ * Returns a prepared transaction that the caller must send via sendTransaction().
+ * Usage in component:
+ *   const tx = prepareRegisterFreelancer(profile);
+ *   await sendTransaction(tx);
  */
+export function prepareRegisterFreelancer(
+  profile: FreelancerProfile
+): PreparedTransaction {
+  return prepareContractCall({
+    contract: freelancerRegistryContract,
+    method:
+      "function registerOrUpdate(string name, string title, string domain, uint256 hourlyRate, string bio, string portfolioUrl, string githubUrl, string skills)",
+    params: [
+      profile.name,
+      profile.title,
+      profile.domain,
+      BigInt(Math.round(profile.hourlyRate)),
+      profile.bio || "",
+      profile.portfolioUrl || "",
+      profile.githubUrl || "",
+      (profile.skills || []).join(","),
+    ],
+  }) as PreparedTransaction;
+}
+
+/** Legacy compat — still saves to API as backup for KYC fields not stored on-chain */
+export async function saveFreelancerProfile(
+  profile: FreelancerProfile
+): Promise<void> {
+  try {
+    await fetch("/api/freelancers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...profile,
+        address: profile.address.toLowerCase(),
+      }),
+    });
+  } catch {
+    /* non-critical */
+  }
+}
+
 export function isKycVerified(address: string): boolean {
   if (typeof window === "undefined" || !address) return false;
   return (

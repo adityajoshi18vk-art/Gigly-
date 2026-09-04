@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { readContract } from "thirdweb";
 import { useReadContract, useActiveAccount } from "thirdweb/react";
-import { escrowContract, votingDisputeContract as votingContract, CONTRACTS } from "@/lib/config";
+import { escrowContract, votingDisputeContract as votingContract, CONTRACTS, POW_NFT_METADATA_URI } from "@/lib/config";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
 import { Link as LinkIcon, AlertCircle, ArrowUpRight, Clock, Users, ShieldAlert } from "lucide-react";
@@ -57,7 +57,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
       const tx = prepareContractCall({
         contract: escrowContract,
         method: "function approveAndRelease(uint256 jobId, string metadataURI)",
-        params: [BigInt(jobId), ""],
+        params: [BigInt(jobId), POW_NFT_METADATA_URI],
       });
       const result = await sendTransaction(tx);
       await waitForReceipt({

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { waitForReceipt } from "thirdweb";
+import { client as thirdwebClient, escrowContract } from "@/lib/config";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -9,6 +11,7 @@ import {
   saveFreelancerProfile,
   getFreelancerProfile,
   getInitials,
+  prepareRegisterFreelancer,
   type FreelancerDomain,
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
@@ -35,6 +38,7 @@ export function ProfileSettingsModal({
   onSaved,
 }: ProfileSettingsModalProps) {
   const account = useActiveAccount();
+  const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
 
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
@@ -174,8 +178,19 @@ export function ProfileSettingsModal({
     };
 
     try {
+      // 1. Send on-chain transaction to register/update profile
+      const tx = prepareRegisterFreelancer(profile);
+      const result = await sendTransaction(tx);
+      await waitForReceipt({
+        client: thirdwebClient,
+        chain: escrowContract.chain,
+        transactionHash: result.transactionHash,
+      });
+
+      // 2. API backup for KYC/verified-skills fields not stored on-chain
       await saveFreelancerProfile(profile);
-      setToastMessage("Profile published to decentralized registry!");
+
+      setToastMessage("Profile published on-chain to FreelancerRegistry!");
       setShowToast(true);
       setTimeout(() => {
         setShowToast(false);
