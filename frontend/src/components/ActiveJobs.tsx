@@ -14,6 +14,7 @@ import { client as thirdwebClient } from "@/lib/config";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { motion, AnimatePresence } from "framer-motion";
+import { DisputeConsentModal } from './DisputeConsentModal';
 
 import { STATUS_MAP, STATUS_COLORS } from "@/lib/constants";
 
@@ -65,6 +66,9 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
   // Voting dispute modal state
   const [votingModalJobId, setVotingModalJobId] = useState<number | null>(null);
   const [votingReason, setVotingReason] = useState("");
+
+  // NDC Consent modal state
+  const [consentModalJobId, setConsentModalJobId] = useState<{ id: number; type: 'admin' | 'jury' } | null>(null);
 
   const handleApprove = async (jobId: number) => {
     try {
@@ -332,8 +336,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                       <Button 
                         variant="outline" 
                         onClick={() => {
-                          setDisputeModalJobId(job.id);
-                          setDisputeReason("");
+                          setConsentModalJobId({ id: job.id, type: 'admin' });
                         }} 
                         disabled={processingJobId === job.id}
                         className="text-[11px] font-semibold py-2 text-error hover:bg-error/10 border-glass-border hover:border-error/40 flex items-center justify-center gap-1"
@@ -344,8 +347,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                       <Button 
                         variant="outline" 
                         onClick={() => {
-                          setVotingModalJobId(job.id);
-                          setVotingReason("");
+                          setConsentModalJobId({ id: job.id, type: 'jury' });
                         }} 
                         disabled={processingJobId === job.id}
                         className="text-[11px] font-semibold py-2 text-amber-400 hover:bg-amber-400/10 border-glass-border hover:border-amber-400/40 flex items-center justify-center gap-1"
@@ -379,7 +381,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
             value={disputeReason}
             onChange={(e) => setDisputeReason(e.target.value)}
             placeholder="e.g. The submitted deliverable does not match the agreed contract requirements..."
-            className="glass-input min-h-[120px] text-sm resize-none"
+            className="w-full p-4 rounded-xl border border-outline bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] text-sm resize-none"
           />
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setDisputeModalJobId(null)}>Cancel</Button>
@@ -418,7 +420,7 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
             value={votingReason}
             onChange={(e) => setVotingReason(e.target.value)}
             placeholder="e.g. The submitted deliverable does not match the agreed contract requirements..."
-            className="glass-input min-h-[120px] text-sm resize-none"
+            className="w-full p-4 rounded-xl border border-outline bg-surface text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] text-sm resize-none"
           />
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setVotingModalJobId(null)}>Cancel</Button>
@@ -432,6 +434,27 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
           </div>
         </div>
       </Modal>
+
+      {/* ── NDC Pre-Dispute Consent Modal ── */}
+      {consentModalJobId !== null && (
+        <DisputeConsentModal
+          isOpen={consentModalJobId !== null}
+          onClose={() => setConsentModalJobId(null)}
+          onConsentGranted={() => {
+            if (consentModalJobId.type === 'admin') {
+              setDisputeModalJobId(consentModalJobId.id);
+              setDisputeReason("");
+            } else {
+              setVotingModalJobId(consentModalJobId.id);
+              setVotingReason("");
+            }
+            setConsentModalJobId(null);
+          }}
+          jobId={consentModalJobId.id}
+          jobTitle={jobs.find(j => j.id === consentModalJobId.id)?.taskTitle || `Job #${consentModalJobId.id}`}
+          escrowAmount={formatUnits(jobs.find(j => j.id === consentModalJobId.id)?.amount || BigInt(0), 6)}
+        />
+      )}
     </div>
   );
 }

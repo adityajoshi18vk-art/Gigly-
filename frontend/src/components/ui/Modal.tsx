@@ -39,7 +39,7 @@ export function Modal({ isOpen, onClose, title, children, size = "lg" }: ModalPr
               "max-w-xl"
             }`}
           >
-            <div className="relative overflow-hidden rounded-2xl border border-glass-border-light bg-surface backdrop-blur-xl shadow-level-3">
+            <div className="relative flex flex-col max-h-[90vh] overflow-hidden rounded-2xl border border-glass-border-light bg-surface backdrop-blur-xl shadow-level-3">
               {/* Top edge highlight */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
               
@@ -55,7 +55,7 @@ export function Modal({ isOpen, onClose, title, children, size = "lg" }: ModalPr
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-6 overflow-y-auto">
                 {children}
               </div>
             </div>
