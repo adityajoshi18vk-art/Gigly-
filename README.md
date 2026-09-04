@@ -6,10 +6,11 @@
 [![Thirdweb](https://img.shields.io/badge/Thirdweb-v5-blue)](https://thirdweb.com/)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-darkgray)](https://soliditylang.org/)
 [![ZK-Ready](https://img.shields.io/badge/Privacy-ZK--SNARKs-brightgreen)](#)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-emerald)](#)
 
 ---
 
-## ⚠️ The Problem Statement:
+## ⚠️ The Problem Statement
 
 The traditional freelance gig economy is broken for both freelancers and clients due to three systemic failures:
 
@@ -21,12 +22,13 @@ The traditional freelance gig economy is broken for both freelancers and clients
 
 ## 🌟 Core Features
 
-- **Zero-Knowledge Compliance (ZK-KYC)**: Identity validation using ZK-SNARKs without storing PII on-chain or off-chain.
-- **Soulbound Token (SBT) Reputation System**: Verifiable on-chain reputation linked to successful escrow settlements.
-- **Escrow-Gated Deliverable Sandbox**: Source code and deliverables remain locked and watermarked until escrow is settled.
+- **Zero-Knowledge Compliance (ZK-KYC)**: Identity validation using ZK-SNARKs (Anon Aadhaar & ZKPassport) without storing PII on-chain or off-chain.
+- **Soulbound Token (SBT) Reputation System**: Verifiable on-chain reputation linked to successful escrow settlements via `GiglyCredential.sol`.
+- **Dual-Portal Workflow (Client & Freelancer)**: Dedicated tabbed hubs with real-time lifecycle synchronization and historical audit views.
 - **Optimistic Smart Escrow**: Dynamically configurable time-locked auto-claims for seamless, dispute-free project resolution.
-- **Decentralized Community Dispute Resolution**: Collision dispute handling through on-chain community voting, replacing centralized arbiters.
+- **Decentralized Community Dispute Resolution**: Collision dispute handling through on-chain community voting (`VotingDispute.sol`), replacing centralized arbiters.
 - **Dynamic Protocol Admin Panel**: Live management of escrow parameters (review window, fees, treasury) via an interactive UI without requiring contract upgrades.
+- **Hybrid High-Performance Discovery**: Supabase PostgreSQL persistence with local JSON fallback for instant talent exploration, coupled with zero-cache real-time blockchain sync.
 
 ---
 
@@ -40,13 +42,14 @@ Immutable payment routing ensures funds are locked securely before work begins. 
 
 | Phase | Description |
 |-------|-------------|
-| **Fund** | Client locks USDC into the escrow contract with a task description and freelancer address. |
-| **Submit** | Freelancer submits a proof-of-work link, triggering a **dynamic review window** (e.g., 3 minutes or 24 hours). |
+| **Fund** | Client locks USDC into the escrow contract with a task description and freelancer address (or `0x0` for open public bounties). |
+| **Accept** | For open bounties, any registered freelancer claims the job on-chain. |
+| **Submit** | Freelancer submits a proof-of-work deliverable link, triggering a **dynamic review window** (e.g., 3 minutes or 24 hours). |
 | **Optimistic Release** | If the client does not dispute within the window, **anyone** can trigger the release — silence equals approval. |
 | **Dispute → Voting** | If disputed, it enters the **VotingDispute** system where community members vote on the outcome, earning contributor SBTs for fair participation. |
 
 - **Dynamic Protocol Configuration**: Platform fee, treasury wallet, and review windows are fully configurable in real-time by admins.
-- **No fund freezes**: The contract is governed by immutable code, not a corporate policy team.
+- **No fund freezes**: Governed by immutable smart contracts, not corporate policy teams.
 - **Security**: Built with OpenZeppelin's `ReentrancyGuard`, `Ownable`, and `SafeERC20`.
 
 ### 🔐 Zero-Knowledge KYC Gates
@@ -62,40 +65,35 @@ Integrating **`@anon-aadhaar/react`** (India) and **`@zkpassport/sdk`** (Global/
 
 ### 🏅 Soulbound NFTs (SBTs) & Verifiable Credentials
 
-Reputation on Gigly is mathematically verifiable and backed by **Soulbound Tokens (SBTs)** — non-transferable NFTs acting as permanent Proof-of-Work. 
+Reputation on Gigly is mathematically verifiable and backed by **Soulbound Tokens (SBTs)** — non-transferable ERC-721 tokens acting as permanent Proof-of-Work certificates.
 
-Additionally, community members who participate in resolving collision disputes are rewarded with **+Contributor SBTs**.
-
-#### How It Works Under the Hood:
-
-1. **`GiglyCredential.sol` Smart Contract**: We deployed a custom ERC-721 contract specifically for reputation. It is heavily modified to be completely non-transferable (a Soulbound Token), ensuring that freelancers cannot sell, transfer, or trade their earned reputation.
-2. **Metadata via IPFS**: When a job is completed and escrow is settled, a credential is minted to the freelancer's wallet. The token URI points to decentralized storage (IPFS), containing metadata about the completed gig (e.g., job title, skills used, client address, and timestamp).
+1. **`GiglyCredential.sol` Smart Contract**: Custom ERC-721 contract specifically modified to be completely non-transferable. Freelancers cannot sell, transfer, or trade their earned reputation. Dual-minter permissions enable both `OptimisticEscrow` and `VotingDispute` to mint credentials upon settlement.
+2. **Metadata via IPFS**: When a job is settled, a credential is minted to the freelancer's wallet. The token URI points to decentralized storage (IPFS), containing metadata about the completed gig (job title, skills used, client address, and timestamp).
 3. **Frontend Integration (`Credentials.tsx`)**:
-   - The UI utilizes Thirdweb's `useReadContract` to directly query the SBT contract and retrieve an array of `tokenId`s owned by the connected freelancer via the `getTokensByFreelancer(address)` function.
-   - For each token, the `tokenURI(uint256)` is fetched and resolved via an HTTP IPFS gateway (`https://ipfs.io/ipfs/...`).
-   - The UI then visually renders these NFTs as glowing, interactive "Credential Cards," parsing the JSON metadata to dynamically display the gig attributes and descriptions.
-4. **W3C Decentralized Identifiers (DIDs)**: Each connected wallet is assigned a `did:ethr` identifier anchored to the Sepolia Testnet (`did:ethr:sepolia:{wallet_address}`).
-5. **Sybil Resistance**: Since the SBT is only minted in tandem with a successful `FundsReleased` event via the `OptimisticEscrow` contract, **fake reviews are structurally and mathematically impossible**. You cannot fabricate a reputation NFT without actual USDC changing hands on-chain.
+   - Queries `GiglyCredential` to retrieve all `tokenId`s owned by the connected freelancer (`getTokensByFreelancer(address)`).
+   - Resolves IPFS metadata via public gateways with fallback error handling and on-demand per-token retries.
+   - Renders interactive Credential Cards complete with direct links to Ethereum Sepolia Etherscan.
+4. **W3C Decentralized Identifiers (DIDs)**: Each connected wallet is assigned a `did:ethr` identifier anchored to Sepolia (`did:ethr:sepolia:{wallet_address}`).
+5. **Sybil Resistance**: Since the SBT is only minted in tandem with a successful `FundsReleased` event, **fake reviews are mathematically impossible**.
 
 ---
 
 ## 🏗️ System Architecture & Workflow
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          Gigly — User Journey                          │
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                           Gigly — Execution Flow                                            │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
   ┌──────────────┐     ┌───────────────────┐     ┌───────────────────────┐
-  │  1. CONNECT  │     │  2. ZK-KYC GATE   │     │  3. LOCK ESCROW      │
+  │  1. CONNECT  │     │  2. ZK-KYC GATE   │     │    3. LOCK ESCROW     │
   │              │────▶│                   │────▶│                       │
-  │  Wallet      │     │  Anon Aadhaar 🇮🇳  │     │  Client sends USDC   │
+  │  Wallet      │     │  Anon Aadhaar 🇮🇳  │     │  Client deposits USDC │
   │  (Thirdweb)  │     │  ZKPassport   🌍  │     │  to OptimisticEscrow  │
-  │              │     │                   │     │  on Sepolia Testnet   │
-  │  • MetaMask  │     │  ZK-SNARK proof   │     │                       │
-  │  • Coinbase  │     │  generated in     │     │  Funds locked in      │
-  │  • Google    │     │  browser/device   │     │  smart contract       │
-  │  • Email OTP │     │  (Zero PII)       │     │                       │
+  │  • In-App    │     │                   │     │  on Sepolia Testnet   │
+  │    Email/OTP │     │  ZK-SNARK proof   │     │                       │
+  │  • External  │     │  generated on     │     │  (Direct Assign OR    │
+  │    Web3      │     │  device (Zero PII)│     │   Open Public Bounty) │
   └──────────────┘     └───────────────────┘     └───────────┬───────────┘
                                                              │
                                                              ▼
@@ -120,302 +118,168 @@ Additionally, community members who participate in resolving collision disputes 
   ┌──────────────────────────────────────────────────────────────────────┐
   │  5. VC MINTING & REPUTATION                                          │
   │                                                                      │
-  │  • FundsReleased tx hash ──▶ Latest VC Proof Hash                    │
-  │  • On-chain job stats    ──▶ Trust Score (verified / total × 100)    │
+  │  • FundsReleased tx hash ──▶ Verified on Etherscan                   │
+  │  • GiglyCredential.mint  ──▶ Soulbound PoW NFT (IPFS metadata)       │
   │  • Honest Voters         ──▶ +Contributor SBT Minted                 │
-  │                                                                      │
-  │  Reputation is ONLY derived from successful escrow settlements.      │
-  │  No escrow release = no credential = no fake reviews. Period.        │
   └──────────────────────────────────────────────────────────────────────┘
 ```
 
-### 🔄 Oracle Price Feed Integration
+---
 
-Gigly uses **Chainlink-compatible price feeds** for real-time fiat-to-crypto conversion within the escrow UI:
+## 🖥️ Portal Structure & Tab Functionality
 
-| Feed | Address (Sepolia) | Purpose |
-|------|-------------------|---------|
-| EUR/USD | `0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910` | Euro conversion for EU freelancers |
-| INR/USD | `0x89f3a73ac523f236804867B8Eca75Da2d5324C86` | INR conversion for Indian freelancers (custom MockINRFeed) |
+The platform is divided into two tailored dashboards with scoped role views:
+
+### 💼 Client Hub (`/client`)
+1. **Active Jobs**: Displays all jobs funded by the connected client that are in progress (`status: Funded (1)`, `Submitted (2)`, or `Disputed (3)`). Only the hiring client has action capabilities (Approve & Release, Raise Admin Dispute, Raise Jury Dispute).
+2. **Past Jobs**: Completed historical archive for the client (`status: Released (4)` or `Refunded (5)`). Displays amount, deliverable link, counterparty freelancer name, and Etherscan transaction links.
+3. **Browse Freelancers**: Talent marketplace powered by Supabase with live search and verified talent filters (Anon Aadhaar / ZKPassport flags). Allows instant hiring via `CreateJobModal`.
+4. **Public Gigs**: Read-only transparency view of all open unassigned bounties (`freelancer: 0x0`, `status: Funded`) awaiting talent pickup.
+
+### 🛠️ Freelancer Hub (`/freelancer`)
+1. **Active Jobs**: Gigs assigned to the connected freelancer currently in progress or review (`status: 1, 2, or 3`). Includes deliverable link submission, milestone logging, and optimistic claim actions.
+2. **Past Jobs**: Archive of settled or refunded gigs for the freelancer with release confirmation receipts.
+3. **Browse Gigs**: Marketplace of open unassigned bounties. Freelancers can view budget, brief, and click **Accept Gig** to lock assignment.
+4. **Earnings**: Real-time escrow volume, settled earnings, and pending disbursements with fiat currency conversions.
+5. **Credentials**: Soulbound NFT credentials gallery loaded directly from `GiglyCredential.sol` and resolved via IPFS.
 
 ---
 
-## ⚙️ Environment Configuration & Infrastructure
+## ⚡ Real-Time Data Pipeline & Cache-Busting Architecture
 
-Gigly relies on a split environment architecture between the Next.js frontend client and the Solidity smart contract backend.
+To ensure instant UI updates across counterparties while eliminating stale blockchain reads, Gigly implements a multi-layer state synchronization architecture:
 
-### Frontend (`frontend/.env.local`)
+```
+[ Sepolia Blockchain ] ──▶ [ /api/jobs (force-dynamic, revalidate: 0) ]
+                                    │ Fresh client per request
+                                    ▼
+[ Browser sessionStorage ] ◀── [ useJobs Hook ] ──▶ [ Client & Freelancer Hubs ]
+  (15s Timestamp TTL)              ▲
+                                   │ On Tx / ↺ Click
+                          clearJobsCache()
+```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` | ✅ | Connects the Next.js application to Thirdweb's infrastructure. This client ID powers the Thirdweb React SDK, handling user wallet connections, RPC routing, transaction execution, and smart contract data fetching without requiring users to configure manual node connections. |
-
-### Smart Contracts (`contracts/.env`)
-
-The blockchain architecture uses public Remote Procedure Call (RPC) nodes to interact with multiple testnets without relying on premium external API services like Alchemy or Infura.
-
-| Variable | Description |
-|----------|-------------|
-| `AMOY_RPC_URL` | Connects to the Polygon Amoy testnet via the Publicnode API (`https://polygon-amoy-bor-rpc.publicnode.com`). |
-| `SEPOLIA_RPC_URL` | Connects to the Ethereum Sepolia testnet via the Publicnode API (`https://ethereum-sepolia-rpc.publicnode.com`). |
-| `BASE_SEPOLIA_RPC_URL` | Connects to the Base Sepolia testnet via the official Base endpoint (`https://sepolia.base.org`). |
-| `DEPLOYER_PRIVATE_KEY` | The private key of the test wallet responsible for paying gas fees and deploying the `OptimisticEscrow.sol` smart contract. **⚠️ Must be a testnet-only wallet. Never use a wallet containing real funds.** |
-| `ARBITER_ADDRESS` | The designated wallet address acting as the third-party judge to resolve gig disputes between clients and freelancers. |
+1. **`api/jobs/route.ts`**:
+   - Enforces `export const dynamic = "force-dynamic"` and `export const revalidate = 0`.
+   - Creates a **fresh Thirdweb client and contract instance per request** to circumvent internal RPC client-level memoization.
+   - Sends explicit HTTP response headers: `Cache-Control: no-store, no-cache, must-revalidate`.
+2. **`useJobs.ts` Client Hook**:
+   - Cache-busting queries (`/api/jobs?t=${Date.now()}`) with `cache: "no-store"` guarantee fresh network requests.
+   - Enforces a **15-second TTL** on local `sessionStorage` to ensure cross-user job updates reflect automatically without manual refreshes.
+   - Exports `clearJobsCache()` called before every contract state transition across `ActiveJobs`, `IncomingJobs`, `BrowseGigs`, and `CreateJobModal`.
+3. **Manual Refresh Trigger**:
+   - Dedicated **Refresh (↺)** buttons located in both the Client and Freelancer headers allow users to immediately bypass local cache and pull real-time on-chain data.
 
 ---
 
-## 🏛️ Technical Architecture
+## 📦 Smart Contracts & Addresses (Ethereum Sepolia)
 
-- **Frontend**: Next.js 14
-- **Web3 Integrations**: Thirdweb v5
-- **Smart Contracts**: Solidity
-- **Framework & Security**: OpenZeppelin v5 (specifically `OptimisticEscrow.sol`, `GiglyCredential.sol`, and `VotingDispute.sol`)
+| Contract | Address | Explorer | Description |
+| :--- | :--- | :--- | :--- |
+| **`OptimisticEscrow`** | `0xc14cAC4CbaE8954E3bd71A04399193f099c8b451` | [Etherscan](https://sepolia.etherscan.io/address/0xc14cAC4CbaE8954E3bd71A04399193f099c8b451) | Core escrow contract |
+| **`GiglyCredential`** | `0x7CbC2961526453E48154Bc5A045bc254Eb61B46C` | [Etherscan](https://sepolia.etherscan.io/address/0x7CbC2961526453E48154Bc5A045bc254Eb61B46C) | Soulbound ERC-721 PoW NFTs |
+| **`VotingDispute`** | `0xA963219334f02d23c6e041e1d4af1491a2eF89D0` | [Etherscan](https://sepolia.etherscan.io/address/0xA963219334f02d23c6e041e1d4af1491a2eF89D0) | Community jury voting dispute resolution |
+| **`FreelancerRegistry`** *(Legacy)* | `0xd78CF42205dE581c06bFBc28928F20898B244eDA` | [Etherscan](https://sepolia.etherscan.io/address/0xd78CF42205dE581c06bFBc28928F20898B244eDA) | On-chain registry (migrated to Supabase) |
+| **`USDC` (Circle)** | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` | [Etherscan](https://sepolia.etherscan.io/address/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238) | Official Circle Testnet USDC |
+| **Chainlink EUR/USD** | `0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910` | [Etherscan](https://sepolia.etherscan.io/address/0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910) | Chainlink price aggregator |
+| **Mock INR/USD Feed** | `0x89f3a73ac523f236804867B8Eca75Da2d5324C86` | [Etherscan](https://sepolia.etherscan.io/address/0x89f3a73ac523f236804867B8Eca75Da2d5324C86) | Custom INR/USD price aggregator |
 
 ---
 
 ## 💻 Tech Stack
 
 | Layer | Technology | Details |
-|-------|-----------|---------|
-| **Frontend** | Next.js 14 (App Router), TypeScript, Tailwind CSS | Server components + client interactivity. Inter font via Google Fonts. |
-| **Web3 / Auth** | **Thirdweb v5 SDK** | Wallet connection (MetaMask, Coinbase, Google, Email OTP), ERC-4337 Smart Accounts with **gasless (sponsored) transactions**. |
-| **Privacy / KYC** | `@anon-aadhaar/react` v2.4 (PSE), `@zkpassport/sdk` v0.16 | Client-side ZK-SNARK proof generation. No backend KYC server. |
-| **Smart Contracts** | Solidity 0.8.24, Hardhat 3, OpenZeppelin 5.x | `OptimisticEscrow.sol` deployed on **Ethereum Sepolia Testnet**. Uses `SafeERC20`, `ReentrancyGuard`, `Ownable`. |
-| **Payment Token** | Circle Testnet USDC | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` — [Circle Faucet](https://faucet.circle.com/) |
-| **Oracles** | Chainlink Price Feeds (+ custom `MockINRFeed`) | Real-time USD/EUR/INR conversion for multi-currency escrow display. |
-| **DID Standard** | `did:ethr` (W3C DID Specification) | Decentralized Identifiers anchored to Ethereum addresses. |
-| **Networks** | Ethereum Sepolia, Base Sepolia, Polygon Amoy | Multi-chain testnet infrastructure. |
-
-### 📦 Key Dependencies
-
-```
-Frontend:  next@14 · thirdweb@5 · @anon-aadhaar/react · @zkpassport/sdk · lucide-react · react-qr-code · tailwind-merge
-Contracts: hardhat@3 · @openzeppelin/contracts@5 · @chainlink/contracts · ethers@6
-```
+|---|---|---|
+| **Frontend Framework** | Next.js 14 (App Router), React 18, TypeScript | Server and Client components with Tailwind CSS & Framer Motion |
+| **Web3 SDK** | **Thirdweb v5 SDK** (`thirdweb@^5.121.1`) | In-app social wallets (Email OTP, Google), ERC-4337 Smart Accounts, and sponsored gas |
+| **Zero-Knowledge KYC** | `@anon-aadhaar/react` v2.4, `@zkpassport/sdk` v0.16 | Client-side Groth16 ZK-SNARK proof generation with zero PII exposure |
+| **Database & API** | **Supabase** (`@supabase/supabase-js ^2.115.0`) | PostgreSQL talent directory with local JSON fallback |
+| **Smart Contracts** | Solidity 0.8.24, Hardhat 3, OpenZeppelin 5.x | `OptimisticEscrow`, `GiglyCredential`, `VotingDispute` on Ethereum Sepolia |
+| **Settlement Currency** | Circle Testnet USDC | Official Circle ERC-20 (`0x1c7D...7238`) |
+| **Oracles** | Chainlink Price Feeds | Live EUR/USD and INR/USD currency conversion |
+| **Decentralized Storage** | IPFS | Proof-of-Work metadata pinning & token URI resolution |
 
 ---
 
 ## 🚀 Local Setup & Installation
 
 ### Prerequisites
-
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - A Thirdweb Client ID ([get one free](https://thirdweb.com/dashboard))
+- Supabase Project URL and Service Role Key ([Supabase Dashboard](https://supabase.com))
 
 ### 1️⃣ Clone the Repository
-
 ```bash
-git clone https://github.com/your-username/gigly.git
-cd gigly
+git clone https://github.com/adityajoshi18vk-art/Gigly-.git
+cd Gigly-
 ```
 
 ### 2️⃣ Install Frontend Dependencies
-
 ```bash
 cd frontend
 npm install --legacy-peer-deps
 ```
 
-> **⚠️ Why `--legacy-peer-deps`?**
-> The Anon Aadhaar ZK circuit packages (`@anon-aadhaar/core`, `@anon-aadhaar/react`) have peer dependency conflicts with React 18's strict resolution. The `--legacy-peer-deps` flag is **required** to install these packages correctly. The ZK circuits function normally at runtime.
+> **⚠️ Why `--legacy-peer-deps`?**  
+> Anon Aadhaar ZK circuit packages (`@anon-aadhaar/core`, `@anon-aadhaar/react`) require `--legacy-peer-deps` due to strict React 18 resolution. Circuits function with 100% stability at runtime.
 
-### 3️⃣ Environment Variables
-
-Create a `.env.local` file in the `frontend/` directory:
-
+### 3️⃣ Configure Environment Variables
+Create `frontend/.env.local`:
 ```env
-# Gigly Frontend — Environment Variables
-NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id_here
+# Thirdweb Client ID
+NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
+
+# Supabase (Talent Database)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
 
-### 4️⃣ Next.js Configuration Note
-
-> **⚙️ `reactStrictMode: false` is required.**
-> The ZK-SNARK proof generation in Anon Aadhaar relies on **Web Workers** and **WebAssembly** modules that are incompatible with React Strict Mode's double-invocation behavior. `next.config.mjs` is pre-configured with `reactStrictMode: false` and a custom **Content-Security-Policy** header that allows `blob:` and `unsafe-eval` for Web Worker execution. Do not modify these settings.
+### 4️⃣ Set Up Supabase Database (SQL)
+Run the migration script located at `frontend/supabase/schema.sql` in your Supabase SQL Editor to create the `freelancers` table, indexes, and Row Level Security policies.
 
 ### 5️⃣ Run the Development Server
-
 ```bash
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) to access Gigly.
-
-### 6️⃣ Smart Contracts (Optional)
-
-If you need to redeploy or modify the escrow contracts:
-
-```bash
-cd contracts
-npm install
-```
-
-Create a `.env` file in the `contracts/` directory:
-
-```env
-AMOY_RPC_URL=https://polygon-amoy-bor-rpc.publicnode.com
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
-DEPLOYER_PRIVATE_KEY=your_deployer_private_key
-ARBITER_ADDRESS=0xYourArbiterAddress
-```
-
-> **⚠️ Security:** Never commit `.env` files. The `DEPLOYER_PRIVATE_KEY` should be a **testnet-only wallet** with Sepolia ETH for gas. Never use a wallet containing real funds.
-
----
-
-## 📁 Project Structure
-
-```
-gigly/
-├── frontend/                       # Next.js 14 App
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── api/                # Next.js API Routes (ZKPassport integration)
-│   │   │   ├── client/             # Client dashboard (create jobs, fund escrow)
-│   │   │   ├── freelancer/         # Freelancer dashboard (browse, submit, earn)
-│   │   │   ├── admin/              # Dynamic Protocol Admin Panel
-│   │   │   └── layout.tsx          # Root layout (ThirdwebProvider + AnonAadhaarWrapper)
-│   │   ├── components/
-│   │   │   ├── landing/            # 🎨 New immersive landing page (HeroSection, InteractiveProcess, etc.)
-│   │   │   ├── ui/                 # 🧩 Reusable design system elements (PixelCard, Buttons, Modals, Tabs)
-│   │   │   ├── KYCModal.tsx        # 🔐 ZK-KYC Gate (Anon Aadhaar + ZKPassport)
-│   │   │   ├── DIDTrustCard.tsx    # 🆔 W3C DID & Verifiable Credentials display
-│   │   │   ├── Credentials.tsx     # 🏅 Soulbound NFT Credentials Display
-│   │   │   ├── CreateJobModal.tsx  # 💼 Escrow creation with currency conversion
-│   │   │   ├── ActiveJobs.tsx      # 📋 Job lifecycle tracking
-│   │   │   ├── IncomingJobs.tsx    # 📥 Freelancer job queue
-│   │   │   ├── Earnings.tsx        # 💰 Earnings dashboard with oracle feeds
-│   │   │   └── VotingDisputeUi.tsx # 🗳️ Community Collision Dispute System UI
-│   │   └── lib/
-│   │       ├── config.ts           # Chain, contract, wallet & oracle configuration
-│   │       └── constants.ts        # App-wide constants
-│   └── .env.local                  # Environment variables (not committed)
-│
-├── contracts/                      # Hardhat 3 Smart Contracts
-│   ├── contracts/
-│   │   ├── OptimisticEscrow.sol    # ⛓️ Core escrow contract
-│   │   ├── VotingDispute.sol       # 🗳️ Community collision dispute contract
-│   │   ├── GiglyCredential.sol     # 🏅 SBT credential contract
-│   │   ├── MockUSDC.sol            # 🪙 ERC-20 mock for local testing
-│   │   └── MockINRFeed.sol         # 📊 Chainlink-style INR/USD price feed
-│   ├── scripts/                    # Deployment & migration scripts
-│   ├── hardhat.config.ts           # Network config (Sepolia, Amoy, Base Sepolia)
-│   └── .env                        # RPC URLs & deployer key (not committed)
-│
-└── README.md
-```
-
----
-
-## 🧑‍⚖️ Hackathon Rubric Alignment
-
-> **For the Judges:** Here's how Gigly maps to the core hackathon evaluation criteria.
-
-### ⛓️ Web3 Architecture — Fully On-Chain
-
-| Criterion | Gigly Implementation |
-|-----------|----------------------|
-| On-chain logic | `OptimisticEscrow.sol` & `VotingDispute.sol` — all escrow state, dispute voting, and parameters are **100% on-chain**. No off-chain relayers or centralized backends. |
-| Decentralized frontend | Next.js app reads directly from the blockchain via Thirdweb SDK. No proprietary API layer. |
-| Gasless UX | ERC-4337 Smart Accounts with **sponsored gas** via Thirdweb — users never need to hold ETH. |
-| Token standard | Uses **Circle's official USDC** on Sepolia — not a custom token. |
-
-### 🔐 Privacy & Compliance — FATF / RBI / GDPR
-
-| Regulation | How Gigly Complies |
-|------------|---------------------|
-| **GDPR Article 25** — Data Protection by Design | ZK-SNARKs ensure **zero PII** is stored on-chain or on any server. Proof generation happens entirely in the user's browser (Anon Aadhaar) or on-device (ZKPassport). |
-| **FATF Travel Rule** | Identity is **verified** (proof of valid government ID) without **transmitting** identity data between counterparties. |
-| **RBI KYC Norms** (India) | Anon Aadhaar verifies Aadhaar credentials via the official UIDAI digital signature — same cryptographic root of trust as DigiLocker. |
-| **eIDAS** (EU) | ZKPassport reads the ICAO 9303 NFC chip in EU e-Passports, verifying the government digital signature without extracting personal fields. |
-
-### 🛡️ Fraud Reduction — Sybil-Resistant Reputation
-
-| Attack Vector | Gigly Defense |
-|----------------|----------------|
-| **Fake reviews** | Impossible. Verifiable Credentials are only derived from `FundsReleased` events — requires actual USDC to change hands on-chain. |
-| **Sybil accounts** | ZK-KYC gates ensure one real identity = one verified wallet. Creating 100 wallets doesn't create 100 verified identities. |
-| **Rating manipulation** | Trust Score = `(released gigs / total completed gigs) × 100`. Computed deterministically from immutable on-chain state. No human moderation. |
-| **Proof hash forgery** | Each VC proof hash is a real Ethereum `transactionHash` — verifiable by anyone on Etherscan. |
-
----
-
-## 🔐 Security & Trust Assumptions
-
-- **Deliverable Protection**: The UI strictly hides raw final deliverables and source code links behind an escrow gate until final settlement is completed.
-- **Anti-Spoofing Auto-Claims**: In the event of an expired review window, a fallback URI is utilized to ensure seamless auto-claims, preventing malicious clients from indefinitely stalling releases.
-- **Democratic Collision Resolution**: Collisions are handled via the VotingDispute module, ensuring no single entity (not even the protocol admins) can unilaterally freeze or extract funds.
+Open [http://localhost:3000](http://localhost:3000) to launch Gigly.
 
 ---
 
 ## 🧪 Testing & Demo Guide
 
-This section outlines the standard end-to-end testing flow for Gigly, utilizing Account Abstraction (ERC-4337) and Thirdweb In-App Wallets.
-
-Because the platform relies on smart accounts that map 1:1 to email addresses, it's recommended to use different incognito windows or different browsers when testing multiple roles simultaneously.
+Testing uses Account Abstraction (ERC-4337) and Thirdweb In-App Wallets. Smart accounts map 1:1 to email addresses; use separate browser windows or incognito sessions when testing multiple roles simultaneously.
 
 ### Test Accounts
+- **Client:** `giglytest1@yopmail.com`
+- **Freelancer:** `giglytest2@yopmail.com`
+- **Admin / Voter:** `giglytest3@yopmail.com`
+*(Check OTPs at [yopmail.com](https://yopmail.com))*
 
-* **Client:** `giglytest1@yopmail.com`
-* **Freelancer:** `giglytest2@yopmail.com`
-* **Admin / Voter:** `giglytest3@yopmail.com`
+### End-to-End Walkthrough
 
-> **Note:** OTPs for these accounts can be checked at [yopmail.com](https://yopmail.com).
+#### 1. Client: Post a Job
+1. Sign in at `http://localhost:3000` with `giglytest1@yopmail.com` and select **"I'm hiring"**.
+2. Click **Post Open Job** or pick a profile from **Browse Freelancers**.
+3. Input task title, budget in USDC, approve USDC allowance, and confirm escrow creation.
+4. Job immediately appears in the client's **Active Jobs** tab.
 
-### Testing the Happy Path (Create, Submit, Approve)
+#### 2. Freelancer: Accept & Submit Deliverable
+1. Sign in on a separate window with `giglytest2@yopmail.com` and select **"I'm working"**.
+2. In **Active Jobs** (or **Browse Gigs** for public bounties), click **Submit Work**.
+3. Provide the deliverable URL. The status updates to **Submitted**, starting the dynamic review window.
 
-#### 1. Client: Create a Job
-1. Navigate to `http://localhost:3000`
-2. Click **Sign In to Gigly** and enter `giglytest1@yopmail.com`. Enter the OTP sent to Yopmail.
-3. If prompted, select **"I'm hiring"** (Client Role).
-4. On the Client Dashboard, go to the **Browse Freelancers** tab.
-5. Click on **Giglytest Freelancer** (This profile is hardcoded to route funds to the `giglytest2` smart account).
-6. Enter a Task Title (e.g., "Build Landing Page") and an Amount (e.g., "50").
-7. Click **Create Job**.
-8. Once successful, the job will appear in the **Active Jobs** tab.
+#### 3. Client: Approval & Payout
+1. In the Client window, review the submitted deliverable under **Active Jobs**.
+2. Click **Approve & Release**.
+3. USDC is released to the freelancer's wallet, protocol fees are sent to the treasury, and an ERC-721 Soulbound PoW NFT is minted to the freelancer.
+4. The job moves cleanly to both parties' **Past Jobs** tabs.
 
-#### 2. Freelancer: Submit Work
-1. Open a new Incognito Window and navigate to `http://localhost:3000`.
-2. Sign in with `giglytest2@yopmail.com` and select **"I'm working"** (Freelancer Role).
-3. On the Freelancer Dashboard, go to **Incoming Tasks**.
-4. You should see the job created by the client. Click **Submit Work**.
-5. Enter a mock URL (e.g., `https://github.com/...`) and confirm.
-6. The job status will update to "Submitted".
-
-#### 3. Client: Approve & Release
-1. Return to the Client window (`giglytest1@yopmail.com`).
-2. Navigate to **Active Jobs**.
-3. You will see the Freelancer's submitted link.
-4. Click **Approve & Release**.
-5. The smart contract will immediately release the USDC to the freelancer's smart account.
-
-### Testing the Collision Dispute (Community Voting) Flow
-
-#### 1. Client: Raise a Dispute
-1. Repeat steps 1 & 2 from the Happy Path to create and submit a new job.
-2. As the Client (`giglytest1@yopmail.com`), go to **Active Jobs**.
-3. Instead of approving, click **Raise Dispute**.
-4. Enter a reason (e.g., "The design does not match the Figma file") and submit.
-5. The job enters the **VotingDispute** system.
-
-#### 2. Community: Vote on Dispute
-1. Open a new window and sign in as a community voter (e.g. `giglytest3@yopmail.com`).
-2. Navigate to the **Active Disputes / Community Resolution** area.
-3. Review the Freelancer's submission and the Client's dispute reason.
-4. Cast your vote (e.g., "Favor Client" or "Favor Freelancer").
-5. Upon conclusion, the smart contract enacts the community consensus. Honest voters are rewarded with a `+Contributor` SBT credential for participating.
-
-### Testing the Dynamic Admin Panel
-
-#### 1. Admin: Configure Escrow Parameters
-1. Open a new window and navigate directly to `http://localhost:3000/admin`.
-2. Ensure you are signed in with the contract owner/deployer wallet.
-3. You will see the **Protocol Configuration Dashboard**.
-4. Change the **Review Window** (e.g., from 24 Hours to 3 Minutes) to accelerate testing of Optimistic Auto-Claims.
-5. Modify the **Platform Fee** percentage dynamically.
-6. These updates are immediately broadcast on-chain and reflect across all dashboards.
+#### 4. Dispute Resolution (Optional)
+1. If the deliverable is unsatisfactory, click **Raise Dispute**.
+2. Confirm the Pre-Dispute Consent Modal and select Arbiter or Community Jury.
+3. If routed to community jury, voters sign in to vote in `/disputes`, triggering on-chain majority distribution and awarding `+Contributor` SBTs to participating jurors.
 
 ---
 
@@ -425,21 +289,10 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-<div align="center">
-
-**Built with 🔐 by the Gigly Team**
-
-*Trustless escrows. Zero-knowledge compliance. Verifiable reputation.*
-*The future of work is decentralized.*
-
-</div>
-
----
-
 ## 👥 Team FinNova (Smart Horizon 2026 Hackathon)
 
-- Aditya Joshi (Team Lead)
-- Daiwik Roy
-- Saswat Dutta
-- Puvaladas Sai Vaibhav
-- Shaik Fariza
+- **Aditya Joshi** (Team Lead)
+- **Daiwik Roy**
+- **Saswat Dutta**
+- **Puvaladas Sai Vaibhav**
+- **Shaik Fariza**
