@@ -23,22 +23,17 @@ function isImageUrl(url: string): boolean {
   }
 }
 
-/** Known embed-safe URL patterns */
-const EMBEDDABLE_PATTERNS = [
-  /youtube\.com\/embed/i,
-  /youtube-nocookie\.com\/embed/i,
-  /player\.vimeo\.com/i,
-  /codepen\.io\/.*\/embed/i,
-  /codesandbox\.io\/embed/i,
-  /stackblitz\.com\/edit/i,
-  /figma\.com\/embed/i,
-  /canva\.com\/design\/.*\/.*embed/i,
-  /docs\.google\.com\/(presentation|document|spreadsheets)\/.*\/embed/i,
-  /loom\.com\/embed/i,
-];
-
-function isEmbeddableUrl(url: string): boolean {
-  return EMBEDDABLE_PATTERNS.some((pattern) => pattern.test(url));
+/** Domains that enforce X-Frame-Options: DENY on standard links */
+function isKnownBlocked(url: string): boolean {
+  return (
+    url.includes("github.com") ||
+    (url.includes("canva.com") && !url.includes("embed")) ||
+    (url.includes("figma.com") && !url.includes("embed")) ||
+    url.includes("drive.google.com") ||
+    url.includes("notion.so") ||
+    url.includes("twitter.com") ||
+    url.includes("x.com")
+  );
 }
 
 export function DeliverableViewer({
@@ -95,15 +90,7 @@ export function DeliverableViewer({
             className={`w-full max-h-[420px] object-contain bg-black/40 ${isLocked ? "select-none" : ""}`}
             draggable={!isLocked}
           />
-        ) : isEmbeddableUrl(previewUrl) ? (
-          <iframe
-            src={previewUrl}
-            title={`Preview: ${jobTitle}`}
-            className={`w-full h-96 border-0 bg-white rounded-none ${isLocked ? "select-none" : ""}`}
-            sandbox="allow-scripts allow-same-origin"
-            loading="lazy"
-          />
-        ) : (
+        ) : isKnownBlocked(previewUrl) ? (
           <div className="w-full h-96 flex flex-col items-center justify-center bg-[#080d18] border-0 relative overflow-hidden">
             <div className="flex flex-col items-center gap-4 relative z-20">
               <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
@@ -122,6 +109,14 @@ export function DeliverableViewer({
               </a>
             </div>
           </div>
+        ) : (
+          <iframe
+            src={previewUrl}
+            title={`Preview: ${jobTitle}`}
+            className={`w-full h-96 border-0 bg-white ${isLocked ? "select-none" : ""}`}
+            sandbox="allow-scripts allow-same-origin"
+            loading="lazy"
+          />
         )}
 
         {/* Watermark overlay (InReview only) */}
