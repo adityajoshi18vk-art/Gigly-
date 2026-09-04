@@ -67,8 +67,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# Freelancer registry data (file-backed API)
-frontend/data/
 
 # Remote reference clone (temporary, for porting UI changes)
 _remote_ref/
