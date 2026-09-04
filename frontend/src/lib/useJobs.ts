@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { JobData } from "@/components/ActiveJobs";
 
 const CACHE_KEY = "gigly_jobs_cache";
 const CACHE_TS_KEY = "gigly_jobs_cache_ts";
-const CACHE_TTL_MS = 15_000; // 15 seconds — stale after this, force fresh fetch
+const CACHE_TTL_MS = 15_000; // 15 seconds
 
 function readCache(): JobData[] | null {
   if (typeof window === "undefined") return null;
   try {
     const ts = sessionStorage.getItem(CACHE_TS_KEY);
-    if (!ts || Date.now() - Number(ts) > CACHE_TTL_MS) return null; // expired
+    if (!ts || Date.now() - Number(ts) > CACHE_TTL_MS) return null;
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached);
@@ -47,17 +47,21 @@ export function clearJobsCache() {
 }
 
 export function useJobs(refreshCounter: number = 0) {
-  const cached = readCache();
-
-  const [jobs, setJobs] = useState<JobData[]>(cached ?? []);
-  const [loading, setLoading] = useState<boolean>(cached === null);
+  const initialCache = useRef(readCache());
+  const [jobs, setJobs] = useState<JobData[]>(initialCache.current ?? []);
+  const [loading, setLoading] = useState<boolean>(initialCache.current === null);
 
   const fetchJobs = useCallback(async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const res = await fetch("/api/jobs", { signal: controller.signal });
+      // cache-busting: append timestamp to bypass browser HTTP cache + Next.js static cache
+      const res = await fetch(`/api/jobs?t=${Date.now()}`, {
+        signal: controller.signal,
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       clearTimeout(timeoutId);
 
       if (res.ok) {
@@ -84,7 +88,7 @@ export function useJobs(refreshCounter: number = 0) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // stable reference — cache-busting is in the URL timestamp
 
   useEffect(() => {
     fetchJobs();
