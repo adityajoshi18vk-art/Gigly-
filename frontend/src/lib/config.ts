@@ -40,8 +40,8 @@ export const CONTRACTS = {
   // Official Circle Testnet USDC on Ethereum Sepolia
   // Faucet: https://faucet.circle.com/
   USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-  // Deployed 2026-08-11 — points to Circle Testnet USDC
-  OptimisticEscrow: "0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672",
+  // Fresh deployment 2026-09-04 — wired to GiglyCredential + VotingDispute as arbiter
+  OptimisticEscrow: "0x5143b56d2ac0757Ad206176c30f08fc850b9bb6b",
   // Legacy Soulbound Token (PoW NFTs) — deployed 2026-09-03, used by OptimisticEscrow
   GiglyCredentialLegacy: "0xFB43c1182F51583d33E2e191DB32025DE115ea75",
   // New GiglyCredential (dual-minter: escrow + VotingDispute) — deployed 2026-09-04
@@ -50,7 +50,7 @@ export const CONTRACTS = {
   VotingDispute: "0xbaE78ef2777959fE419De8a28Ed1D974216279D2",
 };
 
-export const DEPLOYMENT_BLOCK = BigInt(11425792);
+export const DEPLOYMENT_BLOCK = BigInt(11631500);
 
 export const usdcContract = getContract({
   client,
