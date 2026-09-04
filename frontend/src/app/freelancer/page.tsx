@@ -11,6 +11,7 @@ import { IncomingJobs } from "@/components/IncomingJobs";
 import { BrowseGigs } from "@/components/BrowseGigs";
 import { Earnings } from "@/components/Earnings";
 import { DIDTrustCard } from "@/components/DIDTrustCard";
+import { Credentials } from "@/components/Credentials";
 import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { Button } from "@/components/ui/Button";
 
@@ -63,7 +64,7 @@ export default function FreelancerDashboard() {
       </header>
 
       <Tabs 
-        tabs={["Incoming Tasks", "Browse Gigs", "Earnings"]} 
+        tabs={["Incoming Tasks", "Browse Gigs", "Earnings", "Credentials"]} 
         activeTab={activeTab} 
         onChange={setActiveTab}
         className="mb-8"
@@ -91,6 +92,10 @@ export default function FreelancerDashboard() {
           <Earnings />
           <DIDTrustCard />
         </div>
+      )}
+
+      {activeTab === "Credentials" && (
+        <Credentials />
       )}
 
       <ProfileSettingsModal

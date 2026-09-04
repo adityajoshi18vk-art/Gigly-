@@ -42,6 +42,8 @@ export const CONTRACTS = {
   USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   // Deployed 2026-08-11 — points to Circle Testnet USDC
   OptimisticEscrow: "0x4B60d9531fCF480edc6cE7FAfF27A171e61bA672",
+  // Soulbound Token Credentials Contract — deployed 2026-09-03
+  GiglyCredential: "0xFB43c1182F51583d33E2e191DB32025DE115ea75",
 };
 
 export const DEPLOYMENT_BLOCK = BigInt(11425792);
@@ -59,4 +61,10 @@ export const escrowContract = getContract({
   client,
   chain: CHAIN,
   address: CONTRACTS.OptimisticEscrow,
+});
+
+export const credentialContract = getContract({
+  client,
+  chain: CHAIN,
+  address: CONTRACTS.GiglyCredential,
 });

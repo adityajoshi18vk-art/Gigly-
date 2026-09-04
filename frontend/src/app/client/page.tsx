@@ -13,7 +13,6 @@ import { CreateJobModal } from "@/components/CreateJobModal";
 import { ActiveJobs } from "@/components/ActiveJobs";
 import {
   getRegisteredFreelancers,
-  isKycVerified,
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
 import { Users, ShieldCheck } from "lucide-react";
@@ -62,7 +61,9 @@ export default function ClientDashboard() {
   // Filter freelancers based on verified toggle
   const displayedFreelancers = showVerifiedOnly
     ? freelancers.filter(
-        (p) => p.verifiedSkills && p.verifiedSkills.length > 0
+        (p) =>
+          (p.verifiedSkills && p.verifiedSkills.length > 0) ||
+          p.kycVerified === true
       )
     : freelancers;
 
@@ -187,7 +188,7 @@ export default function ClientDashboard() {
                     domain={profile.domain}
                     portfolioUrl={profile.portfolioUrl}
                     githubUrl={profile.githubUrl}
-                    isVerified={isKycVerified(profile.address)}
+                    isVerified={profile.kycVerified === true}
                   />
                 </div>
               ))}

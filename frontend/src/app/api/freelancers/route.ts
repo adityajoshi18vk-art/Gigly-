@@ -22,6 +22,7 @@ interface FreelancerProfile {
   githubUrl?: string;
   avatarFallback: string;
   createdAt: number;
+  kycVerified?: boolean;
 }
 
 function readProfiles(): FreelancerProfile[] {

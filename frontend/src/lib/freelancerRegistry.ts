@@ -23,6 +23,8 @@ export interface FreelancerProfile {
   githubUrl?: string;
   avatarFallback: string;
   createdAt: number;
+  /** KYC/ZK proof verified — persisted in API so clients can see it */
+  kycVerified?: boolean;
 }
 
 // ─── Initials Helper ────────────────────────────────────────────────────

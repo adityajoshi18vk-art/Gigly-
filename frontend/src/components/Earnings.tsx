@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { WithdrawModal } from "@/components/WithdrawModal";
 import { KYCModal } from "@/components/KYCModal";
+import { getFreelancerProfile, saveFreelancerProfile } from "@/lib/freelancerRegistry";
 
 // ─── Chainlink EUR/USD feed ───────────────────────────────────────────────────
 const eurUsdFeedContract = getContract({
@@ -44,7 +45,7 @@ export function Earnings() {
   // Sync KYC state from localStorage
   useEffect(() => {
     if (account?.address) {
-      const stored = localStorage.getItem(`finguard_kyc_${account.address}`);
+      const stored = localStorage.getItem(`finguard_kyc_${account.address.toLowerCase()}`);
       setIsKYCVerified(stored === "true");
     } else {
       setIsKYCVerified(false);
@@ -59,13 +60,24 @@ export function Earnings() {
     }
   }, [isKYCVerified]);
 
-  const handleKYCVerified = useCallback(() => {
+  const handleKYCVerified = useCallback(async () => {
     setIsKYCVerified(true);
     setIsKYCModalOpen(false);
-  }, []);
+    // Persist kycVerified to API so the client marketplace can see it
+    if (account?.address) {
+      try {
+        const existing = await getFreelancerProfile(account.address);
+        if (existing) {
+          await saveFreelancerProfile({ ...existing, kycVerified: true });
+        }
+      } catch (e) {
+        console.warn("Failed to persist kycVerified to API:", e);
+      }
+    }
+  }, [account?.address]);
 
   const handleResetKYC = useCallback(() => {
-    localStorage.removeItem(`finguard_kyc_${account?.address}`);
+    localStorage.removeItem(`finguard_kyc_${account?.address?.toLowerCase()}`);
     localStorage.removeItem("anonAadhaar");
     sessionStorage.clear();
     window.location.reload();

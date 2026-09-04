@@ -139,7 +139,7 @@ export function KYCModal({
 
   useEffect(() => {
     if (anonAadhaar.status === "logged-in" && isOpen && jurisdiction === "india") {
-      localStorage.setItem(`finguard_kyc_${walletAddress}`, "true");
+      localStorage.setItem(`finguard_kyc_${walletAddress.toLowerCase()}`, "true");
       onVerified();
       onClose();
     }
@@ -171,7 +171,7 @@ export function KYCModal({
       await new Promise((r) => setTimeout(r, VERIFICATION_STEPS[i].delay));
     }
 
-    localStorage.setItem(`finguard_kyc_${walletAddress}`, "true");
+    localStorage.setItem(`finguard_kyc_${walletAddress.toLowerCase()}`, "true");
     setShowSuccess(true);
     await new Promise((r) => setTimeout(r, 1200));
 
