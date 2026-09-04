@@ -30,8 +30,10 @@ export function AuthAndRouting() {
         return;
       }
 
-      const savedRole = localStorage.getItem(`gigly_role_${account.address}`);
-      if (savedRole) {
+      const savedRole =
+        localStorage.getItem(`gigly_role_${account.address}`) ||
+        localStorage.getItem("gigly_last_portal");
+      if (savedRole && (savedRole === "client" || savedRole === "freelancer")) {
         setRole(savedRole);
         router.push(`/${savedRole}`);
       } else {
@@ -45,6 +47,7 @@ export function AuthAndRouting() {
   const handleSelectRole = (selectedRole: "client" | "freelancer") => {
     if (!account) return;
     localStorage.setItem(`gigly_role_${account.address}`, selectedRole);
+    localStorage.setItem("gigly_last_portal", selectedRole);
     setRole(selectedRole);
     router.push(`/${selectedRole}`);
   };

@@ -15,6 +15,7 @@ export function Navbar({ activeRole }: { activeRole?: "client" | "freelancer" | 
   const handleRoleSwitch = (newRole: "client" | "freelancer") => {
     if (account) {
       localStorage.setItem(`gigly_role_${account.address}`, newRole);
+      localStorage.setItem("gigly_last_portal", newRole);
     }
     router.push(`/${newRole}`);
   };

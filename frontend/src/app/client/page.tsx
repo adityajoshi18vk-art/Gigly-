@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { Home, Plus } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
@@ -16,10 +16,10 @@ import {
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
 import { Users, ShieldCheck } from "lucide-react";
+import { usePortalAuth } from "@/lib/usePortalAuth";
 
 export default function ClientDashboard() {
-  const account = useActiveAccount();
-  const router = useRouter();
+  const { account } = usePortalAuth("client");
   
   const [activeTab, setActiveTab] = useState("Browse Freelancers");
   const [selectedFreelancer, setSelectedFreelancer] = useState<{
@@ -49,14 +49,6 @@ export default function ClientDashboard() {
     fetchFreelancers();
   };
 
-  // Route protection
-  useEffect(() => {
-    if (!account) {
-      router.push("/");
-    }
-  }, [account, router]);
-
-  if (!account) return null;
 
   // Filter freelancers based on verified toggle
   const displayedFreelancers = showVerifiedOnly

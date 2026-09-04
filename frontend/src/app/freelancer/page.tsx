@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { Home, Sparkles, UserCog } from "lucide-react";
 import { useActiveAccount } from "thirdweb/react";
@@ -14,23 +14,15 @@ import { DIDTrustCard } from "@/components/DIDTrustCard";
 import { Credentials } from "@/components/Credentials";
 import { ProfileSettingsModal } from "@/components/ProfileSettingsModal";
 import { Button } from "@/components/ui/Button";
+import { usePortalAuth } from "@/lib/usePortalAuth";
 
 export default function FreelancerDashboard() {
-  const account = useActiveAccount();
-  const router = useRouter();
+  const { account } = usePortalAuth("freelancer");
   
   const [activeTab, setActiveTab] = useState("Incoming Tasks");
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // Route protection
-  useEffect(() => {
-    if (!account) {
-      router.push("/");
-    }
-  }, [account, router]);
-
-  if (!account) return null;
 
   return (
     <div className="min-h-screen py-4 sm:py-6 relative text-on-background">
