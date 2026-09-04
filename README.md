@@ -9,7 +9,7 @@
 
 ---
 
-## ⚠️ The Problem Statement
+## ⚠️ The Problem Statement:
 
 The traditional freelance gig economy is broken for both freelancers and clients due to three systemic failures:
 
