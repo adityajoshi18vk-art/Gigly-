@@ -58,18 +58,20 @@ Integrating **`@anon-aadhaar/react`** (India) and **`@zkpassport/sdk`** (Global/
 
 > **🔒 Zero-Knowledge Guarantee:** Gigly is compliant with **GDPR Article 25** (Data Protection by Design), **FATF Travel Rule**, **eIDAS**, and **RBI KYC norms** — because zero data stored means zero data to breach.
 
-### 🆔 W3C Decentralized Identifiers (DIDs) & Verifiable Credentials
+### 🏅 Soulbound NFTs (SBTs) & Verifiable Credentials
 
-Reputation is mathematically verifiable. Each connected wallet is assigned a **`did:ethr` identifier** anchored to the Ethereum Sepolia network:
+Reputation on Gigly is mathematically verifiable and backed by **Soulbound Tokens (SBTs)** — non-transferable NFTs acting as permanent Proof-of-Work.
 
-```text
-did:ethr:sepolia:{wallet_address}
-```
+#### How It Works Under the Hood:
 
-- **Trust Scores** are computed deterministically from on-chain escrow settlement events (`FundsReleased` logs).
-- Positive trust scores are only minted as non-transferable **Verifiable Credentials (VCs)** when the `OptimisticEscrow` smart contract successfully releases funds.
-- Each VC proof hash is a real Ethereum `transactionHash` — verifiable by anyone on Etherscan.
-- Since the VC is derived from an immutable on-chain event, **fake reviews are structurally and mathematically impossible** — you cannot fabricate a `FundsReleased` event without actual USDC changing hands.
+1. **`GiglyCredential.sol` Smart Contract**: We deployed a custom ERC-721 contract specifically for reputation. It is heavily modified to be completely non-transferable (a Soulbound Token), ensuring that freelancers cannot sell, transfer, or trade their earned reputation.
+2. **Metadata via IPFS**: When a job is completed and escrow is settled, a credential is minted to the freelancer's wallet. The token URI points to decentralized storage (IPFS), containing metadata about the completed gig (e.g., job title, skills used, client address, and timestamp).
+3. **Frontend Integration (`Credentials.tsx`)**:
+   - The UI utilizes Thirdweb's `useReadContract` to directly query the SBT contract and retrieve an array of `tokenId`s owned by the connected freelancer via the `getTokensByFreelancer(address)` function.
+   - For each token, the `tokenURI(uint256)` is fetched and resolved via an HTTP IPFS gateway (`https://ipfs.io/ipfs/...`).
+   - The UI then visually renders these NFTs as glowing, interactive "Credential Cards," parsing the JSON metadata to dynamically display the gig attributes and descriptions.
+4. **W3C Decentralized Identifiers (DIDs)**: Each connected wallet is assigned a `did:ethr` identifier anchored to the Sepolia Testnet (`did:ethr:sepolia:{wallet_address}`).
+5. **Sybil Resistance**: Since the SBT is only minted in tandem with a successful `FundsReleased` event via the `OptimisticEscrow` contract, **fake reviews are structurally and mathematically impossible**. You cannot fabricate a reputation NFT without actual USDC changing hands on-chain.
 
 ---
 
