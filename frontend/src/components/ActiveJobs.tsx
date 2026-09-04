@@ -5,7 +5,7 @@ import { useReadContract, useActiveAccount } from "thirdweb/react";
 import { escrowContract, votingDisputeContract as votingContract, CONTRACTS, POW_NFT_METADATA_URI } from "@/lib/config";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
-import { Link as LinkIcon, ArrowUpRight, Clock, Users, ShieldAlert } from "lucide-react";
+import { Link as LinkIcon, ArrowUpRight, Clock, Users, ShieldAlert, Eye, Lock } from "lucide-react";
 import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { motion, AnimatePresence } from "framer-motion";
 import { DisputeConsentModal } from './DisputeConsentModal';
+import { SandboxDeliverableModal } from './SandboxDeliverableModal';
 import { getRegisteredFreelancers } from "@/lib/freelancerRegistry";
 import { useJobs, clearJobsCache } from "@/lib/useJobs";
 
@@ -70,6 +71,9 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
 
   // NDC Consent modal state
   const [consentModalJobId, setConsentModalJobId] = useState<{ id: number; type: 'admin' | 'jury' } | null>(null);
+
+  // Anti-fraud Sandbox Preview Modal state
+  const [previewJob, setPreviewJob] = useState<JobData | null>(null);
 
   const handleApprove = async (jobId: number) => {
     try {
@@ -249,16 +253,14 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                 <div>
                   {job.status >= 2 && (
                     job.submissionLink ? (
-                      <a 
-                        href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-accent-light hover:text-white bg-accent/10 hover:bg-accent/20 px-3.5 py-1.5 rounded-xl border border-accent/25 transition-all"
+                      <button 
+                        onClick={() => setPreviewJob(job)}
+                        className="inline-flex items-center gap-2 text-xs font-medium text-accent-light hover:text-white bg-accent/10 hover:bg-accent/20 px-3.5 py-2 rounded-xl border border-accent/25 transition-all shadow-glow-accent/10 group/preview"
                       >
-                        <LinkIcon className="w-4 h-4" />
-                        View Work Submission
-                        <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
-                      </a>
+                        <Eye className="w-3.5 h-3.5 text-accent-light" />
+                        <span>Inspect in Protected Sandbox</span>
+                        <Lock className="w-3 h-3 text-warning ml-1" />
+                      </button>
                     ) : (
                       <span className="inline-flex items-center gap-2 text-sm text-on-surface-variant/50 bg-glass-subtle px-3 py-1.5 rounded-xl border border-glass-border italic">
                         No external link provided
@@ -432,6 +434,25 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
           jobId={consentModalJobId.id}
           jobTitle={jobs.find(j => j.id === consentModalJobId.id)?.taskTitle || `Job #${consentModalJobId.id}`}
           escrowAmount={formatUnits(jobs.find(j => j.id === consentModalJobId.id)?.amount || BigInt(0), 6)}
+        />
+      )}
+
+      {/* ── Sandbox Deliverable Preview Modal ── */}
+      {previewJob && (
+        <SandboxDeliverableModal
+          isOpen={previewJob !== null}
+          onClose={() => setPreviewJob(null)}
+          rawUrl={previewJob.submissionLink}
+          jobTitle={previewJob.taskTitle || `Job #${previewJob.id}`}
+          jobId={previewJob.id}
+          isEscrowSettled={previewJob.status === 4}
+          amountUsdc={formatUnits(previewJob.amount, 6)}
+          onApproveAndRelease={() => {
+            const id = previewJob.id;
+            setPreviewJob(null);
+            handleApprove(id);
+          }}
+          isProcessing={processingJobId === previewJob.id}
         />
       )}
     </div>
