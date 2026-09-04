@@ -25,6 +25,7 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
   // Submit modal state
   const [submitModalJobId, setSubmitModalJobId] = useState<number | null>(null);
   const [workLinkInput, setWorkLinkInput] = useState("");
+  const [rawDeliverableInput, setRawDeliverableInput] = useState("");
 
   // Progress modal state
   const [progressModalJobId, setProgressModalJobId] = useState<number | null>(null);
@@ -107,18 +108,25 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
     if (submitModalJobId === null) return;
     const jobId = submitModalJobId;
     const link = workLinkInput.trim();
+    const rawDeliverable = rawDeliverableInput.trim();
 
     // Close modal immediately so wallet UI can't block it
     setSubmitModalJobId(null);
     setWorkLinkInput("");
+    setRawDeliverableInput("");
 
     try {
       setProcessingJobId(jobId);
 
+      // Store both URLs pipe-delimited: previewUrl|rawDeliverableUrl
+      const combinedLink = rawDeliverable
+        ? `${link}|${rawDeliverable}`
+        : link;
+
       const tx = prepareContractCall({
         contract: escrowContract,
         method: "function submitWork(uint256 jobId, string submissionLink)",
-        params: [BigInt(jobId), link],
+        params: [BigInt(jobId), combinedLink],
       });
       const result = await sendTransaction(tx);
 
@@ -304,15 +312,26 @@ export function IncomingJobs({ refreshCounter, onInteractionSuccess }: { refresh
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-1">Link to your work (optional)</label>
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">Preview URL (shown to client during review)</label>
             <input 
               type="text" 
-              placeholder="https://github.com/..." 
+              placeholder="https://preview.vercel.app/..." 
               value={workLinkInput}
               onChange={(e) => setWorkLinkInput(e.target.value)}
               className="w-full px-3 py-2 border border-outline-variant bg-surface-container-lowest rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-on-surface transition-all shadow-sm"
             />
-            <p className="text-xs text-on-surface-variant mt-1">This will be shared with the client so they can review your work.</p>
+            <p className="text-xs text-on-surface-variant mt-1">Client sees watermarked preview until escrow releases.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-on-surface-variant mb-1">Final Deliverable URL (unlocked after payment)</label>
+            <input 
+              type="text" 
+              placeholder="https://github.com/repo/archive.zip" 
+              value={rawDeliverableInput}
+              onChange={(e) => setRawDeliverableInput(e.target.value)}
+              className="w-full px-3 py-2 border border-outline-variant bg-surface-container-lowest rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-on-surface transition-all shadow-sm"
+            />
+            <p className="text-xs text-on-surface-variant mt-1">Download link released to client only after funds settle.</p>
           </div>
           
           <div className="flex justify-end gap-2 pt-4">

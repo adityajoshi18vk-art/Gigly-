@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatUnits } from "viem";
 import { Link as LinkIcon } from "lucide-react";
+import { DeliverableViewer } from "@/components/DeliverableViewer";
 import { useProgressUpdates } from "@/lib/useProgressUpdates";
 import { prepareContractCall, waitForReceipt } from "thirdweb";
 import { useSendTransaction } from "thirdweb/react";
@@ -242,17 +243,18 @@ export function ActiveJobs({ refreshCounter, onInteractionSuccess }: { refreshCo
                 
                 <div>
                   {job.status >= 2 && (
-                    job.submissionLink ? (
-                      <a 
-                        href={job.submissionLink.startsWith('http') ? job.submissionLink : `https://${job.submissionLink}`}
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 hover:underline bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 transition-colors"
-                      >
-                        <LinkIcon className="w-4 h-4" />
-                        View Work Submission
-                      </a>
-                    ) : (
+                    job.submissionLink ? (() => {
+                      const parts = job.submissionLink.split("|");
+                      const previewUrl = parts[0] || "";
+                      const rawDeliverableUrl = parts[1] || previewUrl;
+                      return (
+                        <DeliverableViewer
+                          previewUrl={previewUrl}
+                          rawDeliverableUrl={rawDeliverableUrl}
+                          jobStatus={job.status}
+                        />
+                      );
+                    })() : (
                       <span className="inline-flex items-center gap-2 text-sm text-white/40 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 italic">
                         No link submitted
                       </span>
