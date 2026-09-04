@@ -222,6 +222,7 @@ function ConfigDashboard() {
   const [windowUnit, setWindowUnit] = useState<"minutes" | "hours" | "days">("minutes");
   const [feeInput, setFeeInput] = useState("");
   const [treasuryInput, setTreasuryInput] = useState("");
+  const [arbiterInput, setArbiterInput] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
 
   // Convert current review window to human readable
@@ -301,6 +302,31 @@ function ConfigDashboard() {
     } catch (err) {
       console.error("setTreasuryWallet failed:", err);
       alert("Failed to update treasury wallet.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleSetArbiter = async () => {
+    if (!arbiterInput || !/^0x[a-fA-F0-9]{40}$/.test(arbiterInput)) {
+      alert("Invalid Ethereum address.");
+      return;
+    }
+
+    try {
+      setSaving("arbiter");
+      const tx = prepareContractCall({
+        contract: escrowContract,
+        method: "function setArbiter(address newArbiter)",
+        params: [arbiterInput as `0x${string}`],
+      });
+      const result = await sendTransaction(tx);
+      await waitForReceipt({ client: thirdwebClient, chain: escrowContract.chain, transactionHash: result.transactionHash });
+      alert("Arbiter successfully updated!");
+      setArbiterInput("");
+    } catch (err) {
+      console.error("setArbiter failed:", err);
+      alert("Failed to update arbiter.");
     } finally {
       setSaving(null);
     }
@@ -475,6 +501,36 @@ function ConfigDashboard() {
             className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider"
           >
             {saving === "treasury" ? "Saving..." : "Update"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Set Arbiter */}
+      <div className="surface-card rounded-2xl p-6 shadow-level-1 space-y-4">
+        <h3 className="font-display font-semibold text-on-surface flex items-center gap-2">
+          <Gavel className="w-4 h-4 text-accent-light" />
+          Set Arbiter Contract
+        </h3>
+        <p className="text-xs text-on-surface-variant leading-relaxed">
+          The Arbiter is the only address authorized to resolve disputes on the Escrow contract. Update this to the <code className="font-mono text-accent-light">VotingDispute</code> contract address for Community Jury functionality.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <input
+              type="text"
+              className="glass-input text-sm font-mono w-full"
+              placeholder="0x..."
+              value={arbiterInput}
+              onChange={(e) => setArbiterInput(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={handleSetArbiter}
+            disabled={saving === "arbiter" || !arbiterInput}
+            variant="primary"
+            className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider bg-warning hover:bg-warning/80 text-black border-none"
+          >
+            {saving === "arbiter" ? "Saving..." : "Update Arbiter"}
           </Button>
         </div>
       </div>

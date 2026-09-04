@@ -39,8 +39,6 @@ export function SandboxDeliverableModal({
 }: SandboxDeliverableModalProps) {
   const [iframeError, setIframeError] = useState(false);
 
-  if (!isOpen) return null;
-
   const sanitizedUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
   // Major websites like GitHub, Google, Twitter send X-Frame-Options: DENY / CSP frame-ancestors: 'none'
@@ -60,6 +58,8 @@ export function SandboxDeliverableModal({
       return false;
     }
   }, [sanitizedUrl]);
+
+  if (!isOpen) return null;
 
   // Masked display URL (e.g. https://github.com/••••••••••••)
   const getMaskedUrl = (url: string) => {
