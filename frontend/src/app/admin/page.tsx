@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { readContract, prepareContractCall, waitForReceipt } from "thirdweb";
 import { useReadContract, useActiveAccount, useSendTransaction, useConnect } from "thirdweb/react";
 import { inAppWallet } from "thirdweb/wallets";
-import { escrowContract, client as thirdwebClient, client, CHAIN, accountAbstraction } from "@/lib/config";
+import { escrowContract, votingDisputeContract, client as thirdwebClient, client, CHAIN, accountAbstraction } from "@/lib/config";
 import { formatUnits, parseUnits } from "viem";
 import { useDisputeReasons } from "@/lib/useDisputeReasons";
 import { Link as LinkIcon, ShieldAlert, ShieldCheck, Scale, ArrowUpRight, CheckCircle2, Lock, Settings, Gavel, Clock, Percent, Wallet } from "lucide-react";
@@ -223,6 +223,9 @@ function ConfigDashboard() {
   const [feeInput, setFeeInput] = useState("");
   const [treasuryInput, setTreasuryInput] = useState("");
   const [arbiterInput, setArbiterInput] = useState("");
+  const [juror1Input, setJuror1Input] = useState("");
+  const [juror2Input, setJuror2Input] = useState("");
+  const [juror3Input, setJuror3Input] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
 
   // Convert current review window to human readable
@@ -327,6 +330,39 @@ function ConfigDashboard() {
     } catch (err) {
       console.error("setArbiter failed:", err);
       alert("Failed to update arbiter.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleRegisterJurors = async () => {
+    const jurors = [juror1Input, juror2Input, juror3Input].filter(j => j && /^0x[a-fA-F0-9]{40}$/.test(j));
+    
+    if (jurors.length === 0) {
+      alert("Please enter at least one valid Ethereum address.");
+      return;
+    }
+
+    try {
+      setSaving("jurors");
+      
+      for (const juror of jurors) {
+        const tx = prepareContractCall({
+          contract: votingDisputeContract,
+          method: "function adminRegisterJuror(address juror)",
+          params: [juror as `0x${string}`],
+        });
+        const result = await sendTransaction(tx);
+        await waitForReceipt({ client: thirdwebClient, chain: votingDisputeContract.chain, transactionHash: result.transactionHash });
+      }
+      
+      alert(`Successfully registered ${jurors.length} juror(s)!`);
+      setJuror1Input("");
+      setJuror2Input("");
+      setJuror3Input("");
+    } catch (err) {
+      console.error("adminRegisterJuror failed:", err);
+      alert("Failed to register jurors. Make sure you are the owner of the VotingDispute contract.");
     } finally {
       setSaving(null);
     }
@@ -532,6 +568,50 @@ function ConfigDashboard() {
           >
             {saving === "arbiter" ? "Saving..." : "Update Arbiter"}
           </Button>
+        </div>
+      </div>
+
+      {/* Register Jurors */}
+      <div className="surface-card rounded-2xl p-6 shadow-level-1 space-y-4">
+        <h3 className="font-display font-semibold text-on-surface flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-accent-light" />
+          Register Test Jurors
+        </h3>
+        <p className="text-xs text-on-surface-variant leading-relaxed">
+          Add up to 3 juror addresses to the <code className="font-mono text-accent-light">VotingDispute</code> contract for testing. You must be the owner of the VotingDispute contract to register jurors.
+        </p>
+        <div className="flex flex-col gap-3">
+          <input
+            type="text"
+            className="glass-input text-sm font-mono w-full"
+            placeholder="Juror 1 Address (0x...)"
+            value={juror1Input}
+            onChange={(e) => setJuror1Input(e.target.value)}
+          />
+          <input
+            type="text"
+            className="glass-input text-sm font-mono w-full"
+            placeholder="Juror 2 Address (0x...) - Optional"
+            value={juror2Input}
+            onChange={(e) => setJuror2Input(e.target.value)}
+          />
+          <input
+            type="text"
+            className="glass-input text-sm font-mono w-full"
+            placeholder="Juror 3 Address (0x...) - Optional"
+            value={juror3Input}
+            onChange={(e) => setJuror3Input(e.target.value)}
+          />
+          <div className="flex justify-end mt-2">
+            <Button
+              onClick={handleRegisterJurors}
+              disabled={saving === "jurors" || (!juror1Input && !juror2Input && !juror3Input)}
+              variant="primary"
+              className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider bg-success hover:bg-success/80 text-black border-none"
+            >
+              {saving === "jurors" ? "Registering..." : "Register Jurors"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
