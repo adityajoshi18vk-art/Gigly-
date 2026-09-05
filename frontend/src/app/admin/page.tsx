@@ -717,6 +717,7 @@ function AdminDisputes({ isArbiter }: { isArbiter: boolean }) {
               onResolved={() => setRefreshCounter(c => c + 1)} 
               submissionLink={job.submissionLink}
               disputeReason={disputeReasons[job.id]}
+              isArbiter={isArbiter}
             />
           ))}
         </div>
@@ -725,7 +726,7 @@ function AdminDisputes({ isArbiter }: { isArbiter: boolean }) {
   );
 }
 
-function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: JobData, onResolved: () => void, submissionLink?: string, disputeReason?: string }) {
+function DisputeRow({ job, onResolved, submissionLink, disputeReason, isArbiter }: { job: JobData, onResolved: () => void, submissionLink?: string, disputeReason?: string, isArbiter: boolean }) {
   const [amountInput, setAmountInput] = useState("");
   const [processing, setProcessing] = useState(false);
   const { mutateAsync: sendTransaction } = useSendTransaction({ payModal: false });
