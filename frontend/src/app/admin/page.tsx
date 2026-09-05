@@ -136,7 +136,7 @@ function AdminPanel({ isOwner, isArbiter }: { isOwner: boolean; isArbiter: boole
 
   const tabs = [
     ...(isOwner ? [{ id: "config" as const, label: "Protocol Config", icon: Settings }] : []),
-    ...(isArbiter ? [{ id: "disputes" as const, label: "Disputes", icon: Gavel }] : []),
+    ...(isOwner || isArbiter ? [{ id: "disputes" as const, label: "Disputes (Read-Only)", icon: Gavel }] : []),
   ];
 
   return (
@@ -176,7 +176,7 @@ function AdminPanel({ isOwner, isArbiter }: { isOwner: boolean; isArbiter: boole
       )}
 
       {activeTab === "config" && isOwner && <ConfigDashboard />}
-      {activeTab === "disputes" && isArbiter && <AdminDisputes />}
+      {activeTab === "disputes" && (isOwner || isArbiter) && <AdminDisputes isArbiter={isArbiter} />}
     </div>
   );
 }
@@ -620,7 +620,7 @@ function ConfigDashboard() {
 
 // ─── Disputes Panel ──────────────────────────────────────────────────
 
-function AdminDisputes() {
+function AdminDisputes({ isArbiter }: { isArbiter: boolean }) {
   const [jobs, setJobs] = useState<JobData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -882,10 +882,11 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
         </div>
       </div>
 
-      {/* Split & Adjudication Controls */}
-      <div className="bg-surface-container-lowest border border-glass-border p-4 rounded-xl space-y-4">
-        <p className="text-xs font-semibold text-on-surface uppercase tracking-wider">Or Custom Settlement Split:</p>
-        <div className="flex flex-col sm:flex-row items-end gap-4">
+      {/* Split & Adjudication Controls (Only for Arbiter) */}
+      {isArbiter && (
+        <div className="bg-surface-container-lowest border border-glass-border p-4 rounded-xl space-y-4">
+          <p className="text-xs font-semibold text-on-surface uppercase tracking-wider">Or Custom Settlement Split (Arbiter only):</p>
+          <div className="flex flex-col sm:flex-row items-end gap-4">
           <div className="flex-1 w-full">
             <div className="flex justify-between items-center mb-1.5 text-xs">
               <label className="font-semibold text-on-surface uppercase tracking-wider">
@@ -933,6 +934,7 @@ function DisputeRow({ job, onResolved, submissionLink, disputeReason }: { job: J
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
