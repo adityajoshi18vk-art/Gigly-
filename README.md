@@ -26,8 +26,8 @@ The traditional freelance gig economy is broken for both freelancers and clients
 - **Soulbound Token (SBT) Reputation System**: Verifiable on-chain reputation linked to successful escrow settlements via `GiglyCredential.sol`.
 - **Dual-Portal Workflow (Client & Freelancer)**: Dedicated tabbed hubs with real-time lifecycle synchronization and historical audit views.
 - **Optimistic Smart Escrow**: Dynamically configurable time-locked auto-claims for seamless, dispute-free project resolution.
-- **Decentralized Community Dispute Resolution**: Collision dispute handling through on-chain community voting (`VotingDispute.sol`), replacing centralized arbiters.
-- **Dynamic Protocol Admin Panel**: Live management of escrow parameters (review window, fees, treasury) via an interactive UI without requiring contract upgrades.
+- **Decentralized Community Dispute Resolution**: Collision dispute handling through on-chain community voting (`VotingDispute.sol`), replacing centralized arbiters, featuring a strict Binding Dispute Protocol (NDC form) for consent.
+- **Dynamic Protocol Admin Panel**: Live management of escrow parameters (review window, fees, treasury) via a secured interactive UI restricted exclusively to authorized owner/arbiter wallets.
 - **Hybrid High-Performance Discovery**: Supabase PostgreSQL persistence with local JSON fallback for instant talent exploration, coupled with zero-cache real-time blockchain sync.
 
 ---
@@ -48,7 +48,14 @@ Immutable payment routing ensures funds are locked securely before work begins. 
 | **Optimistic Release** | If the client does not dispute within the window, **anyone** can trigger the release — silence equals approval. |
 | **Dispute → Voting** | If disputed, it enters the **VotingDispute** system where community members vote on the outcome, earning contributor SBTs for fair participation. |
 
-- **Dynamic Protocol Configuration**: Platform fee, treasury wallet, and review windows are fully configurable in real-time by admins.
+- **Binding Dispute Protocol**: Before a dispute can be reviewed by a Jury or Admin, both parties must cryptographically sign a consent form (DisputeConsentModal) acknowledging the binding nature of the resolution.
+- **Dynamic Protocol Configuration**: Platform fee, treasury wallet, and review windows are fully configurable in real-time via the `/admin` dashboard.
+- **Secured Admin Architecture**: The admin route is protected by a strict layout wrapper that verifies the active Thirdweb wallet address against a whitelist of authorized protocol administrators.
+| Environment Variable | Required | Purpose |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` | ✅ | Connects the Next.js application to Thirdweb's infrastructure. This client ID powers the Thirdweb React SDK, handling user wallet connections, RPC routing, high-speed IPFS CDN resolution, transaction execution, and smart contract data fetching. |
+| `NEXT_PUBLIC_ADMIN_WALLET_ADDRESS` | ✅ | A comma-separated list of authorized wallet addresses that are permitted to access the `/admin` dashboard. Prevents unauthorized users from modifying protocol parameters. |
+
 - **No fund freezes**: Governed by immutable smart contracts, not corporate policy teams.
 - **Security**: Built with OpenZeppelin's `ReentrancyGuard`, `Ownable`, and `SafeERC20`.
 
@@ -71,7 +78,7 @@ Reputation on Gigly is mathematically verifiable and backed by **Soulbound Token
 2. **Metadata via IPFS**: When a job is settled, a credential is minted to the freelancer's wallet. The token URI points to decentralized storage (IPFS), containing metadata about the completed gig (job title, skills used, client address, and timestamp).
 3. **Frontend Integration (`Credentials.tsx`)**:
    - Queries `GiglyCredential` to retrieve all `tokenId`s owned by the connected freelancer (`getTokensByFreelancer(address)`).
-   - Resolves IPFS metadata via public gateways with fallback error handling and on-demand per-token retries.
+   - Resolves IPFS metadata via **Thirdweb's high-performance IPFS CDN** (`resolveScheme`). This completely bypasses the rate limits and timeouts associated with public gateways like `ipfs.io`.
    - Renders interactive Credential Cards complete with direct links to Ethereum Sepolia Etherscan.
 4. **W3C Decentralized Identifiers (DIDs)**: Each connected wallet is assigned a `did:ethr` identifier anchored to Sepolia (`did:ethr:sepolia:{wallet_address}`).
 5. **Sybil Resistance**: Since the SBT is only minted in tandem with a successful `FundsReleased` event, **fake reviews are mathematically impossible**.
@@ -279,7 +286,18 @@ Testing uses Account Abstraction (ERC-4337) and Thirdweb In-App Wallets. Smart a
 #### 4. Dispute Resolution (Optional)
 1. If the deliverable is unsatisfactory, click **Raise Dispute**.
 2. Confirm the Pre-Dispute Consent Modal and select Arbiter or Community Jury.
-3. If routed to community jury, voters sign in to vote in `/disputes`, triggering on-chain majority distribution and awarding `+Contributor` SBTs to participating jurors.
+3. If routed to community jury, voters sign in to vote in `/disputes` (e.g. `giglytest3@yopmail.com`), triggering on-chain majority distribution and awarding `+Contributor` SBTs to participating jurors.
+
+### Testing the Dynamic Admin Panel
+
+#### 1. Admin: Configure Escrow Parameters
+1. Open a new window and navigate directly to `http://localhost:3000/admin`.
+2. Ensure you are signed in with an authorized admin wallet (e.g., `giglytest3@yopmail.com` which maps to the whitelisted Arbiter address, or the Deployer address).
+3. If unauthorized, the app will instantly render a "🛑 Unauthorized: Admin Access Only" screen.
+4. If authorized, you will see the **Protocol Configuration Dashboard**.
+5. Change the **Review Window** (e.g., from 24 Hours to 3 Minutes) to accelerate testing of Optimistic Auto-Claims.
+6. Modify the **Platform Fee** percentage dynamically.
+7. These updates are immediately broadcast on-chain and reflect across all dashboards.
 
 ---
 
