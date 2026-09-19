@@ -307,10 +307,3 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-## 👥 Team FinNova (Smart Horizon 2026 Hackathon)
-
-- **Aditya Joshi** (Team Lead)
-- **Daiwik Roy**
-- **Saswat Dutta**
-- **Puvaladas Sai Vaibhav**
-- **Shaik Fariza**
