@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 
 import Link from "next/link";
 import { Home, Plus, RefreshCw, UserCog } from "lucide-react";
-import { useActiveAccount } from "thirdweb/react";
 import { CustomConnectButton } from "@/components/CustomConnectButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { FreelancerCard } from "@/components/FreelancerCard";
@@ -20,13 +19,13 @@ import {
   getRegisteredFreelancers,
   type FreelancerProfile,
 } from "@/lib/freelancerRegistry";
-import { getClientProfile } from "@/lib/clientRegistry";
+import { getClientProfile, type ClientProfile } from "@/lib/clientRegistry";
 import { Users, ShieldCheck } from "lucide-react";
 import { usePortalAuth } from "@/lib/usePortalAuth";
 
 export default function ClientDashboard() {
   const { account } = usePortalAuth("client");
-  
+
   const [activeTab, setActiveTab] = useState("Active Jobs");
   const [selectedFreelancer, setSelectedFreelancer] = useState<{
     name: string;
@@ -35,45 +34,77 @@ export default function ClientDashboard() {
   } | null>(null);
   const [viewingFreelancerProfile, setViewingFreelancerProfile] = useState<FreelancerProfile | null>(null);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
-  const [isClientProfileModalOpen, setIsClientProfileModalOpen] = useState(false);
-  const [isOnboarding, setIsOnboarding] = useState(false);
-  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
-  const [refreshCounter, setRefreshCounter] = useState(0);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Check if connected client has an onboarding profile in Supabase
+  // ── Profile & Modal State ─────────────────────────────────────────────────
+  // `isProfileLoading` is the single source of truth for "check in progress".
+  // The modal MUST NOT render while this is true to avoid flashing for
+  // returning users whose data is still in-flight from Supabase.
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [existingProfile, setExistingProfile] = useState<ClientProfile | null>(null);
+  const [isClientProfileModalOpen, setIsClientProfileModalOpen] = useState(false);
+  const [isOnboarding, setIsOnboarding] = useState(false);
+
+  // ── Supabase Profile Check ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+
+    // No wallet connected yet — nothing to check.
     if (!account?.address) {
-      setIsCheckingProfile(false);
+      setIsProfileLoading(false);
       return;
     }
 
     async function checkClientProfile() {
-      setIsCheckingProfile(true);
+      setIsProfileLoading(true);
       try {
         const profile = await getClientProfile(account!.address);
         if (cancelled) return;
+
         if (!profile || !profile.name?.trim()) {
+          // NEW USER: profile missing or incomplete — open onboarding modal.
+          setExistingProfile(null);
           setIsOnboarding(true);
           setIsClientProfileModalOpen(true);
         } else {
+          // RETURNING USER: cache profile, keep modal closed.
+          setExistingProfile(profile);
           setIsOnboarding(false);
+          setIsClientProfileModalOpen(false);
         }
       } catch (err) {
-        console.warn("Failed to check client profile:", err);
+        console.warn("[Gigly] Failed to check client profile:", err);
+        // On error, do NOT open the modal — fail silently to avoid spam.
       } finally {
-        if (!cancelled) {
-          setIsCheckingProfile(false);
-        }
+        if (!cancelled) setIsProfileLoading(false);
       }
     }
 
     checkClientProfile();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
+  }, [account?.address]);
+
+  // ── Manual "Edit Profile" trigger (bypasses new-user check) ──────────────
+  const handleOpenEditProfile = useCallback(() => {
+    // Always open modal in edit mode (non-onboarding) when user clicks the button.
+    setIsOnboarding(false);
+    setIsClientProfileModalOpen(true);
+  }, []);
+
+  // ── On successful save, update local state & close modal ─────────────────
+  const handleClientProfileSaved = useCallback(async () => {
+    setIsOnboarding(false);
+    setIsClientProfileModalOpen(false);
+    // Re-fetch to keep `existingProfile` in sync with the latest Supabase data.
+    if (account?.address) {
+      try {
+        const updated = await getClientProfile(account.address);
+        if (updated) setExistingProfile(updated);
+      } catch {
+        // Non-critical; local state is already updated by the modal.
+      }
+    }
   }, [account?.address]);
 
   const handleRefresh = useCallback(async () => {
@@ -84,6 +115,7 @@ export default function ClientDashboard() {
   }, []);
 
   // ── Dynamic freelancer registry (SSR-safe, API-backed) ────────────────
+  const [refreshCounter, setRefreshCounter] = useState(0);
   const [freelancers, setFreelancers] = useState<FreelancerProfile[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -97,11 +129,6 @@ export default function ClientDashboard() {
     fetchFreelancers();
   }, [fetchFreelancers]);
 
-  const handleProfileSaved = () => {
-    fetchFreelancers();
-  };
-
-
   // Filter freelancers based on verified toggle
   const displayedFreelancers = showVerifiedOnly
     ? freelancers.filter(
@@ -113,8 +140,9 @@ export default function ClientDashboard() {
 
   return (
     <div className="min-h-screen py-4 sm:py-6 relative text-on-background">
-      {/* Onboarding Notice Banner */}
-      {isOnboarding && (
+
+      {/* Onboarding Notice Banner — only shown while profile is incomplete */}
+      {isOnboarding && !isProfileLoading && (
         <div className="mb-6 p-4 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center text-accent-light">
@@ -147,7 +175,7 @@ export default function ClientDashboard() {
             </button>
           </Link>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-light flex items-center justify-center shadow-glow-accent text-white">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
           </div>
           <div>
             <h1 className="font-display text-xl font-bold text-on-surface tracking-tight">Client Hub</h1>
@@ -163,14 +191,15 @@ export default function ClientDashboard() {
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-accent-light" : ""}`} />
           </button>
+          {/* Edit Profile button: always opens in edit (non-onboarding) mode */}
           <button
-            onClick={() => setIsClientProfileModalOpen(true)}
+            onClick={handleOpenEditProfile}
             className="flex items-center gap-1.5 text-xs font-medium py-2.5 px-3.5 rounded-xl border border-glass-border bg-glass-light hover:bg-glass-medium text-on-surface transition-all"
           >
             <UserCog className="w-4 h-4 text-accent-light" />
             Edit Profile
           </button>
-          <button 
+          <button
             onClick={() => setIsPostJobModalOpen(true)}
             className="btn-gradient-primary text-xs font-semibold py-2.5 px-5 flex items-center gap-1.5 shadow-glow-accent"
           >
@@ -181,9 +210,9 @@ export default function ClientDashboard() {
         </div>
       </header>
 
-      <Tabs 
-        tabs={["Active Jobs", "Past Jobs", "Browse Freelancers", "Public Gigs"]} 
-        activeTab={activeTab} 
+      <Tabs
+        tabs={["Active Jobs", "Past Jobs", "Browse Freelancers", "Public Gigs"]}
+        activeTab={activeTab}
         onChange={setActiveTab}
         className="mb-8"
       />
@@ -243,9 +272,7 @@ export default function ClientDashboard() {
                 <Users className="w-7 h-7" />
               </div>
               <h3 className="font-display text-lg font-bold text-on-surface mb-2">
-                {showVerifiedOnly
-                  ? "No verified talent found"
-                  : "No freelancers registered yet"}
+                {showVerifiedOnly ? "No verified talent found" : "No freelancers registered yet"}
               </h3>
               <p className="text-on-surface-variant text-sm max-w-xs mx-auto">
                 {showVerifiedOnly
@@ -256,8 +283,8 @@ export default function ClientDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedFreelancers.map((profile) => (
-                <div 
-                  key={profile.address} 
+                <div
+                  key={profile.address}
                   className="cursor-pointer"
                   onClick={() =>
                     setSelectedFreelancer({
@@ -296,7 +323,7 @@ export default function ClientDashboard() {
         </>
       )}
 
-      <CreateJobModal 
+      <CreateJobModal
         isOpen={!!selectedFreelancer || isPostJobModalOpen}
         onClose={() => {
           setSelectedFreelancer(null);
@@ -305,25 +332,32 @@ export default function ClientDashboard() {
         onSuccess={() => {
           clearJobsCache();
           setRefreshCounter(c => c + 1);
-          handleProfileSaved();
+          fetchFreelancers();
         }}
         freelancerName={selectedFreelancer?.name || ""}
         freelancerAddress={selectedFreelancer?.address || ""}
         suggestedRate={selectedFreelancer?.hourlyRate}
       />
 
-      <ClientProfileModal
-        isOpen={isClientProfileModalOpen}
-        isOnboarding={isOnboarding}
-        onClose={() => {
-          setIsClientProfileModalOpen(false);
-          setIsOnboarding(false);
-        }}
-        onSaved={() => {
-          setIsOnboarding(false);
-          setIsClientProfileModalOpen(false);
-        }}
-      />
+      {/*
+        ── Modal Gate ──────────────────────────────────────────────────────────
+        The modal is intentionally NOT rendered while `isProfileLoading` is true.
+        This prevents it from flashing open for returning users while Supabase
+        fetch is still in-flight. Once the check resolves, React will correctly
+        evaluate `isClientProfileModalOpen` (false for existing users, true for new).
+      */}
+      {!isProfileLoading && (
+        <ClientProfileModal
+          isOpen={isClientProfileModalOpen}
+          isOnboarding={isOnboarding}
+          existingProfile={existingProfile}
+          onClose={() => {
+            setIsClientProfileModalOpen(false);
+            setIsOnboarding(false);
+          }}
+          onSaved={handleClientProfileSaved}
+        />
+      )}
 
       <FreelancerDetailModal
         isOpen={viewingFreelancerProfile !== null}
