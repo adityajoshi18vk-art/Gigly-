@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
   saveFreelancerProfile,
-  getFreelancerProfile,
   getInitials,
   type FreelancerDomain,
   type FreelancerProfile,
@@ -28,6 +27,13 @@ export interface ProfileSettingsModalProps {
   onClose: () => void;
   onSaved?: () => void;
   isOnboarding?: boolean;
+  /**
+   * When provided (e.g. from the dashboard's cached Supabase fetch), the modal
+   * will pre-populate the form fields immediately without making a second
+   * network request. This prevents double-fetching and ensures the modal is
+   * always in sync with the data that triggered the onboarding check.
+   */
+  existingProfile?: FreelancerProfile | null;
 }
 
 export function ProfileSettingsModal({
@@ -35,6 +41,7 @@ export function ProfileSettingsModal({
   onClose,
   onSaved,
   isOnboarding = false,
+  existingProfile,
 }: ProfileSettingsModalProps) {
   const account = useActiveAccount();
 
@@ -56,25 +63,51 @@ export function ProfileSettingsModal({
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState("");
 
+  /**
+   * Pre-populate the form whenever the modal opens.
+   *
+   * Priority order:
+   *  1. `existingProfile` prop (already fetched by the parent — no extra request)
+   *  2. Nothing — leave fields empty for new-user onboarding flow
+   *
+   * The parent page is responsible for fetching the profile once and passing
+   * it down. We do NOT issue a second `getFreelancerProfile()` call here to
+   * avoid race conditions and redundant network traffic.
+   */
   useEffect(() => {
-    if (!isOpen || !account?.address) return;
-    (async () => {
-      const existing = await getFreelancerProfile(account.address);
-      if (existing) {
-        setName(existing.name);
-        setTitle(existing.title);
-        setDomain(existing.domain);
-        setHourlyRate(String(existing.hourlyRate));
-        setSkills(existing.skills);
-        setSkillsInput("");
-        setBio(existing.bio);
-        setPortfolioUrl(existing.portfolioUrl || "");
-        setGithubUrl(existing.githubUrl || "");
-        setVerifiedSkills(existing.verifiedSkills || []);
-        setSkillVerificationHash(existing.skillVerificationHash || "");
-      }
-    })();
-  }, [isOpen, account?.address]);
+    if (!isOpen) return;
+
+    if (existingProfile) {
+      setName(existingProfile.name ?? "");
+      setTitle(existingProfile.title ?? "");
+      setDomain(existingProfile.domain ?? "Frontend");
+      setHourlyRate(existingProfile.hourlyRate != null ? String(existingProfile.hourlyRate) : "");
+      setSkills(existingProfile.skills ?? []);
+      setSkillsInput("");
+      setBio(existingProfile.bio ?? "");
+      setPortfolioUrl(existingProfile.portfolioUrl ?? "");
+      setGithubUrl(existingProfile.githubUrl ?? "");
+      setVerifiedSkills(existingProfile.verifiedSkills ?? []);
+      setSkillVerificationHash(existingProfile.skillVerificationHash ?? "");
+    } else {
+      // New user — reset form to blank slate.
+      setName("");
+      setTitle("");
+      setDomain("Frontend");
+      setHourlyRate("");
+      setSkills([]);
+      setSkillsInput("");
+      setBio("");
+      setPortfolioUrl("");
+      setGithubUrl("");
+      setVerifiedSkills([]);
+      setSkillVerificationHash("");
+    }
+
+    // Always clear transient UI state when the modal (re)opens.
+    setSaveError("");
+    setShowToast(false);
+  }, [isOpen, existingProfile]);
 
   const handleAddSkills = () => {
     if (!skillsInput.trim()) return;
@@ -176,15 +209,19 @@ export function ProfileSettingsModal({
     };
 
     try {
+      // Await the UPSERT — only update UI state on confirmed success.
       await saveFreelancerProfile(profile);
 
       setToastMessage("Profile published to decentralized registry!");
       setShowToast(true);
+
+      // Give the user a brief moment to see the success toast, then close.
+      // `onSaved` updates parent state (existingProfile, isOnboarding) and
+      // closes the modal — no hard refresh required.
       setTimeout(() => {
         setShowToast(false);
         setIsSaving(false);
         onSaved?.();
-        onClose();
       }, 1500);
     } catch (err) {
       setIsSaving(false);

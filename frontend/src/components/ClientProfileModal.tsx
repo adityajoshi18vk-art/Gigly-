@@ -6,17 +6,23 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import {
   saveClientProfile,
-  getClientProfile,
   getClientInitials,
   type ClientProfile,
 } from "@/lib/clientRegistry";
-import { CheckCircle2, Building2, Briefcase } from "lucide-react";
+import { CheckCircle2, Building2 } from "lucide-react";
 
 export interface ClientProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
   isOnboarding?: boolean;
+  /**
+   * When provided (e.g. from the dashboard's cached Supabase fetch), the modal
+   * will pre-populate the form fields immediately without making a second
+   * network request. This prevents double-fetching and ensures the modal is
+   * always in sync with the data that triggered the onboarding check.
+   */
+  existingProfile?: ClientProfile | null;
 }
 
 const INDUSTRY_OPTIONS = [
@@ -35,6 +41,7 @@ export function ClientProfileModal({
   onClose,
   onSaved,
   isOnboarding = false,
+  existingProfile,
 }: ClientProfileModalProps) {
   const account = useActiveAccount();
 
@@ -48,19 +55,39 @@ export function ClientProfileModal({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  /**
+   * Pre-populate the form whenever the modal opens.
+   *
+   * Priority order:
+   *  1. `existingProfile` prop (already fetched by the parent — no extra request)
+   *  2. Nothing — leave fields empty for new-user onboarding flow
+   *
+   * The parent page is responsible for fetching the profile once and passing
+   * it down. We do NOT issue a second `getClientProfile()` call here to
+   * avoid race conditions and redundant network traffic.
+   */
   useEffect(() => {
-    if (!isOpen || !account?.address) return;
-    (async () => {
-      const existing = await getClientProfile(account.address);
-      if (existing) {
-        setName(existing.name);
-        setCompanyName(existing.companyName || "");
-        setIndustry(existing.industry || "Technology & Software");
-        setWebsite(existing.website || "");
-        setBio(existing.bio || "");
-      }
-    })();
-  }, [isOpen, account?.address]);
+    if (!isOpen) return;
+
+    if (existingProfile) {
+      setName(existingProfile.name ?? "");
+      setCompanyName(existingProfile.companyName ?? "");
+      setIndustry(existingProfile.industry ?? "Technology & Software");
+      setWebsite(existingProfile.website ?? "");
+      setBio(existingProfile.bio ?? "");
+    } else {
+      // New user — reset form to blank slate.
+      setName("");
+      setCompanyName("");
+      setIndustry("Technology & Software");
+      setWebsite("");
+      setBio("");
+    }
+
+    // Always clear transient UI state when the modal (re)opens.
+    setSaveError("");
+    setShowToast(false);
+  }, [isOpen, existingProfile]);
 
   const isValid = name.trim().length > 0;
 
@@ -81,15 +108,19 @@ export function ClientProfileModal({
     };
 
     try {
+      // Await the UPSERT — only update UI state on confirmed success.
       await saveClientProfile(profile);
 
       setToastMessage("Client profile saved successfully!");
       setShowToast(true);
+
+      // Give the user a brief moment to see the success toast, then close.
       setTimeout(() => {
         setShowToast(false);
         setIsSaving(false);
+        // `onSaved` updates parent state (existingProfile, isOnboarding) and
+        // closes the modal — no hard refresh required.
         onSaved?.();
-        onClose();
       }, 1200);
     } catch (err) {
       setIsSaving(false);
@@ -136,7 +167,7 @@ export function ClientProfileModal({
         </div>
       )}
 
-      {/* Toast */}
+      {/* Success Toast */}
       {showToast && (
         <div className="flex items-center gap-2 bg-success/15 text-success-light p-3 rounded-xl border border-success/30 mb-4 text-xs font-medium">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
